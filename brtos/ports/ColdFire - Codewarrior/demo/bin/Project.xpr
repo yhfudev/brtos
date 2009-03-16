@@ -1,5 +1,0 @@
-Data:2 < ADDXPR ONLY_ADD_IF_NEW "OSEventTbl"
-Data:2 < ADDXPR ONLY_ADD_IF_NEW "PTCDD"
-Data:2 < ADDXPR ONLY_ADD_IF_NEW "ReceivingMode"
-Data:2 < ADDXPR ONLY_ADD_IF_NEW "SerialPortBuffer"
-Data:2 < ADDXPR ONLY_ADD_IF_NEW "numPackRx"
