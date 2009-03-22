@@ -1,0 +1,2 @@
+RAM ocupada
+Quantidade de memória ocupada por cada tarefa (posição atual do stack virtual - início do stack virtual)
