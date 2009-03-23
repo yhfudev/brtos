@@ -1,0 +1,4 @@
+Data:2 < ADDXPR ONLY_ADD_IF_NEW "BRTOS_Sem_Table"
+Data:2 < ADDXPR ONLY_ADD_IF_NEW "BRTOS_Mutex_Table"
+Data:2 < ADDXPR ONLY_ADD_IF_NEW "BRTOS_Mbox_Table"
+Data:2 < ADDXPR ONLY_ADD_IF_NEW "BRTOS_Queue_Table"
