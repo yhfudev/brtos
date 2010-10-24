@@ -1,0 +1,17 @@
+# FIXED
+BRTOS/BRTOS.obj: ../BRTOS/BRTOS.c
+BRTOS/BRTOS.obj: ../BRTOS/includes/BRTOS.h
+BRTOS/BRTOS.obj: ../BRTOS/includes/../HAL/HAL.h
+BRTOS/BRTOS.obj: ../BRTOS/includes/../HAL/../includes/OS_types.h
+BRTOS/BRTOS.obj: ../BRTOS/includes/../HAL/hardware.h
+BRTOS/BRTOS.obj: D:/CODE_COMPOSER/ccsv4/msp430/include/msp430f2274.h
+BRTOS/BRTOS.obj: D:/CODE_COMPOSER/ccsv4/msp430/include/in430.h
+BRTOS/BRTOS.obj: ../BRTOS/includes/event.h
+BRTOS/BRTOS.obj: ../BRTOS/includes/BRTOS.h
+BRTOS/BRTOS.obj: ../BRTOS/includes/queue.h
+BRTOS/BRTOS.obj: ../BRTOS/includes/drivers.h
+BRTOS/BRTOS.obj: ../BRTOS/includes/tasks.h
+BRTOS/BRTOS.obj: ../BRTOS/includes/debug_stack.h
+BRTOS/BRTOS.obj: ../BRTOS/includes/OS_RTC.h
+BRTOS/BRTOS.obj: ../BRTOS/includes/debug_stack.h
+BRTOS/BRTOS.obj: ../BRTOS/includes/drivers.h

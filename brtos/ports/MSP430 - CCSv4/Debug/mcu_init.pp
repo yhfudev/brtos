@@ -1,0 +1,16 @@
+# FIXED
+mcu_init.obj: ../mcu_init.c
+mcu_init.obj: ../BRTOS/includes/BRTOS.h
+mcu_init.obj: ../BRTOS/includes/../HAL/HAL.h
+mcu_init.obj: ../BRTOS/includes/../HAL/../includes/OS_types.h
+mcu_init.obj: ../BRTOS/includes/../HAL/hardware.h
+mcu_init.obj: D:/CODE_COMPOSER/ccsv4/msp430/include/msp430f2274.h
+mcu_init.obj: D:/CODE_COMPOSER/ccsv4/msp430/include/in430.h
+mcu_init.obj: ../BRTOS/includes/event.h
+mcu_init.obj: ../BRTOS/includes/BRTOS.h
+mcu_init.obj: ../BRTOS/includes/queue.h
+mcu_init.obj: ../BRTOS/includes/drivers.h
+mcu_init.obj: ../BRTOS/includes/tasks.h
+mcu_init.obj: ../BRTOS/includes/debug_stack.h
+mcu_init.obj: ../BRTOS/includes/OS_RTC.h
+mcu_init.obj: ../BRTOS/includes/debug_stack.h

@@ -1,0 +1,17 @@
+# FIXED
+BRTOS/drivers/drivers.obj: ../BRTOS/drivers/drivers.c
+BRTOS/drivers/drivers.obj: ../BRTOS/drivers/../includes/drivers.h
+BRTOS/drivers/drivers.obj: ../BRTOS/drivers/../includes/../includes/BRTOS.h
+BRTOS/drivers/drivers.obj: ../BRTOS/drivers/../includes/../includes/../HAL/HAL.h
+BRTOS/drivers/drivers.obj: ../BRTOS/drivers/../includes/../includes/../HAL/../includes/OS_types.h
+BRTOS/drivers/drivers.obj: ../BRTOS/drivers/../includes/../includes/../HAL/hardware.h
+BRTOS/drivers/drivers.obj: D:/CODE_COMPOSER/ccsv4/msp430/include/msp430f2274.h
+BRTOS/drivers/drivers.obj: D:/CODE_COMPOSER/ccsv4/msp430/include/in430.h
+BRTOS/drivers/drivers.obj: ../BRTOS/drivers/../includes/../includes/event.h
+BRTOS/drivers/drivers.obj: ../BRTOS/drivers/../includes/../includes/BRTOS.h
+BRTOS/drivers/drivers.obj: ../BRTOS/drivers/../includes/../includes/queue.h
+BRTOS/drivers/drivers.obj: ../BRTOS/drivers/../includes/../includes/drivers.h
+BRTOS/drivers/drivers.obj: ../BRTOS/drivers/../includes/../includes/tasks.h
+BRTOS/drivers/drivers.obj: ../BRTOS/drivers/../includes/../includes/debug_stack.h
+BRTOS/drivers/drivers.obj: ../BRTOS/drivers/../includes/../includes/OS_RTC.h
+BRTOS/drivers/drivers.obj: ../BRTOS/drivers/../includes/../includes/debug_stack.h
