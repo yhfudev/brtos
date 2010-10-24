@@ -1,4 +1,10 @@
-
+/**
+* \file mbox.c
+* \brief BRTOS MailBox functions
+*
+* Functions to install and use MailBoxes
+*
+**/
 /*********************************************************************************************************
 *                                               BRTOS
 *                                Brazilian Real-Time Operating System
@@ -13,16 +19,51 @@
 *
 *
 *   Author:   Gustavo Weber Denardin
-*   Revision: 1.0
-*   Date:     20/03/2009
+*   Revision: 1.1
+*   Date:     11/03/2010
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.2
+*   Date:     01/10/2010
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.3
+*   Date:     11/10/2010
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.4
+*   Date:     19/10/2010
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.45
+*   Date:     20/10/2010
 *
 *********************************************************************************************************/
 
-#include <hidef.h> /* for EnableInterrupts macro */
+#include "hardware.h"
 #include "OS_types.h"
 #include "event.h"
 #include "BRTOS.h"
 
+#pragma warn_implicitconv off
+
+#define ANY_WAITING    if (pont_event->OSEventWait != 0)
+                                                                                            
+#define REMOVE_FROM_WAITLIST                                                                  \
+      iPriority = SAScheduler(pont_event->OSEventWaitList);                                   \
+      pont_event->OSEventWaitList = pont_event->OSEventWaitList & ~(PriorityMask[iPriority]); \
+      pont_event->OSEventWait--;                                                              
+
+#define PUT_ON_READYLIST     OSReadyList = OSReadyList | (PriorityMask[iPriority]); 
+
+
+#define MAILBOX_SET_MESSAGE                               \
+    pont_event->OSEventPointer = message;                 \
+    pont_event->OSEventState = AVAILABLE_MESSAGE;           
+        
+#define  FROM_TASK_SWITCH_CTX    if (!iNesting)  ChangeContext();
+    
+                                                                                    
 
 #if (BRTOS_MBOX_EN == 1)
 ////////////////////////////////////////////////////////////
@@ -33,14 +74,20 @@
 
 INT8U OSMboxCreate (BRTOS_Mbox **event, void *message)
 {
+  #if (NESTING_INT == 1)
+  INT16U CPU_SR = 0;
+  #endif
+  INT16S i = 0;  
   BRTOS_Mbox *pont_event;
-  INT16S i = 0;
 
   if (iNesting > 0) {                                // See if caller is an interrupt
       return(IRQ_PEND_ERR);                          // Can't be create by interrupt
   }
     
-  // Enter critical
+  // Enter critical Section
+  if (currentTask)
+     OSEnterCritical();
+  
   // Verifica se ainda há blocos de controle de eventos disponíveis
   for(i=0;i<=BRTOS_MAX_MBOX;i++)
   {
@@ -58,19 +105,61 @@ INT8U OSMboxCreate (BRTOS_Mbox **event, void *message)
     }
   }    
     
-
-    // Exit Critical
   pont_event->OSEventPointer   = message;                // Link EventPtr to message
-  pont_event->OSEventWait      = 0;
-  
-  for(i=0;i<WAIT_LIST_SIZE;i++)
-  {
-    pont_event->OSEventList[i]=0;  
-  }
+  pont_event->OSEventWait      = 0;  
+  pont_event->OSEventWaitList=0;
   
   *event = pont_event;
   
+  // Exit critical Section
+  if (currentTask)
+     OSExitCritical();  
+  
   return(ALLOC_EVENT_OK);
+}
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+
+
+
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+/////      Delete Mutex Function                       /////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+INT8U OSMboxDelete (BRTOS_Mbox **event)
+{
+  #if (NESTING_INT == 1)
+  INT16U CPU_SR = 0;
+  #endif
+  BRTOS_Mbox *pont_event;
+
+  if (iNesting > 0) {                                // See if caller is an interrupt
+      return(IRQ_PEND_ERR);                          // Can't be delete by interrupt
+  }
+    
+  // Enter Critical Section
+  OSEnterCritical();
+  
+  pont_event = *event;
+  pont_event->OSEventAllocated   = 0;
+  pont_event->OSEventPointer     = NULL;
+  pont_event->OSEventWait        = 0;
+  
+  pont_event->OSEventWaitList=0;
+  
+  *event = NULL;
+  
+  // Exit Critical Section
+  OSExitCritical();
+  
+  return(DELETE_EVENT_OK);
 }
 
 ////////////////////////////////////////////////////////////
@@ -88,51 +177,163 @@ INT8U OSMboxCreate (BRTOS_Mbox **event, void *message)
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-void *OSMboxPend (BRTOS_Mbox *pont_event, INT16U timeout)
+INT8U OSMboxPend (BRTOS_Mbox *pont_event, void *Mail, INT16U timeout)
 {
-  INT16U time_wait = 0;
-  INT16S i = 0;  
+  #if (NESTING_INT == 1)
+  INT16U CPU_SR = 0;
+  #endif
+  INT8U  iPriority = 0;
+  ContextType *Task;
   
-  // Enter Critical Section
-  OSEnterCritical;  
-  
+  // Can not use mailbox pend function from interrupt handling code
   if(iNesting > 0)
   {
-    OSExitCritical;
-    return (void *)0;
+    // Return NULL message
+    Mail = (void *)NULL;
+    // Indicates IRQ error
+    return(IRQ_PEND_ERR);
   }
   
-  ContextTask[currentTask].Suspended = TRUE;
-  ContextTask[currentTask].SuspendedType = MAILBOX;
+  // Enter Critical Section
+  OSEnterCritical();
   
-  if (timeout)
-  {  
-    time_wait = counter + timeout;
-    if (time_wait >= TickCountOverFlow)
-      time_wait = timeout - (TickCountOverFlow - counter);
-    ContextTask[currentTask].TimeToWait = time_wait;
-  } else
-    ContextTask[currentTask].TimeToWait = 65000;  
-  
-  // Aloca a tarefa com semaforo pendente na lista do evento
-  for(i=0;i<WAIT_LIST_SIZE;i++)
+  // Verify if there was a message post
+  if (pont_event->OSEventState == AVAILABLE_MESSAGE)
   {
-    if(pont_event->OSEventList[i] == currentTask)
-    {
-      break;
-    }
+    // Copy message pointer
+    Mail = pont_event->OSEventPointer;
+    
+    // Free message slot
+    pont_event->OSEventState = NO_MESSAGE;
+    
+    // Exit Critical Section
+    OSExitCritical();
+    return OK;
+  }
+  else
+  {
+    Task = &ContextTask[currentTask];
       
-    if(pont_event->OSEventList[i] == 0)
+    // Copy task priority to local scope
+    iPriority = Task->Priority;
+    
+    // Increases the semaphore wait list counter
+    pont_event->OSEventWait++;
+    
+    // Allocates the current task on the mailbox wait list
+    pont_event->OSEventWaitList = pont_event->OSEventWaitList | (PriorityMask[iPriority]);
+    
+    // Task entered suspended state, waiting for mailbox post
+    #if (VERBOSE == 1)
+    Task->State = SUSPENDED;
+    Task->SuspendedType = MAILBOX;
+    #endif
+    
+    // Remove current task from the Ready List
+    OSReadyList = OSReadyList & ~(PriorityMask[iPriority]);
+
+    // Set timeout overflow
+    if (timeout)
+    {  
+      timeout = counter + timeout;
+      if (timeout >= TickCountOverFlow)
+        timeout = timeout - TickCountOverFlow;
+      
+      Task->TimeToWait = timeout;
+    
+      // Put task into delay list
+      if(Tail != NULL)
+      { 
+        // Insert task into list
+        Tail->Next = Task;
+        Task->Previous = Tail;
+        Tail = Task;
+        Tail->Next = NULL;
+      }
+      else
+      {
+         // Init delay list
+         Tail = Task;
+         Head = Task; 
+      }
+    } else
     {
-      pont_event->OSEventList[i] = currentTask;
-      pont_event->OSEventWait++;
-      break;
+      Task->TimeToWait = NO_TIMEOUT;
+    }
+    
+    // Change Context - Returns on time overflow or mailbox post
+    ChangeContext();
+
+    #if (NESTING_INT == 1)
+    // Exit Critical Section
+    OSExitCritical();
+    #endif
+    
+    // Enter Critical Section
+    OSEnterCritical();
+
+    // Verify if the reason of task wake up was mailbox timeout
+    if(Task->TimeToWait == EXIT_BY_TIMEOUT)
+    {      
+      // Remove the task from the mailbox wait list
+      pont_event->OSEventWaitList = pont_event->OSEventWaitList & ~(PriorityMask[iPriority]);
+      
+      // Decreases the mailbox wait list counter
+      pont_event->OSEventWait--;
+      
+      // Return NULL message
+      Mail = (void *)NULL;
+
+      // Exit Critical Section
+      OSExitCritical();
+      
+      // Indicates mailbox timeout
+      return(TIMEOUT);
+    }
+    // Remove the time to wait condition
+    else
+    {
+      if (timeout)
+      {
+          Task->TimeToWait = NO_TIMEOUT;
+          
+          // Remove from delay list
+          if(Task == Head)
+          {
+            Head = Task->Next;
+            Head->Previous = NULL;
+            if(Task == Tail)
+            {
+              Tail = Task->Previous;
+              Tail->Next = NULL;
+            }          
+          }
+          else
+          {          
+            if(Task == Tail)
+            {
+              Tail = Task->Previous;
+              Tail->Next = NULL;
+            }
+            else
+            {
+              Task->Next->Previous = Task->Previous;
+              Task->Previous->Next = Task->Next; 
+            }
+          }    
+      }
+      
+      // Copy message pointer
+      Mail = pont_event->OSEventPointer;
+      
+      // Free message slot
+      pont_event->OSEventState = NO_MESSAGE;
+      
+      // Exit Critical Section
+      OSExitCritical();  
+      return OK;      
     }
   }
-  
-  // Troca contexto e só retorna quando estourar Delay ou quando ocorrer um Post do Semaforo
-  ChangeContext(); 
-  return (pont_event->OSEventPointer);
 }
 
 ////////////////////////////////////////////////////////////
@@ -152,31 +353,56 @@ void *OSMboxPend (BRTOS_Mbox *pont_event, INT16U timeout)
 
 INT8U OSMboxPost(BRTOS_Mbox *pont_event, void *message)
 {
-  int i=0;
+  #if (NESTING_INT == 1)
+  INT16U CPU_SR = 0;
+  #endif
+  INT8U iPriority = (INT8U)0;
+  INT8U TaskSelect = 0;  
   
   // Critical Section
-  #if (Coldfire == 1)
+  #if (NESTING_INT == 0)
   if (!iNesting)
   #endif
-     OSEnterCritical;
+     OSEnterCritical();
        
-  if (pont_event->OSEventWait != 0)                                  // See if any task is waiting for Message
+  // See if any task is waiting for a message
+  ANY_WAITING
   {
-    for(i=0;i<WAIT_LIST_SIZE;i++)
-    {
-	    if (pont_event->OSEventList[i] != 0)
-	    {    
-        ContextTask[pont_event->OSEventList[i]].Suspended = READY;   // Coloca a tarefa na Ready List
-      }
-    }
-    pont_event->OSEventPointer = message;
+    // Selected task and remove from Waiting List
+    REMOVE_FROM_WAITLIST
     
+    // Put the selected task into Ready List
+    PUT_ON_READYLIST     
     
-    ChangeContext();
+    #if (VERBOSE == 1)
+    TaskSelect = PriorityVector[iPriority]; 
+    ContextTask[TaskSelect].State = READY;
+    #endif
+    
+    MAILBOX_SET_MESSAGE
+    
+    FROM_TASK_SWITCH_CTX     
+  
+    #if (NESTING_INT == 0)                    
+    if (!iNesting)                            
+    #endif                                    
+       OSExitCritical();  
+
     return OK;
   }
-  
-  return ERR_EVENT_NO_CREATED;
+  else
+  {
+
+     MAILBOX_SET_MESSAGE 
+     
+      #if (NESTING_INT == 0)                    
+      if (!iNesting)                            
+      #endif    
+      OSExitCritical();       
+       
+    
+     return OK;
+  }
 }
 
 ////////////////////////////////////////////////////////////
@@ -184,3 +410,6 @@ INT8U OSMboxPost(BRTOS_Mbox *pont_event, void *message)
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 #endif
+
+
+  

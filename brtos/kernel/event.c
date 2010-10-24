@@ -1,4 +1,10 @@
-
+/**
+* \file event.c
+* \brief BRTOS Event Handler Variable Declarations
+*
+* Declare the control block variables to semaphores, mutexes, mailboxes and queues
+*
+**/
 /*********************************************************************************************************
 *                                               BRTOS
 *                                Brazilian Real-Time Operating System
@@ -12,9 +18,25 @@
 *                                 OS Event Handle Structs Declarations
 *
 *
-*   Author: Gustavo Weber Denardin
-*   Revision: 1.0
-*   Date:     20/03/2009
+*   Author:   Gustavo Weber Denardin
+*   Revision: 1.1
+*   Date:     11/03/2010
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.2
+*   Date:     01/10/2010
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.3
+*   Date:     11/10/2010
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.4
+*   Date:     19/10/2010
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.41
+*   Date:     20/10/2010
 *
 *********************************************************************************************************/
 
@@ -35,6 +57,7 @@
 ////////////////////////////////////////////////////////////
 
 #if (BRTOS_SEM_EN == 1)
+  /// Semahore Control Block
   BRTOS_Sem        BRTOS_Sem_Table[BRTOS_MAX_SEM];      // Table of EVENT control blocks
 #endif
 
@@ -54,6 +77,7 @@
 ////////////////////////////////////////////////////////////
 
 #if (BRTOS_MUTEX_EN == 1)
+  /// Mutex Control Block
   BRTOS_Mutex      BRTOS_Mutex_Table[BRTOS_MAX_MUTEX];    // Table of EVENT control blocks
 #endif
 
@@ -73,6 +97,7 @@
 ////////////////////////////////////////////////////////////
 
 #if (BRTOS_MBOX_EN == 1)
+  /// MailBox Control Block
   BRTOS_Mbox       BRTOS_Mbox_Table[BRTOS_MAX_MBOX];     // Table of EVENT control blocks
 #endif
 
@@ -92,6 +117,7 @@
 ////////////////////////////////////////////////////////////
 
 #if (BRTOS_QUEUE_EN == 1)
+  /// Queue Control Block
   BRTOS_Queue      BRTOS_Queue_Table[BRTOS_MAX_QUEUE];    // Table of EVENT control blocks
 #endif
 

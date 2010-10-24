@@ -1,4 +1,10 @@
-
+/**
+* \file mutex.c
+* \brief BRTOS Mutex functions
+*
+* Functions to install and use mutexes
+*
+**/
 /*********************************************************************************************************
 *                                               BRTOS
 *                                Brazilian Real-Time Operating System
@@ -13,17 +19,33 @@
 *
 *
 *   Author:   Gustavo Weber Denardin
-*   Revision: 1.0
-*   Date:     20/03/2009
+*   Revision: 1.1
+*   Date:     11/03/2010
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.2
+*   Date:     01/10/2010
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.3
+*   Date:     11/10/2010
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.4
+*   Date:     19/10/2010
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.45
+*   Date:     20/10/2010
 *
 *********************************************************************************************************/
 
 #include "OS_types.h"
 #include "event.h"
 #include "BRTOS.h"
-#include <hidef.h> /* for EnableInterrupts macro */
+#include "hardware.h"
 
-
+#pragma warn_implicitconv off
 
 
 #if (BRTOS_MUTEX_EN == 1)
@@ -35,6 +57,9 @@
 
 INT8U OSMutexCreate (BRTOS_Mutex **event, INT8U HigherPriority)
 {
+  #if (NESTING_INT == 1)
+  INT16U CPU_SR = 0;
+  #endif
   int i=0;
 
   BRTOS_Mutex *pont_event;
@@ -43,7 +68,21 @@ INT8U OSMutexCreate (BRTOS_Mutex **event, INT8U HigherPriority)
       return(IRQ_PEND_ERR);                          // Can't be create by interrupt
   }
     
-  // Enter critical
+  // Enter critical Section
+  if (currentTask)
+     OSEnterCritical();
+  
+  if (PriorityVector[HigherPriority] != EMPTY_PRIO)
+  {
+      // Exit critical Section
+      if (currentTask)
+        OSExitCritical();
+      return BUSY_PRIORITY;                          // The priority is busy
+  }
+  
+  // Allocate priority to the mutex
+  PriorityVector[HigherPriority] = MUTEX_PRIO;
+
   // Verifica se ainda há blocos de controle de eventos disponíveis
   for(i=0;i<=BRTOS_MAX_MUTEX;i++)
   {
@@ -63,17 +102,18 @@ INT8U OSMutexCreate (BRTOS_Mutex **event, INT8U HigherPriority)
     
 
     // Exit Critical
-  pont_event->OSEventCount = 1;                        // Set mutex counter value
+  pont_event->OSEventState = AVAILABLE_RESOURCE;       // Set mutex init value
   pont_event->OSEventWait  = 0;
   pont_event->OSMaxPriority = HigherPriority;          // Determina a tarefa de maior prioridade acessando o mutex
 
   
-  for(i=0;i<WAIT_LIST_SIZE;i++)
-  {
-    pont_event->OSEventList[i]=0;  
-  }
+  pont_event->OSEventWaitList=0;
   
   *event = pont_event;
+  
+  // Exit critical Section
+  if (currentTask)
+     OSExitCritical();  
   
   return(ALLOC_EVENT_OK);
 }
@@ -89,87 +129,41 @@ INT8U OSMutexCreate (BRTOS_Mutex **event, INT8U HigherPriority)
 
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
-/////      Mutex Pend Function                         /////
+/////      Delete Mutex Function                       /////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-INT8U OSMutexPend (BRTOS_Mutex *pont_event, INT16U timeout)
+INT8U OSMutexDelete (BRTOS_Mutex **event)
 {
+  #if (NESTING_INT == 1)
+  INT16U CPU_SR = 0;
+  #endif
   INT16S i = 0;
-  INT16U time_wait = 0;
-  INT8U backup_task;
+  BRTOS_Mutex *pont_event;
 
-  // Enter critical section
-  OSEnterCritical;
-  
-  if (pont_event->OSEventCount > 0)
-  {
-    pont_event->OSEventCount--;
-    pont_event->OSEventOwner = currentTask;
-        
-    ///////////////////////////////////////////////////////////////////////////////
-    // Realiza a troca temporária de prioridade da tarefa proprietária do mutex  //
-    // No caso da prioridade da tarefa já não ser a maior                        //
-    // OBS: menor valor de prioridade indica maior prioridade                    //
-    ///////////////////////////////////////////////////////////////////////////////
-    
-    pont_event->OSOriginalPriority = ContextTask[currentTask].Priority;
-    
-    if (pont_event->OSMaxPriority != ContextTask[currentTask].Priority)
-    {
-       // Event Context Priority Information
-       ContextTask[currentTask].Priority = pont_event->OSMaxPriority;
-       
-       // Priority change
-       backup_task = PriorityVector[pont_event->OSMaxPriority];
-       PriorityVector[pont_event->OSMaxPriority] = currentTask;
-       PriorityVector[pont_event->OSOriginalPriority] = backup_task;
-    }
-    
-    OSExitCritical;
-    return OK;
+  if (iNesting > 0) {                                // See if caller is an interrupt
+      return(IRQ_PEND_ERR);                          // Can't be delete by interrupt
   }
- 
+    
+  // Enter Critical Section
+  OSEnterCritical();
   
-  if(iNesting > 0)
-  {
-    return(IRQ_PEND_ERR);
-  }
+  pont_event = *event;  
+  pont_event->OSEventAllocated   = 0;
+  pont_event->OSEventState       = 0;
+  pont_event->OSEventOwner       = 0;                        
+  pont_event->OSMaxPriority      = 0;                      
+  pont_event->OSOriginalPriority = 0;                
+  pont_event->OSEventWait        = 0;  
   
-  ContextTask[currentTask].Suspended = TRUE;
-  ContextTask[currentTask].SuspendedType = MUTEX;
-
+  pont_event->OSEventWaitList=0;
   
-  // Verificar o timeout em relação ou counter overflow
-  if (timeout)
-  {  
-    time_wait = counter + timeout;
-    if (time_wait >= TickCountOverFlow)
-      time_wait = timeout - (TickCountOverFlow - counter);
-    ContextTask[currentTask].TimeToWait = time_wait;
-  } else
-    ContextTask[currentTask].TimeToWait = 65000;
+  *event = NULL;
   
+  // Exit Critical Section
+  OSExitCritical();
   
-  // Aloca a tarefa com semaforo pendente na lista do evento
-  for(i=0;i<WAIT_LIST_SIZE;i++)
-  {
-    if(pont_event->OSEventList[i] == currentTask)
-    {
-      break;
-    }
-      
-    if(pont_event->OSEventList[i] == 0)
-    {
-      pont_event->OSEventList[i] = currentTask;
-      pont_event->OSEventWait++;
-      break;
-    }
-  }
-  
-  // Troca contexto e só retorna quando estourar Delay ou quando ocorrer um Post do Semaforo
-  ChangeContext();
-  
+  return(DELETE_EVENT_OK);
 }
 
 ////////////////////////////////////////////////////////////
@@ -183,124 +177,257 @@ INT8U OSMutexPend (BRTOS_Mutex *pont_event, INT16U timeout)
 
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
-/////      Mutex Post Function                         /////
+/////      Mutex Acquire Function                      /////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-INT8U OSMutexPost(BRTOS_Mutex *pont_event)
+INT8U OSMutexAcquire(BRTOS_Mutex *pont_event)
 {
-  INT16U i=0;
-  INT16U j=0;
-  INT8U Max_Priority = 32;
-  INT8U backup_task = 0;
-
-  // Critical Section
-  #if (Coldfire == 1)
-  if (!iNesting)
+  #if (NESTING_INT == 1)
+  INT16U CPU_SR = 0;
   #endif
-     OSEnterCritical;  
+  INT8U  iPriority = 0;
+  
+  /// Can not use mutex acquire function from interrupt handling code
+  if(iNesting > 0)
+  {
+    return(IRQ_PEND_ERR);
+  }  
+  
+  // BRTOS TRACE SUPPORT
+  #if (OSTRACE == 1)
+      #if(OS_TRACE_BY_TASK == 1)
+      Update_OSTrace(currentTask, MUTEXPEND);
+      #else
+      Update_OSTrace(ContextTask[currentTask].Priority, MUTEXPEND);
+      #endif 
+  #endif
+  
+  OSEnterCritical(); 
+   // lock scheduler 
+  
+  // Verify if the shared resource is available
+  if (pont_event->OSEventState == AVAILABLE_RESOURCE)
+  {
+    // Set shared resource busy
+    pont_event->OSEventState = BUSY_RESOURCE;
+        
+    ///////////////////////////////////////////////////////////////////////////////
+    // Performs the temporary exchange of mutex owner priority, if needed        //
+    ///////////////////////////////////////////////////////////////////////////////
+    
+    // Backup the original task priority
+    pont_event->OSOriginalPriority = ContextTask[currentTask].Priority;
+    
+    if (pont_event->OSMaxPriority > pont_event->OSOriginalPriority)
+    {
+      // Receives the priority ceiling temporarily
+      ContextTask[currentTask].Priority = pont_event->OSMaxPriority;
+      
+      // Priority vector change       
+      PriorityVector[pont_event->OSMaxPriority] = currentTask;
+      
+      
+      
+      // Remove "original priority current task" from the Ready List
+      //OSReadyList = OSReadyList & ~(PriorityMask[pont_event->OSOriginalPriority]);
+      // Put the "max priority current task" into Ready List
+      //OSReadyList = OSReadyList | (PriorityMask[pont_event->OSMaxPriority]);
+      //#1.46
+      
+      OSReadyList = OSReadyList ^ (PriorityMask[pont_event->OSOriginalPriority] + PriorityMask[pont_event->OSMaxPriority]); 
+           
+    }        
+    
+    OSExitCritical();
+    
+    // Current task becomes the temporary owner of the mutex
+    pont_event->OSEventOwner = currentTask;
+       
+    return OK;
+  }
+  else
+  {
+  
+    iNesting++;
+    
+    //OSExitCritical();
+    
+    // Copy task priority to local scope
+    iPriority = ContextTask[currentTask].Priority;
+    // Increases the mutex wait list counter
+    pont_event->OSEventWait++;
+    
+    // Allocates the current task on the mutex wait list
+    pont_event->OSEventWaitList = pont_event->OSEventWaitList | (PriorityMask[iPriority]);
+      
+    // Task entered suspended state, waiting for mutex release
+    #if (VERBOSE == 1)
+    ContextTask[currentTask].State = SUSPENDED;
+    ContextTask[currentTask].SuspendedType = MUTEX;
+    #endif
 
+    //OSEnterCritical(); 
+      // Remove current task from the Ready List
+      OSReadyList = OSReadyList ^(PriorityMask[iPriority]);
+    OSExitCritical();
+            
+    
+    iNesting--;
+    // Change Context - Returns on mutex release
+    ChangeContext();
+    
+    // Current task becomes the temporary owner of the mutex
+    pont_event->OSEventOwner = currentTask;
+    
+    ///////////////////////////////////////////////////////////////////////////////
+    // Performs the temporary exchange of mutex owner priority, if needed        //
+    ///////////////////////////////////////////////////////////////////////////////
+    
+    // Backup the original task priority
+    pont_event->OSOriginalPriority = ContextTask[currentTask].Priority;
+    
+    if (pont_event->OSMaxPriority > pont_event->OSOriginalPriority)
+    {
+      // Receives the priority ceiling temporarily
+      ContextTask[currentTask].Priority = pont_event->OSMaxPriority;
+      
+      // Priority vector change
+      PriorityVector[pont_event->OSMaxPriority] = currentTask;
+      
+      // Remove "original priority current task" from the Ready List
+      //OSReadyList = OSReadyList & ~(PriorityMask[pont_event->OSOriginalPriority]);
+      // Put the "max priority current task" into Ready List
+      //OSReadyList = OSReadyList | (PriorityMask[pont_event->OSMaxPriority]);
+            
+      INT32U RL = (PriorityMask[pont_event->OSOriginalPriority] +  PriorityMask[pont_event->OSMaxPriority]);
+      OSEnterCritical();
+        OSReadyList = OSReadyList ^ RL;
+      OSExitCritical();
+    }
+    
+    return OK;
+  }
+}
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+
+
+
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+/////      Mutex Release Function                      /////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+INT8U OSMutexRelease(BRTOS_Mutex *pont_event)
+{
+  #if (NESTING_INT == 1)
+  INT16U CPU_SR = 0;
+  #endif
+  INT8U iPriority = (INT8U)0;
+  INT8U TaskSelect = 0;
+
+
+  /// Can not use mutex pend function from interrupt handling code
+  if(iNesting > 0)
+  {
+    return(IRQ_PEND_ERR);
+  } 
+     
+  // BRTOS TRACE SUPPORT
+  #if (OSTRACE == 1)  
+    if(!iNesting){  
+      #if(OS_TRACE_BY_TASK == 1)
+      Update_OSTrace(currentTask, MUTEXPOST);
+      #else
+      Update_OSTrace(ContextTask[currentTask].Priority, MUTEXPOST);
+      #endif 
+    }else{
+      Update_OSTrace(0, MUTEXPOST);
+    }
+  #endif 
+  
   // Verify Mutex Owner
   if (pont_event->OSEventOwner != currentTask)
   {   
     return ERR_EVENT_OWNER;
   }  
   
-  if (pont_event->OSEventWait != 0)                    // See if any task is waiting for mutex
+  // lock scheduler
+  //iNesting++;
+  
+  // Returns to the original priority, if needed
+  // Copy backuped original priority to the task context
+  iPriority = ContextTask[currentTask].Priority;
+  
+  OSEnterCritical();
+  
+  if (iPriority != pont_event->OSOriginalPriority)
+  {              
+    ContextTask[currentTask].Priority = pont_event->OSOriginalPriority;
+    
+    // Since current task is executing with another priority, reallocate its priority to the original
+    // into the Ready List
+    // Remove "max priority current task" from the Ready List
+    //OSReadyList = OSReadyList & ~(PriorityMask[iPriority]);
+    // Put the "original priority current task" into Ready List
+    //OSReadyList = OSReadyList | (PriorityMask[pont_event->OSOriginalPriority]);
+     
+     // Critical Section
+    
+     OSReadyList = OSReadyList ^ (PriorityMask[pont_event->OSOriginalPriority] + PriorityMask[iPriority]);   
+    
+  }
+  
+  
+  // See if any task is waiting for mutex release
+  if (pont_event->OSEventWait != 0)
   {
-    for(i=0;i<WAIT_LIST_SIZE;i++)
-    {
-	    if (pont_event->OSEventList[i] != 0)
-	    {
-	      if(ContextTask[pont_event->OSEventList[i]].Priority <= Max_Priority)
-	      {
-	        // Descobre a tarefa de maior prioridade esperando o recurso
-	        Max_Priority = ContextTask[pont_event->OSEventList[i]].Priority;
-	        j = i;
-	      }
-      }
-    }
-    
-    // Realiza a volta da troca temporária de prioridade da tarefa proprietária do mutex
-    // OBS: menor valor de prioridade indica maior prioridade
-    if (pont_event->OSOriginalPriority != ContextTask[currentTask].Priority)
-    {
-       // Event Context Priority Information
-       ContextTask[currentTask].Priority = pont_event->OSOriginalPriority;
-       
-       // Priority change
-       backup_task = PriorityVector[pont_event->OSOriginalPriority];
-       PriorityVector[pont_event->OSOriginalPriority] = currentTask;
-       PriorityVector[pont_event->OSMaxPriority] = backup_task;
-    }
-    
-    ///////////////////////////////////////////////////////////////////////////////
-    // Realiza a troca temporária de prioridade da tarefa proprietária do mutex  //
-    // No caso da prioridade da tarefa já não ser a maior                        //
-    // OBS: menor valor de prioridade indica maior prioridade                    //
-    ///////////////////////////////////////////////////////////////////////////////
-    
-    pont_event->OSOriginalPriority = ContextTask[pont_event->OSEventList[j]].Priority;
-    
-    if (pont_event->OSMaxPriority != ContextTask[pont_event->OSEventList[j]].Priority)
-    {
-       // Event Context Priority Information
-       ContextTask[pont_event->OSEventList[j]].Priority = pont_event->OSMaxPriority;
-       
-       // Priority change
-       backup_task = PriorityVector[pont_event->OSMaxPriority];
-       PriorityVector[pont_event->OSMaxPriority] = pont_event->OSEventList[j];
-       PriorityVector[pont_event->OSOriginalPriority] = backup_task;
-    }    
-    
-    // Coloca a tarefa de maior prioridade na Ready List
-    ContextTask[pont_event->OSEventList[j]].Suspended = READY;     // Coloca a tarefa na Ready List
-    // Retira esta tarefa das tarefas que esperam por evento / recurso
-    pont_event->OSEventList[j] = 0;
-    // Decrementa o número de tarefas esperando pelo evento / recurso
-    pont_event->OSEventWait--;
-        
-    // Exit Critical Section
-    #if (Coldfire == 1)
-    if (!iNesting)
-    #endif
-      OSExitCritical;
-    return OK;
-  }
-    
-  if (pont_event->OSEventCount < 255)               // Make sure mutex will not overflow
-  {            
-    pont_event->OSEventCount++;                     // Increment mutex count
+    // Selects the highest priority task
+    iPriority = SAScheduler(pont_event->OSEventWaitList);        
 
+    // Remove the selected task from the mutex wait list
+    pont_event->OSEventWaitList = pont_event->OSEventWaitList ^ (PriorityMask[iPriority]);
     
-    // Realiza a volta da troca temporária de prioridade da tarefa proprietária do mutex
-    // OBS: menor valor de prioridade indica maior prioridade
-    if (pont_event->OSOriginalPriority != ContextTask[currentTask].Priority)
-    {
-       // Event Context Priority Information
-       ContextTask[currentTask].Priority = pont_event->OSOriginalPriority;
-       
-       // Priority change
-       backup_task = PriorityVector[pont_event->OSOriginalPriority];
-       PriorityVector[pont_event->OSOriginalPriority] = currentTask;
-       PriorityVector[pont_event->OSMaxPriority] = backup_task;
-    }
-            
-    // Exit Critical Section
-    #if (Coldfire == 1)
-    if (!iNesting)
+    // Decreases the mutex wait list counter
+    pont_event->OSEventWait--;
+         
+    // Indicates that selected task is ready to run
+    #if (VERBOSE == 1)
+    TaskSelect = PriorityVector[iPriority]; 
+    ContextTask[TaskSelect].State = READY;
     #endif
-      OSExitCritical;
+    
+    // Copy task priority to local scope
+    //iPriority = ContextTask[TaskSelect].Priority;
+    
+    // Critical Section
+    // OSEnterCritical();
+    // Put the selected task into Ready List
+    OSReadyList = OSReadyList | (PriorityMask[iPriority]);    
+    // Exit Critical Section
+    OSExitCritical();
+        
+    // Verify if there is a higher priority task ready to run
+    ChangeContext();  
+      
     return OK;
   }
-  
+      
+  // Release Mutex
+  pont_event->OSEventState = AVAILABLE_RESOURCE;
+  PriorityVector[pont_event->OSMaxPriority] = MUTEX_PRIO;
+      
   // Exit Critical Section
-  #if (Coldfire == 1)
-  if (!iNesting)
-  #endif
-    OSExitCritical;
+  OSExitCritical();      
   
-  return ERR_MUTEX_OVF;
+  return OK;
 }
 
 ////////////////////////////////////////////////////////////

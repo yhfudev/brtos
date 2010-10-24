@@ -1,4 +1,10 @@
-
+/**
+* \file OS_RTC.c
+* \brief System Time managment functions
+*
+* Functions to reset and update the system time and date
+*
+**/
 /*********************************************************************************************************
 *                                               BRTOS
 *                                Brazilian Real-Time Operating System
@@ -12,16 +18,32 @@
 *                                      OS Time managment functions
 *
 *
-*   Author: Gustavo Weber Denardin
-*   Revision: 1.0
-*   Date:     20/03/2009
+*   Author:   Gustavo Weber Denardin
+*   Revision: 1.1
+*   Date:     11/03/2010
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.2
+*   Date:     01/10/2010
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.3
+*   Date:     11/10/2010
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.4
+*   Date:     19/10/2010
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.41
+*   Date:     20/10/2010
 *
 *********************************************************************************************************/
 
 
 #include "OS_RTC.h"
 #include "BRTOS.h"
-#include <hidef.h> /* for EnableInterrupts macro */
+#include "hardware.h"
 
 // estrutura - Hora
   OSTime Hora;
@@ -39,10 +61,14 @@
 
 void OSUpdateTime(OSTime *Ptr_Hora)
 {
-  #if (Coldfire == 1)
+  #if (NESTING_INT == 1)
+  INT16U CPU_SR = 0;
+  #endif
+  
+  #if (NESTING_INT == 0)
   if (!iNesting)
   #endif
-     OSEnterCritical;
+     OSEnterCritical();
      
   Ptr_Hora -> RTC_Second++;
 
@@ -62,10 +88,10 @@ void OSUpdateTime(OSTime *Ptr_Hora)
   		
  	}}}
   	
-  #if (Coldfire == 1)
+  #if (NESTING_INT == 0)
   if (!iNesting)
   #endif
-     OSExitCritical;
+     OSExitCritical();
 	
 }
 
@@ -86,11 +112,14 @@ void OSUpdateTime(OSTime *Ptr_Hora)
 
 void OSUpdateUptime(OSTime *Ptr_Hora,OSDate *Ptr_Dia)
 {
+  #if (NESTING_INT == 1)
+  INT16U CPU_SR = 0;
+  #endif
 
-  #if (Coldfire == 1)
+  #if (NESTING_INT == 0)
   if (!iNesting)
   #endif
-     OSEnterCritical;
+     OSEnterCritical();
      
   Ptr_Hora -> RTC_Second++;
 
@@ -111,10 +140,10 @@ void OSUpdateUptime(OSTime *Ptr_Hora,OSDate *Ptr_Dia)
   		
   }}}
   
-  #if (Coldfire == 1)
+  #if (NESTING_INT == 0)
   if (!iNesting)
   #endif
-     OSExitCritical;
+     OSExitCritical();
 }
 
 ////////////////////////////////////////////////////////////
@@ -134,11 +163,14 @@ void OSUpdateUptime(OSTime *Ptr_Hora,OSDate *Ptr_Dia)
 
 void OSUpdateDate(OSDate *Ptr_Dia)
 {   
-
-  #if (Coldfire == 1)
+  #if (NESTING_INT == 1)
+  INT16U CPU_SR = 0;
+  #endif
+  
+  #if (NESTING_INT == 0)
   if (!iNesting)
   #endif
-     OSEnterCritical;
+     OSEnterCritical();
      
 	Ptr_Dia -> RTC_Day++;	
 		
@@ -158,10 +190,10 @@ void OSUpdateDate(OSDate *Ptr_Dia)
 		Ptr_Dia -> RTC_Year = 0;
 	}}}
 	
-  #if (Coldfire == 1)
+  #if (NESTING_INT == 0)
   if (!iNesting)
   #endif
-     OSExitCritical;
+     OSExitCritical();
 	
 }
 
@@ -182,20 +214,23 @@ void OSUpdateDate(OSDate *Ptr_Dia)
 
 void OSResetTime(OSTime *Ptr_Hora)
 {
-      
-  #if (Coldfire == 1)
+  #if (NESTING_INT == 1)
+  INT16U CPU_SR = 0;
+  #endif
+        
+  #if (NESTING_INT == 0)
   if (!iNesting)
   #endif
-     OSEnterCritical;
+     OSEnterCritical();
      
    Ptr_Hora->RTC_Second = 0;
    Ptr_Hora->RTC_Minute = 0;
    Ptr_Hora->RTC_Hour = 0;
    
-  #if (Coldfire == 1)
+  #if (NESTING_INT == 0)
   if (!iNesting)
   #endif
-     OSExitCritical;
+     OSExitCritical();
       
 }
 
@@ -216,20 +251,23 @@ void OSResetTime(OSTime *Ptr_Hora)
  
 void OSResetDate(OSDate *Ptr_Dia)
 {
-   
-  #if (Coldfire == 1)
+  #if (NESTING_INT == 1)
+  INT16U CPU_SR = 0;
+  #endif
+     
+  #if (NESTING_INT == 0)
   if (!iNesting)
   #endif
-     OSEnterCritical;
+     OSEnterCritical();
      
    Ptr_Dia->RTC_Day = 0;
    Ptr_Dia->RTC_Month = 0;
    Ptr_Dia->RTC_Year = 0;
    
-  #if (Coldfire == 1)
+  #if (NESTING_INT == 0)
   if (!iNesting)
   #endif
-     OSExitCritical;
+     OSExitCritical();
       
 }
 

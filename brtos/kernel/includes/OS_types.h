@@ -1,3 +1,9 @@
+/**
+* \file OS_types.h
+* \brief BRTOS types declaration
+*
+*
+**/
 
 /*********************************************************************************************************
 *                                               BRTOS
@@ -31,13 +37,14 @@
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-typedef unsigned char BOOLEAN;
-typedef unsigned char INT8U;
-typedef signed char   INT8S;
-typedef unsigned int  INT16U;
-typedef signed int    INT16S;
-typedef unsigned long INT32U;
-typedef signed long   INT32S;
+typedef unsigned char      BOOLEAN;
+typedef char               CHAR8;
+typedef unsigned char      INT8U;
+typedef signed char        INT8S;
+typedef unsigned short int INT16U;
+typedef signed short int   INT16S;
+typedef unsigned long      INT32U;
+typedef signed long        INT32S;
 
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////

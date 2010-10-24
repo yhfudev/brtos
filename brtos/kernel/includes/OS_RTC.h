@@ -1,3 +1,9 @@
+/**
+* \file OS_RTC.h
+* \brief System Time managment struct declarations and functions prototypes.
+*
+*
+**/
 
 /*********************************************************************************************************
 *                                               BRTOS
@@ -33,11 +39,16 @@
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
+/**
+* \struct OSTime
+* Real time clock - shows the current hours, minutes and seconds or the uptime info
+*/
+
 typedef struct {
 
-	INT8U RTC_Second;
-	INT8U RTC_Minute;
-	INT8U RTC_Hour;	
+	INT8U RTC_Second;         ///< Seconds of the clock
+	INT8U RTC_Minute;         ///< Minutes of the clock
+	INT8U RTC_Hour;	          ///< Hours of the clock
 
 } OSTime;
 
@@ -56,12 +67,16 @@ typedef struct {
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
+/**
+* \struct OSDate
+* Operating System Date - Shows the current day, month and year ou the uptime info
+*/
+
 typedef struct {
 
-	INT8U RTC_Day;
-	INT8U RTC_Month;
-  INT16U RTC_Year;
-	
+	INT8U       RTC_Day;          ///< Day of the date
+	INT8U       RTC_Month;        ///< Month of the date
+  INT16U RTC_Year;         ///< Year of the date
 } OSDate; 
 
 ////////////////////////////////////////////////////////////
@@ -79,10 +94,15 @@ typedef struct {
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
+/**
+* \struct OSTime_Date
+* Operating System Date and time - Shows the current time and date
+*/
+
 typedef struct {
 
 
-	OSTime DC_Hora_Exata;
+	OSTime  DC_Hora_Exata;
 	OSDate  DC_Dia_Exato;
 
 } OSTime_Date;
@@ -102,6 +122,14 @@ typedef struct {
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
+/***************************************************************************************** 
+* \fn void OSUpdateTime(OSTime *Ptr_Hora)
+* \brief Update the system time
+*  Used to update the system time
+* \param Ptr_Hora - pointer to the current system time
+* \return None
+*****************************************************************************************/ 
+  
 void OSUpdateTime(OSTime *Ptr_Hora);
 
 void OSUpdateDate(OSDate *Ptr_Dia); 
