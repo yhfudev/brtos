@@ -1,0 +1,1 @@
+"./BRTOS/HAL/HAL.obj" "./BRTOS/drivers/drivers.obj" "./BRTOS/semaphore.obj" "./BRTOS/queue.obj" "./BRTOS/mutex.obj" "./BRTOS/mbox.obj" "./BRTOS/event.obj" "./BRTOS/debug_stack.obj" "./BRTOS/OS_RTC.obj" "./BRTOS/BRTOS.obj" "./tasks.obj" "./mcu_init.obj" "./main.obj" -l"libc.a" "../lnk_msp430f2274.cmd" 

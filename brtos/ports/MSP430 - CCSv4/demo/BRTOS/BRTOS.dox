@@ -1,0 +1,48 @@
+/**
+\mainpage BRTOS - Brazilian Real-Time Operating System 
+\brief This is a light and simple RTOS that supports pre-emptive multitasking, interprocess synchronization, shared resources management, and queue management.
+\author Gustavo Weber Denardin
+(<A HREF="http://pessoal.utfpr.edu.br/gustavo" TARGET="_top">Personal Home Page</A>)\n
+\version 1.0
+\date    March, 2010\n
+\section notes Release Notes
+<b>Official Ports:</b>\n
+Freescale Coldfire V1, Freescale HCS08 and Texas Instruments MSP430.\n
+\n
+PS.: Due to problems with the Flash speculation Module in the Coldfire V1 microcontroller, the register CPUCR must be configured as shown:\n
+\code
+asm {
+    move #0x12000000, d0
+    movec d0,CPUCR
+  }
+\endcode
+<hr>
+\section requirements Requirements
+<b> Minimum:</b>\n
+300 Bytes of RAM\n
+4KB of code memory (ROM or FLASH)\n
+\n
+<b>Recommended (full services support):</b>\n
+1KB of RAM\n
+10KB of code memory (ROM or FLASH)
+<hr> 
+\section intro Introduction
+The RTOS scheduling scheme is the preemptive with priorities. Each task should be associated with a priority. Maximum number of installed tasks = 32.\n
+Resource Management: semaphores, mutexes, mailboxes and queues.\n
+The Mutex implementation uses the priority ceiling protocol in order to avoid deadlocks and priority inversion.\n
+\n
+The system is written in ANSI C, with only a few calls of assembly in the HAL (Hardware Abstraction Layer).\n
+\n
+The switching context time depends on the clock and the microcontroller used.\n
+Results obtained so far:\n
+Coldfire V1 - Switching context time of 10us with bus clock = 24MHz.\n
+HC08 - Switching context time of 30us with bus clock = 20MHz.\n
+\n
+The amount of RAM required for the tasks will depend on the CPU and the needs of the task (RISC CPUs require more space in RAM, because they have more processor registers).
+\todo Pend and Post functions to queue messages
+\todo Uninstall tasks
+
+\section Download Download
+Download BRTOS source code using following link:\n
+http://code.google.com/p/brtos/downloads/list\n
+*/

@@ -1,0 +1,16 @@
+# FIXED
+BRTOS/semaphore.obj: ../BRTOS/semaphore.c
+BRTOS/semaphore.obj: ../BRTOS/includes/BRTOS.h
+BRTOS/semaphore.obj: ../BRTOS/includes/../HAL/HAL.h
+BRTOS/semaphore.obj: ../BRTOS/includes/../HAL/../includes/OS_types.h
+BRTOS/semaphore.obj: ../BRTOS/includes/../HAL/hardware.h
+BRTOS/semaphore.obj: D:/CODE_COMPOSER/ccsv4/msp430/include/msp430f2274.h
+BRTOS/semaphore.obj: D:/CODE_COMPOSER/ccsv4/msp430/include/in430.h
+BRTOS/semaphore.obj: ../BRTOS/includes/event.h
+BRTOS/semaphore.obj: ../BRTOS/includes/BRTOS.h
+BRTOS/semaphore.obj: ../BRTOS/includes/queue.h
+BRTOS/semaphore.obj: ../BRTOS/includes/drivers.h
+BRTOS/semaphore.obj: ../BRTOS/includes/tasks.h
+BRTOS/semaphore.obj: ../BRTOS/includes/debug_stack.h
+BRTOS/semaphore.obj: ../BRTOS/includes/OS_RTC.h
+BRTOS/semaphore.obj: ../BRTOS/includes/debug_stack.h
