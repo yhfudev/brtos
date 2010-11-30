@@ -38,15 +38,17 @@
 *   Revision: 1.45
 *   Date:     20/10/2010
 *
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.50
+*   Date:     25/10/2010
+*
 *********************************************************************************************************/
 
-#include "hardware.h"
 #include "BRTOS.h"
-#include "queue.h"
-#include <stdlib.h>
-#include "event.h"
 
+#if (PROCESSOR == COLDFIRE_V1)
 #pragma warn_implicitconv off
+#endif
 
 
 #if (BRTOS_QUEUE_EN == 1)
@@ -58,9 +60,7 @@
 
 INT8U OSQueueCreate(OS_QUEUE *cqueue, INT16U size, BRTOS_Queue **event)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   int i=0;
   BRTOS_Queue *pont_event;
 
@@ -137,9 +137,7 @@ INT8U OSQueueCreate(OS_QUEUE *cqueue, INT16U size, BRTOS_Queue **event)
 
 INT8U OSWQueue(OS_QUEUE *cqueue,INT8U data)
 {  
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   
   // Enter Critical Section
   #if (NESTING_INT == 0)
@@ -195,9 +193,7 @@ INT8U OSWQueue(OS_QUEUE *cqueue,INT8U data)
 
 INT8U OSRQueue(OS_QUEUE *cqueue, INT8U* pdata)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif  
+  OS_SR_SAVE_VAR
   
   // Critical Section
   #if (NESTING_INT == 0)
@@ -253,9 +249,7 @@ INT8U OSRQueue(OS_QUEUE *cqueue, INT8U* pdata)
 
 INT8U OSCleanQueue(BRTOS_Queue *pont_event)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   OS_QUEUE *cqueue = pont_event->OSEventPointer;
   
   // Enter Critical Section
@@ -295,20 +289,37 @@ INT8U OSCleanQueue(BRTOS_Queue *pont_event)
 
 INT8U OSQueuePend (BRTOS_Queue *pont_event, INT8U* pdata, INT16U timeout)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   INT8U iPriority = 0;
   ContextType *Task;
   OS_QUEUE *cqueue = pont_event->OSEventPointer;
-  
-  // Can not use Queue pend function from interrupt handling code
-  if(iNesting > 0)
-  {
-    return(IRQ_PEND_ERR);
-  }
+   
+  #if (ERROR_CHECK == 1)
+    /// Can not use Queue pend function from interrupt handling code
+    if(iNesting > 0)
+    {
+      return(IRQ_PEND_ERR);
+    }
+    
+    // Verifies if the pointer is NULL
+    if(pont_event == NULL)
+    {
+      return(NULL_EVENT_POINTER);
+    }
+  #endif
+    
+  // Enter Critical Section
+  OSEnterCritical();
 
-
+  #if (ERROR_CHECK == 1)
+    // Verifies if the event is allocated
+    if(pont_event->OSEventAllocated != TRUE)
+    {
+      // Exit Critical Section
+      OSExitCritical();
+      return(ERR_EVENT_NO_CREATED);
+    }
+  #endif
   
   // BRTOS TRACE SUPPORT
   #if (OSTRACE == 1) 
@@ -318,15 +329,10 @@ INT8U OSQueuePend (BRTOS_Queue *pont_event, INT8U* pdata, INT16U timeout)
       Update_OSTrace(ContextTask[currentTask].Priority, QUEUEPEND);
       #endif
   #endif   
-  
-  // Enter Critical Section
-  OSEnterCritical();  
+    
   // Verify if there is data in the queue
   if(cqueue->OSQEntries > 0)
   {
-    // Decreases queue entries
-    cqueue->OSQEntries--;
-    
     // Verify for output pointer overflow
     if (cqueue->OSQOut == cqueue->OSQEnd)
       cqueue->OSQOut = cqueue->OSQStart;
@@ -337,9 +343,11 @@ INT8U OSQueuePend (BRTOS_Queue *pont_event, INT8U* pdata, INT16U timeout)
     // Increases output pointer
     cqueue->OSQOut++;
     
+    // Decreases queue entries
+    cqueue->OSQEntries--;
+    
     // Exit Critical Section
     OSExitCritical();
-    
     return READ_BUFFER_OK;
   }
   else
@@ -369,10 +377,14 @@ INT8U OSQueuePend (BRTOS_Queue *pont_event, INT8U* pdata, INT16U timeout)
     {  
       timeout = counter + timeout;
       if (timeout >= TickCountOverFlow)
-        timeout = timeout - TickCountOverFlow;
-      
-      Task->TimeToWait = timeout;
-      
+      {
+        Task->TimeToWait = timeout - TickCountOverFlow;
+      }
+      else
+      {
+        Task->TimeToWait = timeout;
+      }
+    
       // Put task into delay list
       if(Tail != NULL)
       { 
@@ -399,75 +411,80 @@ INT8U OSQueuePend (BRTOS_Queue *pont_event, INT8U* pdata, INT16U timeout)
     #if (NESTING_INT == 1)
     // Exit Critical Section
     OSExitCritical();
-    #endif
-    
     // Enter Critical Section
-    OSEnterCritical();
+    OSEnterCritical();    
+    #endif    
     
-    // Verify if the reason of task wake up was queue timeout
-    if(Task->TimeToWait == EXIT_BY_TIMEOUT)
-    {
-        // Remove the task from the queue wait list
-        pont_event->OSEventWaitList = pont_event->OSEventWaitList & ~(PriorityMask[iPriority]);
-        // Decreases the queue wait list counter
-        pont_event->OSEventWait--;
-        
-        // Exit Critical Section
-        OSExitCritical();
-        
-        // Indicates queue timeout
-        return TIMEOUT;
-    }  
-    // Remove the time to wait condition    
-    else
-    {
-      if (timeout)
-      {
-          Task->TimeToWait = NO_TIMEOUT;
-          
-          // Remove from delay list
-          if(Task == Head)
-          {
-            Head = Task->Next;
-            Head->Previous = NULL;
-            if(Task == Tail)
+    if (timeout)
+    {    
+        // Verify if the reason of task wake up was queue timeout
+        if(Task->TimeToWait == EXIT_BY_TIMEOUT)
+        {
+            // Test if both timeout and post have occured before arrive here
+            if ((pont_event->OSEventWaitList & PriorityMask[iPriority]))
             {
-              Tail = Task->Previous;
-              Tail->Next = NULL;
-            }          
-          }
-          else
-          {          
-            if(Task == Tail)
+              // Remove the task from the queue wait list
+              pont_event->OSEventWaitList = pont_event->OSEventWaitList & ~(PriorityMask[iPriority]);
+              
+              // Decreases the queue wait list counter
+              pont_event->OSEventWait--;
+              
+              // Exit Critical Section
+              OSExitCritical();
+              
+              // Indicates queue timeout
+              return TIMEOUT;
+            }
+        }
+        else
+        {
+            // Remove the time to wait condition
+            Task->TimeToWait = NO_TIMEOUT;
+            
+            // Remove from delay list
+            if(Task == Head)
             {
-              Tail = Task->Previous;
-              Tail->Next = NULL;
+              Head = Task->Next;
+              Head->Previous = NULL;
+              if(Task == Tail)
+              {
+                Tail = Task->Previous;
+                Tail->Next = NULL;
+              }          
             }
             else
-            {
-              Task->Next->Previous = Task->Previous;
-              Task->Previous->Next = Task->Next; 
+            {          
+              if(Task == Tail)
+              {
+                Tail = Task->Previous;
+                Tail->Next = NULL;
+              }
+              else
+              {
+                Task->Next->Previous = Task->Previous;
+                Task->Previous->Next = Task->Next; 
+              }
             }
-          }    
-      }
-      
-      // Verify for output pointer overflow
-      if (cqueue->OSQOut == cqueue->OSQEnd)
-        cqueue->OSQOut = cqueue->OSQStart;
-    
-      // Copy data from queue
-      *pdata = *cqueue->OSQOut;
-    
-      // Increases the output pointer
-      cqueue->OSQOut++;
-      
-      // Decreases queue entries
-      cqueue->OSQEntries--;
-      
-      // Exit Critical Section
-      OSExitCritical();
-      return READ_BUFFER_OK;
+        }
+       
     }
+    
+    // Verify for output pointer overflow
+    if (cqueue->OSQOut == cqueue->OSQEnd)
+      cqueue->OSQOut = cqueue->OSQStart;
+  
+    // Copy data from queue
+    *pdata = *cqueue->OSQOut;
+  
+    // Increases the output pointer
+    cqueue->OSQOut++;
+    
+    // Decreases queue entries
+    cqueue->OSQEntries--;
+    
+    // Exit Critical Section
+    OSExitCritical();
+    return READ_BUFFER_OK;
   }
 }
 
@@ -488,18 +505,39 @@ INT8U OSQueuePend (BRTOS_Queue *pont_event, INT8U* pdata, INT16U timeout)
 
 INT8U OSQueuePost(BRTOS_Queue *pont_event, INT8U data)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif  
+  OS_SR_SAVE_VAR
   INT8U iPriority = (INT8U)0;
+  #if (VERBOSE == 1)
   INT8U TaskSelect = 0;
+  #endif
   OS_QUEUE *cqueue = pont_event->OSEventPointer;
   
+  #if (ERROR_CHECK == 1)    
+    // Verifies if the pointer is NULL
+    if(pont_event == NULL)
+    {
+      return(NULL_EVENT_POINTER);
+    }
+  #endif
+
   // Enter Critical Section
   #if (NESTING_INT == 0)
   if (!iNesting)
   #endif
      OSEnterCritical();
+     
+  #if (ERROR_CHECK == 1)        
+    // Verifies if the event is allocated
+    if(pont_event->OSEventAllocated != TRUE)
+    {
+      // Exit Critical Section
+      #if (NESTING_INT == 0)
+      if (!iNesting)
+      #endif
+         OSExitCritical();
+      return(ERR_EVENT_NO_CREATED);
+    }
+  #endif
      
   // BRTOS TRACE SUPPORT
   #if (OSTRACE == 1)  
@@ -546,8 +584,7 @@ INT8U OSQueuePost(BRTOS_Queue *pont_event, INT8U data)
   if (pont_event->OSEventWait != 0)
   {
     // Selects the highest priority task
-    iPriority = SAScheduler(pont_event->OSEventWaitList);
-    TaskSelect = PriorityVector[iPriority];
+    iPriority = SAScheduler(pont_event->OSEventWaitList);    
 
     // Remove the selected task from the queue wait list
     pont_event->OSEventWaitList = pont_event->OSEventWaitList & ~(PriorityMask[iPriority]);
@@ -557,6 +594,7 @@ INT8U OSQueuePost(BRTOS_Queue *pont_event, INT8U data)
     
     // Put the selected task into Ready List
     #if (VERBOSE == 1)
+    TaskSelect = PriorityVector[iPriority];
     ContextTask[TaskSelect].State = READY;
     #endif
     
@@ -608,9 +646,7 @@ INT8U OSQueuePost(BRTOS_Queue *pont_event, INT8U data)
 
 INT8U OSQueue16Create(OS_QUEUE_16 *cqueue, INT16U size, BRTOS_Queue **event)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   INT16S i=0;
   BRTOS_Queue *pont_event;
 
@@ -685,9 +721,7 @@ INT8U OSQueue16Create(OS_QUEUE_16 *cqueue, INT16U size, BRTOS_Queue **event)
 
 INT8U OSWQueue16(OS_QUEUE_16 *cqueue,INT16U data)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   
   // Enter Critical Section
   #if (NESTING_INT == 0)
@@ -743,9 +777,7 @@ INT8U OSWQueue16(OS_QUEUE_16 *cqueue,INT16U data)
 
 INT8U OSRQueue16(OS_QUEUE_16 *cqueue, INT16U *pdata)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
     
   // Critical Section
   #if (NESTING_INT == 0)
@@ -801,9 +833,7 @@ INT8U OSRQueue16(OS_QUEUE_16 *cqueue, INT16U *pdata)
 
 INT8U OSCleanQueue16(OS_QUEUE_16 *cqueue)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif  
+  OS_SR_SAVE_VAR
   OS_QUEUE_16 *tmp_queue = cqueue;
   
   // Enter Critical Section
@@ -847,9 +877,7 @@ INT8U OSCleanQueue16(OS_QUEUE_16 *cqueue)
 
 INT8U OSQueue32Create(OS_QUEUE_32 *cqueue, INT16U size, BRTOS_Queue **event)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   INT16S i=0;
   BRTOS_Queue *pont_event;
 
@@ -924,9 +952,7 @@ INT8U OSQueue32Create(OS_QUEUE_32 *cqueue, INT16U size, BRTOS_Queue **event)
 
 INT8U OSWQueue32(OS_QUEUE_32 *cqueue,INT32U data)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   
   // Enter Critical Section
   #if (NESTING_INT == 0)
@@ -982,9 +1008,7 @@ INT8U OSWQueue32(OS_QUEUE_32 *cqueue,INT32U data)
 
 INT8U OSRQueue32(OS_QUEUE_32 *cqueue, INT32U *pdata)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
     
   // Critical Section
   #if (NESTING_INT == 0)
@@ -1040,9 +1064,7 @@ INT8U OSRQueue32(OS_QUEUE_32 *cqueue, INT32U *pdata)
 
 INT8U OSCleanQueue32(OS_QUEUE_32 *cqueue)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif  
+  OS_SR_SAVE_VAR
   OS_QUEUE_32 *tmp_queue = cqueue;
   
   // Enter Critical Section

@@ -40,10 +40,7 @@
 *
 *********************************************************************************************************/
 
-
-#include "OS_RTC.h"
 #include "BRTOS.h"
-#include "hardware.h"
 
 // estrutura - Hora
   OSTime Hora;
@@ -61,9 +58,7 @@
 
 void OSUpdateTime(OSTime *Ptr_Hora)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   
   #if (NESTING_INT == 0)
   if (!iNesting)
@@ -112,9 +107,7 @@ void OSUpdateTime(OSTime *Ptr_Hora)
 
 void OSUpdateUptime(OSTime *Ptr_Hora,OSDate *Ptr_Dia)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
 
   #if (NESTING_INT == 0)
   if (!iNesting)
@@ -163,9 +156,7 @@ void OSUpdateUptime(OSTime *Ptr_Hora,OSDate *Ptr_Dia)
 
 void OSUpdateDate(OSDate *Ptr_Dia)
 {   
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   
   #if (NESTING_INT == 0)
   if (!iNesting)
@@ -214,18 +205,16 @@ void OSUpdateDate(OSDate *Ptr_Dia)
 
 void OSResetTime(OSTime *Ptr_Hora)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
         
   #if (NESTING_INT == 0)
   if (!iNesting)
   #endif
      OSEnterCritical();
      
-   Ptr_Hora->RTC_Second = 0;
-   Ptr_Hora->RTC_Minute = 0;
-   Ptr_Hora->RTC_Hour = 0;
+   (Ptr_Hora->RTC_Second) = 0;
+   (Ptr_Hora->RTC_Minute) = 0;
+   (Ptr_Hora->RTC_Hour) = 0;
    
   #if (NESTING_INT == 0)
   if (!iNesting)
@@ -251,9 +240,7 @@ void OSResetTime(OSTime *Ptr_Hora)
  
 void OSResetDate(OSDate *Ptr_Dia)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
      
   #if (NESTING_INT == 0)
   if (!iNesting)

@@ -38,14 +38,17 @@
 *   Revision: 1.45
 *   Date:     20/10/2010
 *
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.50
+*   Date:     25/10/2010
+*
 *********************************************************************************************************/
 
-#include "OS_types.h"
-#include "event.h"
 #include "BRTOS.h"
-#include "hardware.h"
 
+#if (PROCESSOR == COLDFIRE_V1)
 #pragma warn_implicitconv off
+#endif
 
 
 #if (BRTOS_MUTEX_EN == 1)
@@ -57,9 +60,7 @@
 
 INT8U OSMutexCreate (BRTOS_Mutex **event, INT8U HigherPriority)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   int i=0;
 
   BRTOS_Mutex *pont_event;
@@ -135,10 +136,7 @@ INT8U OSMutexCreate (BRTOS_Mutex **event, INT8U HigherPriority)
 
 INT8U OSMutexDelete (BRTOS_Mutex **event)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
-  INT16S i = 0;
+  OS_SR_SAVE_VAR
   BRTOS_Mutex *pont_event;
 
   if (iNesting > 0) {                                // See if caller is an interrupt
@@ -183,16 +181,36 @@ INT8U OSMutexDelete (BRTOS_Mutex **event)
 
 INT8U OSMutexAcquire(BRTOS_Mutex *pont_event)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   INT8U  iPriority = 0;
+
   
-  /// Can not use mutex acquire function from interrupt handling code
-  if(iNesting > 0)
-  {
-    return(IRQ_PEND_ERR);
-  }  
+  #if (ERROR_CHECK == 1)
+    /// Can not use mutex acquire function from interrupt handling code
+    if(iNesting > 0)
+    {
+      return(IRQ_PEND_ERR);
+    }
+    
+    // Verifies if the pointer is NULL
+    if(pont_event == NULL)
+    {
+      return(NULL_EVENT_POINTER);
+    }
+  #endif
+    
+  // Enter Critical Section
+  OSEnterCritical();
+
+  #if (ERROR_CHECK == 1)
+    // Verifies if the event is allocated
+    if(pont_event->OSEventAllocated != TRUE)
+    {
+      // Exit Critical Section
+      OSExitCritical();      
+      return(ERR_EVENT_NO_CREATED);
+    }
+  #endif
   
   // BRTOS TRACE SUPPORT
   #if (OSTRACE == 1)
@@ -201,16 +219,16 @@ INT8U OSMutexAcquire(BRTOS_Mutex *pont_event)
       #else
       Update_OSTrace(ContextTask[currentTask].Priority, MUTEXPEND);
       #endif 
-  #endif
-  
-  OSEnterCritical(); 
-   // lock scheduler 
+  #endif    
   
   // Verify if the shared resource is available
   if (pont_event->OSEventState == AVAILABLE_RESOURCE)
   {
     // Set shared resource busy
     pont_event->OSEventState = BUSY_RESOURCE;
+    
+    // Current task becomes the temporary owner of the mutex
+    pont_event->OSEventOwner = currentTask;
         
     ///////////////////////////////////////////////////////////////////////////////
     // Performs the temporary exchange of mutex owner priority, if needed        //
@@ -219,7 +237,7 @@ INT8U OSMutexAcquire(BRTOS_Mutex *pont_event)
     // Backup the original task priority
     pont_event->OSOriginalPriority = ContextTask[currentTask].Priority;
     
-    if (pont_event->OSMaxPriority > pont_event->OSOriginalPriority)
+    if (pont_event->OSMaxPriority > ContextTask[currentTask].Priority)
     {
       // Receives the priority ceiling temporarily
       ContextTask[currentTask].Priority = pont_event->OSMaxPriority;
@@ -227,32 +245,17 @@ INT8U OSMutexAcquire(BRTOS_Mutex *pont_event)
       // Priority vector change       
       PriorityVector[pont_event->OSMaxPriority] = currentTask;
       
-      
-      
       // Remove "original priority current task" from the Ready List
-      //OSReadyList = OSReadyList & ~(PriorityMask[pont_event->OSOriginalPriority]);
+      OSReadyList = OSReadyList & ~(PriorityMask[pont_event->OSOriginalPriority]);
       // Put the "max priority current task" into Ready List
-      //OSReadyList = OSReadyList | (PriorityMask[pont_event->OSMaxPriority]);
-      //#1.46
-      
-      OSReadyList = OSReadyList ^ (PriorityMask[pont_event->OSOriginalPriority] + PriorityMask[pont_event->OSMaxPriority]); 
-           
-    }        
+      OSReadyList = OSReadyList | (PriorityMask[pont_event->OSMaxPriority]);
+    }
     
     OSExitCritical();
-    
-    // Current task becomes the temporary owner of the mutex
-    pont_event->OSEventOwner = currentTask;
-       
     return OK;
   }
   else
   {
-  
-    iNesting++;
-    
-    //OSExitCritical();
-    
     // Copy task priority to local scope
     iPriority = ContextTask[currentTask].Priority;
     // Increases the mutex wait list counter
@@ -267,13 +270,9 @@ INT8U OSMutexAcquire(BRTOS_Mutex *pont_event)
     ContextTask[currentTask].SuspendedType = MUTEX;
     #endif
 
-    //OSEnterCritical(); 
-      // Remove current task from the Ready List
-      OSReadyList = OSReadyList ^(PriorityMask[iPriority]);
-    OSExitCritical();
+    // Remove current task from the Ready List
+    OSReadyList = OSReadyList & ~(PriorityMask[iPriority]);
             
-    
-    iNesting--;
     // Change Context - Returns on mutex release
     ChangeContext();
     
@@ -296,16 +295,12 @@ INT8U OSMutexAcquire(BRTOS_Mutex *pont_event)
       PriorityVector[pont_event->OSMaxPriority] = currentTask;
       
       // Remove "original priority current task" from the Ready List
-      //OSReadyList = OSReadyList & ~(PriorityMask[pont_event->OSOriginalPriority]);
+      OSReadyList = OSReadyList & ~(PriorityMask[pont_event->OSOriginalPriority]);
       // Put the "max priority current task" into Ready List
-      //OSReadyList = OSReadyList | (PriorityMask[pont_event->OSMaxPriority]);
-            
-      INT32U RL = (PriorityMask[pont_event->OSOriginalPriority] +  PriorityMask[pont_event->OSMaxPriority]);
-      OSEnterCritical();
-        OSReadyList = OSReadyList ^ RL;
-      OSExitCritical();
+      OSReadyList = OSReadyList | (PriorityMask[pont_event->OSMaxPriority]);
     }
     
+    OSExitCritical();
     return OK;
   }
 }
@@ -327,18 +322,38 @@ INT8U OSMutexAcquire(BRTOS_Mutex *pont_event)
 
 INT8U OSMutexRelease(BRTOS_Mutex *pont_event)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   INT8U iPriority = (INT8U)0;
+  #if (VERBOSE == 1)
   INT8U TaskSelect = 0;
+  #endif
+  
+  #if (ERROR_CHECK == 1)      
+    /// Can not use mutex pend function from interrupt handling code
+    if(iNesting > 0)
+    {
+      return(IRQ_PEND_ERR);
+    }  
+  
+    // Verifies if the pointer is NULL
+    if(pont_event == NULL)
+    {
+      return(NULL_EVENT_POINTER);
+    }
+  #endif
 
-
-  /// Can not use mutex pend function from interrupt handling code
-  if(iNesting > 0)
-  {
-    return(IRQ_PEND_ERR);
-  } 
+  // Enter Critical Section
+  OSEnterCritical();
+     
+  #if (ERROR_CHECK == 1)        
+    // Verifies if the event is allocated
+    if(pont_event->OSEventAllocated != TRUE)
+    {
+      // Exit Critical Section
+      OSExitCritical();
+      return(ERR_EVENT_NO_CREATED);
+    }
+  #endif
      
   // BRTOS TRACE SUPPORT
   #if (OSTRACE == 1)  
@@ -351,71 +366,57 @@ INT8U OSMutexRelease(BRTOS_Mutex *pont_event)
     }else{
       Update_OSTrace(0, MUTEXPOST);
     }
-  #endif 
-  
+  #endif     
+
   // Verify Mutex Owner
   if (pont_event->OSEventOwner != currentTask)
   {   
+    OSExitCritical();
     return ERR_EVENT_OWNER;
   }  
   
-  // lock scheduler
-  //iNesting++;
   
   // Returns to the original priority, if needed
   // Copy backuped original priority to the task context
   iPriority = ContextTask[currentTask].Priority;
-  
-  OSEnterCritical();
-  
   if (iPriority != pont_event->OSOriginalPriority)
   {              
-    ContextTask[currentTask].Priority = pont_event->OSOriginalPriority;
-    
     // Since current task is executing with another priority, reallocate its priority to the original
     // into the Ready List
     // Remove "max priority current task" from the Ready List
-    //OSReadyList = OSReadyList & ~(PriorityMask[iPriority]);
+    OSReadyList = OSReadyList & ~(PriorityMask[iPriority]);
     // Put the "original priority current task" into Ready List
-    //OSReadyList = OSReadyList | (PriorityMask[pont_event->OSOriginalPriority]);
-     
-     // Critical Section
+    OSReadyList = OSReadyList | (PriorityMask[pont_event->OSOriginalPriority]);
     
-     OSReadyList = OSReadyList ^ (PriorityMask[pont_event->OSOriginalPriority] + PriorityMask[iPriority]);   
-    
+    ContextTask[currentTask].Priority = pont_event->OSOriginalPriority;
   }
-  
-  
+
   // See if any task is waiting for mutex release
   if (pont_event->OSEventWait != 0)
   {
     // Selects the highest priority task
-    iPriority = SAScheduler(pont_event->OSEventWaitList);        
+    iPriority = SAScheduler(pont_event->OSEventWaitList);
 
     // Remove the selected task from the mutex wait list
-    pont_event->OSEventWaitList = pont_event->OSEventWaitList ^ (PriorityMask[iPriority]);
+    pont_event->OSEventWaitList = pont_event->OSEventWaitList & ~(PriorityMask[iPriority]);
     
     // Decreases the mutex wait list counter
     pont_event->OSEventWait--;
          
     // Indicates that selected task is ready to run
     #if (VERBOSE == 1)
-    TaskSelect = PriorityVector[iPriority]; 
-    ContextTask[TaskSelect].State = READY;
-    #endif
+    TaskSelect = PriorityVector[iPriority];
+    ContextTask[TaskSelect].State = READY;    
+    #endif    
     
-    // Copy task priority to local scope
-    //iPriority = ContextTask[TaskSelect].Priority;
-    
-    // Critical Section
-    // OSEnterCritical();
     // Put the selected task into Ready List
-    OSReadyList = OSReadyList | (PriorityMask[iPriority]);    
-    // Exit Critical Section
-    OSExitCritical();
+    OSReadyList = OSReadyList | (PriorityMask[iPriority]);
         
     // Verify if there is a higher priority task ready to run
-    ChangeContext();  
+    ChangeContext();
+
+    // Exit Critical Section
+    OSExitCritical();
       
     return OK;
   }

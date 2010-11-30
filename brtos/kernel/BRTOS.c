@@ -38,33 +38,36 @@
 *   Revision: 1.45
 *   Date:     20/10/2010
 *
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.50
+*   Date:     25/10/2010
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.60
+*   Date:     30/11/2010
+*
 *********************************************************************************************************/
 
 
-#include "hardware.h"
+
 #include "BRTOS.h"
-#include "HAL.h"
-#include "drivers.h"
-#include "queue.h"
-#include "OS_RTC.h"
 
+#if (PROCESSOR == COLDFIRE_V1)
 #pragma warn_implicitconv off
-
-#ifdef __cplusplus
- extern "C"
 #endif
 
 
 const CHAR8 *version=                            ///< Informs BRTOS version
 {
-  "BRTOS Ver. 1.45"
+  "BRTOS Ver. 1.60"
 };
 
-INT8U STACK[HEAP_SIZE];                         ///< Virtual Task stack
+
+                     
 INT8U PriorityVector[configMAX_TASK_INSTALL];   ///< Allocate task priorities
 INT16U iStackAddress = 0;                       ///< Virtual stack counter - Informs the stack occupation in bytes
 
-INT8U QUEUE_STACK[QUEUE_HEAP_SIZE];             ///< Queue heap
+
 INT16U iQueueAddress = 0;                       ///< Queue heap control
 
 #if (SP_SIZE == 32)
@@ -76,23 +79,12 @@ INT16U StackAddress = (INT16U)&STACK;           ///< Virtual stack pointer
 #endif
 
 
-ContextType ContextTask[NUMBER_OF_TASKS + 2]; ///< Task context info
-                                              ///< ContextTask[0] not used
-                                              ///< Last ContexTask is the Idle Task
 
 // global variables
 // Task Manager Variables
 INT8U NumberOfInstalledTasks;                 ///< Number of Installed tasks at the moment
 INT8U currentTask;                            ///< Current task being executed
-
-#if (SP_SIZE == 32)
-  INT32U SPvalue;                             ///< Used to save and restore a task stack pointer
-#endif
-
-#if (SP_SIZE == 16)
-  INT16U SPvalue;                             ///< Used to save and restore a task stack pointer
-#endif
-
+INT8U SelectedTask;
 
 #if NUMBER_OF_PRIORITIES == 32
   INT32U OSReadyList = 0;
@@ -102,15 +94,19 @@ INT8U currentTask;                            ///< Current task being executed
   INT16U OSBlockedList = 0xFFFF;
 #endif
 INT16U counter;                                   ///< Incremented each tick timer - Used in delay and timeout functions
-INT32U OSDuty=0;                                  ///< Used to compute the CPU load
-INT32U OSDutyTmp=0;                               ///< Used to compute the CPU load
-INT16U LastOSDuty = 0;                            ///< Last CPU load computed
+volatile INT32U OSDuty=0;                                  ///< Used to compute the CPU load
+volatile INT32U OSDutyTmp=0;                               ///< Used to compute the CPU load
+volatile INT16U LastOSDuty = 0;                            ///< Last CPU load computed
 INT16U DutyCnt = 0;                               ///< Used to compute the CPU load
 INT32U TaskAlloc = 0;                             ///< Used to search a empty task control block
 INT8U  iNesting = 0;                              ///< Used to inform if the current code position is an interrupt handler code
 
 ContextType *Tail;
 ContextType *Head;
+
+#if (DEBUG == 0)
+volatile INT8U flag_load = TRUE;
+#endif
 
 
 #if NUMBER_OF_PRIORITIES == 32
@@ -129,6 +125,62 @@ const INT16U PriorityMask[16]=
 
 
 ////////////////////////////////////////////////////////////
+/////      Semaphore Control Block Declaration         /////
+////////////////////////////////////////////////////////////
+#if (BRTOS_SEM_EN == 1)
+  /// Semahore Control Block
+  BRTOS_Sem        BRTOS_Sem_Table[BRTOS_MAX_SEM];      // Table of EVENT control blocks
+#endif
+
+
+////////////////////////////////////////////////////////////
+/////      Mutex Control Block Declaration             /////
+////////////////////////////////////////////////////////////
+#if (BRTOS_MUTEX_EN == 1)
+  /// Mutex Control Block
+  BRTOS_Mutex      BRTOS_Mutex_Table[BRTOS_MAX_MUTEX];    // Table of EVENT control blocks
+#endif
+
+
+////////////////////////////////////////////////////////////
+/////      Mbox Control Block Declaration              /////
+////////////////////////////////////////////////////////////
+#if (BRTOS_MBOX_EN == 1)
+  /// MailBox Control Block
+  BRTOS_Mbox       BRTOS_Mbox_Table[BRTOS_MAX_MBOX];     // Table of EVENT control blocks
+#endif
+
+
+////////////////////////////////////////////////////////////
+/////      Queue Control Block Declaration             /////
+////////////////////////////////////////////////////////////
+#if (BRTOS_QUEUE_EN == 1)
+  /// Queue Control Block
+  BRTOS_Queue      BRTOS_Queue_Table[BRTOS_MAX_QUEUE];    // Table of EVENT control blocks
+#endif
+
+
+///// RAM definitions
+
+#if (PROCESSOR == PIC18)
+#pragma udata stackram
+#endif
+INT8U STACK[HEAP_SIZE];   						///< Virtual Task stack
+
+#if (PROCESSOR == PIC18)
+#pragma udata queueram 
+#endif
+INT8U QUEUE_STACK[QUEUE_HEAP_SIZE];             ///< Queue heap
+
+#if (PROCESSOR == PIC18)
+#pragma udata ctxram
+#endif
+ContextType ContextTask[NUMBER_OF_TASKS + 2]; ///< Task context info
+                                              ///< ContextTask[0] not used
+                                              ///< Last ContexTask is the Idle Task
+
+
+////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 /////      Priority Preemptive Scheduler               /////
 ////////////////////////////////////////////////////////////
@@ -139,7 +191,7 @@ const INT16U PriorityMask[16]=
 * \brief Priority Preemptive Scheduler (Internal kernel function).
 ****************************************************************/
 
-void OSSchedule(void)
+INT8U OSSchedule(void)
 {
 	INT8U TaskSelect = 0xFF;
 	INT8U Priority   = 0;
@@ -147,18 +199,7 @@ void OSSchedule(void)
   Priority = SAScheduler(OSReadyList & OSBlockedList);
   TaskSelect = PriorityVector[Priority];
   
-  if (currentTask != TaskSelect)
-  {  
-    
-    ContextTask[currentTask].StackPoint = SPvalue;
-
-	  // Select the new Task
-	  currentTask = TaskSelect;
-	  
-    // Select the new stack pointer value
-    SPvalue = ContextTask[currentTask].StackPoint;    	    
-  } 
-	
+	return TaskSelect;
 }
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
@@ -178,9 +219,7 @@ void OSSchedule(void)
 // Atraso em passos de TickCount
 INT8U DelayTask(INT16U time_wait)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   ContextType *Task = &ContextTask[currentTask];
    
   if (iNesting > 0) {                                // See if caller is an interrupt
@@ -189,52 +228,65 @@ INT8U DelayTask(INT16U time_wait)
 
   if (currentTask)
   {
-    OSEnterCritical();
     
-    // BRTOS TRACE SUPPORT
-    #if (OSTRACE == 1) 
-        #if(OS_TRACE_BY_TASK == 1)
-        Update_OSTrace(currentTask, DELAYTASK);
-        #else
-        Update_OSTrace(Task->Priority, DELAYTASK);
-        #endif
-    #endif    
+    if (time_wait > 0)
+    {
+        OSEnterCritical();
+        
+        // BRTOS TRACE SUPPORT
+        #if (OSTRACE == 1) 
+            #if(OS_TRACE_BY_TASK == 1)
+            Update_OSTrace(currentTask, DELAYTASK);
+            #else
+            Update_OSTrace(Task->Priority, DELAYTASK);
+            #endif
+        #endif    
 
-    time_wait = counter + time_wait;
-    if (time_wait >= TickCountOverFlow)
-      time_wait = time_wait - TickCountOverFlow;
-    
-    Task->TimeToWait = time_wait;
-    
-    // Put task into delay list
-    if(Tail != NULL)
-    { 
-      // Insert task into list
-      Tail->Next = Task;
-      Task->Previous = Tail;
-      Tail = Task;
-      Tail->Next = NULL;
+        time_wait = counter + time_wait;
+        
+        if (time_wait >= TickCountOverFlow)
+        {
+          Task->TimeToWait = time_wait - TickCountOverFlow;
+        }
+        else
+        {
+          Task->TimeToWait = time_wait;
+        }
+        
+        // Put task into delay list
+        if(Tail != NULL)
+        { 
+          // Insert task into list
+          Tail->Next = Task;
+          Task->Previous = Tail;
+          Tail = Task;
+          Tail->Next = NULL;
+        }
+        else{
+           // Init delay list
+           Tail = Task;
+           Head = Task; 
+        }    
+        
+        #if (VERBOSE == 1)
+        Task->State = SUSPENDED;
+        Task->SuspendedType = DELAY;
+        #endif
+        
+        OSReadyList = OSReadyList & ~(PriorityMask[Task->Priority]);
+        
+        // Change context
+        // Return to task when occur delay overflow
+        ChangeContext();
+        
+        OSExitCritical();
+        
+        return OK;
     }
-    else{
-       // Init delay list
-       Tail = Task;
-       Head = Task; 
-    }    
-    
-    #if (VERBOSE == 1)
-    Task->State = SUSPENDED;
-    Task->SuspendedType = DELAY;
-    #endif
-    
-    OSReadyList = OSReadyList ^ (PriorityMask[Task->Priority]);
-    
-    // Change context
-    // Return to task when occur delay overflow
-    ChangeContext();
-    
-    OSExitCritical();
-    
-    return OK;
+    else
+    {
+        return NO_TASK_DELAY;
+    }
   }
   else
   {
@@ -276,18 +328,25 @@ INT8U DelayTaskHMSM(INT8U hours, INT8U minutes, INT8U seconds, INT16U milisecond
         + (INT32U)seconds *         configTICK_RATE_HZ
         + ((INT32U)miliseconds    * configTICK_RATE_HZ)/1000L;
   
-  // Task Delay limit = 32000      
-  loops = ticks / 30000L;
-  ticks = ticks % 30000L;
-  
-  (void)DelayTask(ticks);
-  
-  while(loops > 0)
+  // Task Delay limit = TickCounterOverflow
+  if (ticks > 0)
   {
-    (void)DelayTask(30000);
-    loops--;
+      loops = ticks / 60000L;
+      ticks = ticks % 60000L;
+      
+      (void)DelayTask(ticks);
+      
+      while(loops > 0)
+      {
+        (void)DelayTask(60000);
+        loops--;
+      }
+      return OK;
   }
-  return OK;
+  else
+  {
+      return NO_TASK_DELAY;
+  }
 }
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
@@ -298,14 +357,21 @@ INT8U DelayTaskHMSM(INT8U hours, INT8U minutes, INT8U seconds, INT16U milisecond
 
 
 
-void OSTimerWakeUp(void)
-{  
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+/////      OS Tick Timer Function                      /////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+void OS_TICK_HANDLER(void)
+{
+  OS_SR_SAVE_VAR
   INT8U  iPrio = 0;  
-  ContextType *Task = Head;
-  
+  ContextType *Task = Head;  
+   
+  ////////////////////////////////////////////////////
+  // Put task with delay overflow in the ready list //
+  ////////////////////////////////////////////////////  
   while(Task != NULL)
   {      
       if (Task->TimeToWait == counter)
@@ -317,15 +383,14 @@ void OSTimerWakeUp(void)
         OSEnterCritical();
         #endif        
 
-        if((OSReadyList & PriorityMask[iPrio]) == FALSE)
-        {
-            #if (VERBOSE == 1)
-            Task->State = READY;
-            #endif
-            Task->TimeToWait = EXIT_BY_TIMEOUT;
-
-            OSReadyList = OSReadyList | (PriorityMask[iPrio]);
-        }
+        // Put the task into the ready list
+        OSReadyList = OSReadyList | (PriorityMask[iPrio]);
+        
+        #if (VERBOSE == 1)
+            Task->State = READY;        
+        #endif
+        
+        Task->TimeToWait = EXIT_BY_TIMEOUT;
         
         #if (NESTING_INT == 1)
         OSExitCritical();
@@ -358,61 +423,7 @@ void OSTimerWakeUp(void)
       }
  
       Task = Task->Next;    
-	}
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////
-/////      OS Tick Timer Function                      /////
-////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////
-
-/************************************************************//**
-* \fn interrupt void TickTimer(void)
-* \brief Tick timer interrupt handler routine (Internal kernel function).
-****************************************************************/
-
-#if (NESTING_INT == 1)
-#pragma TRAP_PROC
-void TickTimer(void)
-#else
-interrupt void TickTimer(void)
-#endif
-{
-  // ************************
-  // Entrada de interrupção
-  // ************************
-  OS_INT_ENTER();
-
-  // Interrupt handling
-  TICKTIMER_INT_HANDLER;
-
-  counter++;
-  if (counter == TickCountOverFlow) counter = 0;
-  
-  // BRTOS TRACE SUPPORT
-  #if (OSTRACE == 1) 
-      #if(OS_TICK_SHOW == 1) 
-          #if(OS_TRACE_BY_TASK == 1)
-          Update_OSTrace(0, ISR_TICK);
-          #else
-          Update_OSTrace(configMAX_TASK_INSTALL - 1, ISR_TICK);
-          #endif         
-      #endif       
-  #endif  
-
-  #if (NESTING_INT == 1)
-  OS_ENABLE_NESTING();
-  #endif  
-  
-  ////////////////////////////////////////////////////
-  // Put task with delay overflow in the ready list //
-  ////////////////////////////////////////////////////
-  OSTimerWakeUp();  
+  }
 
   //////////////////////////////////////////
   // System Load                          //
@@ -455,17 +466,7 @@ interrupt void TickTimer(void)
   #if (TIMER_HOOK_EN == 1)
     BRTOS_TimerHook();
   #endif
-
-  // ************************
-  // Interrupt Exit
-  // ************************
-  OS_INT_EXIT();  
-  // ************************
 }
-////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////
 
 
 
@@ -477,14 +478,18 @@ interrupt void TickTimer(void)
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-INT8U TaskStartScheduler(void)
+INT8U BRTOSStart(void)
 {
-  if (InstallIdle(&Idle,100) != OK)
+  if (InstallIdle(&Idle,IDLE_STACK_SIZE) != OK)
   {
     return NO_MEMORY;
   };
 
-  ChangeContext();
+  currentTask = OSSchedule();
+  SPvalue = ContextTask[currentTask].StackPoint;
+  OS_RESTORE_SP();
+  OS_RESTORE_CONTEXT();
+  OS_RESTORE_ISR();
   return OK;
 }
 ////////////////////////////////////////////////////////////
@@ -505,7 +510,6 @@ INT8U TaskStartScheduler(void)
 void PreInstallTasks(void)
 {
   INT8U i=0;
-  DisableInterrupts;
   counter = 0;
   currentTask = 0;
   NumberOfInstalledTasks = 0;
@@ -542,9 +546,7 @@ void PreInstallTasks(void)
 
 INT8U BlockPriority(INT8U iPriority)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif  
+  OS_SR_SAVE_VAR
   INT8U BlockedTask = 0;
   
   if (iNesting > 0) {                                // See if caller is an interrupt
@@ -594,9 +596,7 @@ INT8U BlockPriority(INT8U iPriority)
 
 INT8U UnBlockPriority(INT8U iPriority)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   #if (VERBOSE == 1)
   INT8U BlockedTask = 0;
   #endif
@@ -650,9 +650,7 @@ INT8U UnBlockPriority(INT8U iPriority)
 
 INT8U BlockTask(INT8U iTaskNumber)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   INT8U iPriority = 0;
   
   if (iNesting > 0) {                                // See if caller is an interrupt
@@ -699,9 +697,7 @@ INT8U BlockTask(INT8U iTaskNumber)
 
 INT8U UnBlockTask(INT8U iTaskNumber)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   INT8U iPriority = 0;
   
   // Enter Critical Section
@@ -754,9 +750,7 @@ INT8U UnBlockTask(INT8U iTaskNumber)
 
 INT8U BlockMultipleTask(INT8U TaskStart, INT8U TaskNumber)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   INT8U iTask = 0;
   INT8U TaskFinish = 0;
   INT8U iPriority = 0;  
@@ -808,9 +802,7 @@ INT8U BlockMultipleTask(INT8U TaskStart, INT8U TaskNumber)
 
 INT8U UnBlockMultipleTask(INT8U TaskStart, INT8U TaskNumber)
 {
-  #if (NESTING_INT == 1)
-  INT16U CPU_SR = 0;
-  #endif
+  OS_SR_SAVE_VAR
   INT8U iTask = 0;
   INT8U TaskFinish = 0;
   INT8U iPriority = 0;    
@@ -852,6 +844,280 @@ INT8U UnBlockMultipleTask(INT8U TaskStart, INT8U TaskNumber)
 ////////////////////////////////////////////////////////////
 
 
+
+
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+/////    OS Idle Task                                  /////
+/////                                                  /////
+/////    You must put the processor in standby mode    /////
+/////                                                  /////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+void Idle(void)
+{
+  /* task setup */
+  
+  /* task main loop */
+  for (;;)
+  {
+     
+     #if (DEBUG == 1)
+       #if (COMPUTES_CPU_LOAD == 1)
+       OSDutyTmp = TIMER_COUNTER;
+       #endif
+	
+      #if (IDLE_HOOK_EN == 1)
+        IdleHook();
+      #endif
+      
+      OS_Wait;
+     #else
+       #if (COMPUTES_CPU_LOAD == 1)
+       if(flag_load == TRUE)
+       {
+           flag_load = FALSE;
+           OSDutyTmp = TIMER_COUNTER;
+	
+           #if (IDLE_HOOK_EN == 1)
+             IdleHook();
+           #endif
+  
+       }
+       #endif
+     #endif
+
+  }
+}
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+
+
+
+
+INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED_BYTES,INT8U iPriority)
+{
+  OS_SR_SAVE_VAR
+  INT8U i = 0; 
+  INT8U TaskNumber = 0;
+  ContextType * Task;    
+  
+   if (currentTask)
+    // Enter Critical Section
+    OSEnterCritical();  
+
+   if (USER_STACKED_BYTES < NUMBER_MIN_OF_STACKED_BYTES)
+   {
+       if (currentTask)
+        // Exit Critical Section
+        OSExitCritical();
+       return STACK_SIZE_TOO_SMALL;
+   }
+   
+   if ((iStackAddress + USER_STACKED_BYTES) > HEAP_SIZE)
+   {
+       if (currentTask)
+        // Exit Critical Section
+        OSExitCritical();
+       return NO_MEMORY;
+   }
+
+   if (iPriority)
+   {
+     if (iPriority > configMAX_TASK_PRIORITY)
+     {
+        if (currentTask)
+         // Exit Critical Section
+         OSExitCritical();        
+        return END_OF_AVAILABLE_PRIORITIES;
+     }
+     
+     if (PriorityVector[iPriority] != EMPTY_PRIO)
+     {
+        if (currentTask)
+         // Exit Critical Section
+         OSExitCritical();        
+        return BUSY_PRIORITY;
+     }
+   }
+   else
+   {
+      if (currentTask)
+       // Exit Critical Section
+       OSExitCritical();
+      return CANNOT_ASSIGN_IDLE_TASK_PRIO;
+   }
+
+   NumberOfInstalledTasks++;
+      
+   // Number Task Discovery
+   for(i=0;i<NUMBER_OF_TASKS;i++)
+   {
+      INT32U teste = 1;
+      teste = teste<<i;
+    
+      if (!(teste & TaskAlloc))
+      {
+         TaskNumber = i+1;
+         TaskAlloc = TaskAlloc | teste;
+         break;
+      }
+   }   
+   
+   Task = &ContextTask[TaskNumber];   
+   
+   Task->TaskName = TaskName;
+
+   // Posiciona o inicio do stack da tarefa
+   // no inicio da disponibilidade de RAM do HEAP
+	#if STACK_GROWTH == 1
+	Task->StackPoint = StackAddress + NUMBER_MIN_OF_STACKED_BYTES;
+	#else
+	Task->StackPoint = StackAddress + (USER_STACKED_BYTES - NUMBER_MIN_OF_STACKED_BYTES);
+    #endif
+                                                                      
+   // Virtual Stack Init
+	#if STACK_GROWTH == 1
+	Task->StackInit = StackAddress;
+	#else
+	Task->StackInit = StackAddress + USER_STACKED_BYTES;
+	#endif
+    
+
+   // Determina a prioridade da função
+   Task->Priority = iPriority;
+
+   // Determina a tarefa que irá ocupar esta prioridade
+   PriorityVector[iPriority] = TaskNumber;
+   // set the function entry address in the context
+   
+   // Fill the virtual task stack
+   CreateVirtualStack(FctPtr, USER_STACKED_BYTES);   
+   
+   // Incrementa o contador de bytes do stack virtual (HEAP)
+   iStackAddress = iStackAddress + USER_STACKED_BYTES;
+   
+   // Posiciona o endereço de stack virtual p/ a próxima tarefa instalada
+   StackAddress = StackAddress + USER_STACKED_BYTES;
+   
+
+   Task->TimeToWait = NO_TIMEOUT;
+   Task->Next     =  NULL;
+   Task->Previous =  NULL;
+   
+   #if (VERBOSE == 1)
+   Task->Blocked = FALSE;
+   Task->State = READY;
+   #endif   
+   
+   OSReadyList = OSReadyList | (PriorityMask[iPriority]);
+   
+   if (currentTask)
+    // Exit Critical Section
+    OSExitCritical();   
+   
+   return OK;
+}
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+
+
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+/////  Idle Task Installation Function                 /////
+/////                                                  /////
+/////  Parameters:                                     /////
+/////  Function pointer and task priority              /////
+/////                                                  /////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+INT8U InstallIdle(void(*FctPtr)(void), INT16U USER_STACKED_BYTES)
+{ 
+  OS_SR_SAVE_VAR
+
+   if (currentTask)
+    // Enter Critical Section
+    OSEnterCritical();
+    
+   if (USER_STACKED_BYTES < NUMBER_MIN_OF_STACKED_BYTES)
+   {
+       if (currentTask)
+        // Exit Critical Section
+        OSExitCritical();
+       return STACK_SIZE_TOO_SMALL;
+   }    
+   
+   if ((iStackAddress + USER_STACKED_BYTES) > HEAP_SIZE)
+   {
+      if (currentTask)
+       // Exit Critical Section
+       OSExitCritical();
+       return NO_MEMORY;
+   }
+
+
+	// Posiciona o inicio do stack da tarefa
+   // no inicio da disponibilidade de RAM do HEAP
+	#if STACK_GROWTH == 1
+	ContextTask[NUMBER_OF_TASKS+1].StackPoint = StackAddress + NUMBER_MIN_OF_STACKED_BYTES;
+	#else
+	ContextTask[NUMBER_OF_TASKS+1].StackPoint = StackAddress + (USER_STACKED_BYTES - NUMBER_MIN_OF_STACKED_BYTES);
+    #endif
+                                                                      
+   // Virtual Stack Init
+	#if STACK_GROWTH == 1
+	ContextTask[NUMBER_OF_TASKS+1].StackInit = StackAddress;
+	#else
+	ContextTask[NUMBER_OF_TASKS+1].StackInit = StackAddress + USER_STACKED_BYTES;
+	#endif
+
+   // Determina a prioridade da função
+   ContextTask[NUMBER_OF_TASKS+1].Priority = 0;
+   // Determina a tarefa que irá ocupar esta prioridade
+   PriorityVector[0] = NUMBER_OF_TASKS+1;
+   
+   // Fill the virtual task stack
+   CreateVirtualStack(FctPtr, USER_STACKED_BYTES);    
+   
+   // Incrementa o contador de bytes do stack virtual (HEAP)
+   iStackAddress = iStackAddress + USER_STACKED_BYTES;
+   
+   // Posiciona o endereço de stack virtual p/ a próxima tarefa instalada
+   StackAddress = StackAddress + USER_STACKED_BYTES;   
+   
+   ContextTask[NUMBER_OF_TASKS+1].TimeToWait = NO_TIMEOUT;
+   
+   #if (VERBOSE == 1)
+   ContextTask[NUMBER_OF_TASKS+1].Blocked = FALSE;
+   ContextTask[NUMBER_OF_TASKS+1].State = READY;  
+   #endif
+   
+   #if NUMBER_OF_PRIORITIES == 32
+    OSReadyList = OSReadyList | (INT32U)1;
+   #else
+    OSReadyList = OSReadyList | (INT16U)1;
+   #endif
+   
+   if (currentTask)
+    // Exit Critical Section
+    OSExitCritical();
+   
+   return OK;
+}
+
+
+
+
+
 void BRTOS_Init(void)
 {  
   ////////////////////////////////////////////////////////////  
@@ -876,36 +1142,35 @@ void BRTOS_Init(void)
 
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
-/////   Software Interrupt to provide Switch Context   /////
+/////      Initialize Block List Control               /////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
- 
-/************************************************************//**
-* \fn interrupt void SwitchContext(void)
-* \brief Software interrupt handler routine (Internal kernel function).
-*  Used to switch the tasks context.
-****************************************************************/
 
-#if (NESTING_INT == 1)
-#pragma TRAP_PROC
-void SwitchContext(void)
-#else
-interrupt void SwitchContext(void)
-#endif
+void initEvents(void)
 {
-  // ************************
-  // Entrada de interrupção
-  // ************************
-  OS_INT_ENTER();
-
-  // Interrupt Handling
+  INT8U i=0;
   
-  // ************************
-  // Interrupt Exit
-  // ************************
-  OS_INT_EXIT();  
-  // ************************
+  #if (BRTOS_SEM_EN == 1)
+    for(i=0;i<BRTOS_MAX_SEM;i++)
+      BRTOS_Sem_Table[i].OSEventAllocated = 0;
+  #endif
+  
+  #if (BRTOS_MUTEX_EN == 1)
+    for(i=0;i<BRTOS_MAX_MUTEX;i++)
+      BRTOS_Mutex_Table[i].OSEventAllocated = 0;
+  #endif
+    
+  #if (BRTOS_MBOX_EN == 1)
+    for(i=0;i<BRTOS_MAX_MBOX;i++)
+      BRTOS_Mbox_Table[i].OSEventAllocated = 0;    
+  #endif
+  
+  #if (BRTOS_QUEUE_EN == 1)
+    for(i=0;i<BRTOS_MAX_QUEUE;i++)
+      BRTOS_Queue_Table[i].OSEventAllocated = 0;    
+  #endif
 }
+
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
