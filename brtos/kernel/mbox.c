@@ -42,6 +42,14 @@
 *   Revision: 1.50
 *   Date:     25/10/2010
 *
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.60
+*   Date:     30/11/2010
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.61
+*   Date:     02/12/2010
+*
 *********************************************************************************************************/
 
 #include "BRTOS.h"
@@ -170,10 +178,11 @@ INT8U OSMboxDelete (BRTOS_Mbox **event)
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-INT8U OSMboxPend (BRTOS_Mbox *pont_event, void **Mail, INT16U timeout)
+INT8U OSMboxPend (BRTOS_Mbox *pont_event, void **Mail, INT16U time_wait)
 {
   OS_SR_SAVE_VAR
   INT8U  iPriority = 0;
+  INT32U  timeout;
   ContextType *Task;  
   
   #if (ERROR_CHECK == 1)
@@ -241,16 +250,17 @@ INT8U OSMboxPend (BRTOS_Mbox *pont_event, void **Mail, INT16U timeout)
     OSReadyList = OSReadyList & ~(PriorityMask[iPriority]);
 
     // Set timeout overflow
-    if (timeout)
+    if (time_wait)
     {  
-      timeout = counter + timeout;
+      timeout = (INT32U)((INT32U)counter + (INT32U)time_wait);
+      
       if (timeout >= TickCountOverFlow)
       {
-        Task->TimeToWait = timeout - TickCountOverFlow;
+        Task->TimeToWait = (INT16U)(timeout - TickCountOverFlow);
       }
       else
       {
-        Task->TimeToWait = timeout;
+        Task->TimeToWait = (INT16U)timeout;
       }
       
       // Put task into delay list
@@ -276,14 +286,12 @@ INT8U OSMboxPend (BRTOS_Mbox *pont_event, void **Mail, INT16U timeout)
     // Change Context - Returns on time overflow or mailbox post
     ChangeContext();
 
-    #if (NESTING_INT == 1)
     // Exit Critical Section
     OSExitCritical();
     // Enter Critical Section
-    OSEnterCritical();    
-    #endif    
+    OSEnterCritical();
     
-    if (timeout)
+    if (time_wait)
     {    
         // Verify if the reason of task wake up was queue timeout
         if(Task->TimeToWait == EXIT_BY_TIMEOUT)

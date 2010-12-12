@@ -47,7 +47,7 @@
 ///////////////////////////////////////////////////////////////
 
 
-/// False, True and NULL defines
+/// False and True defines
 #ifndef FALSE
 #define FALSE (INT8U)0
 #endif
@@ -59,6 +59,12 @@
 #ifndef NULL
 #define NULL  (void*)0
 #endif
+
+#ifndef OS_PTR
+#define OS_PTR  (void*)
+#endif
+
+
 
 /// Task States
 #define READY                        (INT8U)0     ///< Task is ready to be executed - waiting for the scheduler authorization
@@ -1005,11 +1011,12 @@ void initEvents(void);
   extern INT16U OSBlockedList;
 #endif
 
+
 #if NUMBER_OF_PRIORITIES == 32
 extern const INT32U PriorityMask[32];
 #else
 extern const INT16U PriorityMask[16];
-#endif 
+#endif
 
 extern ContextType *Tail;
 extern ContextType *Head;
@@ -1031,7 +1038,19 @@ extern INT32U TaskAlloc;
 extern INT8U  QUEUE_STACK[QUEUE_HEAP_SIZE];
 extern INT16U iQueueAddress;
 
+#if (PROCESSOR == ATMEGA)
+extern PGM_P BRTOSStringTable[] PROGMEM;
+#else
+#if (PROCESSOR == PIC18)
+extern const rom CHAR8 *version;
+#else
 extern const CHAR8 *version;
+#endif
+#endif
+
+#if ((PROCESSOR == ATMEGA) || (PROCESSOR == PIC18))
+extern CHAR8 BufferText[32];
+#endif
 
 #if (SP_SIZE == 32)
   extern INT32U StackAddress;

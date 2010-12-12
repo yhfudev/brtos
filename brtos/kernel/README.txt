@@ -37,3 +37,32 @@
 - Mutex bug correction - Now it is possible to call multiple mutex in a task to acquire more than one resource
 - Improved serial driver - The TX polling was removed. Now TX uses interrupt.
 - Improved include and remove of tasks from the ReadyList (better for processors of 8 and 16 bits)
+
+
+== BRTOS 1.50 Changelog ==
+
+- Stack size of the InstallTask function is te real stack size (in previous versions of the BRTOS the minimum stack size is added to the user stack)
+- Better stack management for interrupts preemption
+- New ERROR_CHECK define. The system becomes more fault tolerant With this definition
+- TickCounterOverflow changed to 64000
+- New BRTOSConfig.h file. This file contains all the user settings.
+- Files event.c, event.h and queue.h removed from BRTOS. The event.c is in the BRTOS.c and the .h files into the BRTOS.h file.
+- InstallTask was moved to the BRTOS.c core functions. Now there are a new function to be ported (CreateVirtualStack).
+- New Idle stack size definition in the BRTOSConfig.h file
+
+
+== BRTOS 1.60 Changelog ==
+
+- add support for PIC18 microcontroller
+- add support for ATMEGA microcontroller
+- Add support for low power mode in ATMEGA microcontrollers
+- New OS start function - Now to start the BRTOS we call BRTOSStart();
+- Add support for stack growth in both directions
+- New HAL define (OS_SR_SAVE_VAR) for save status register info
+
+
+== BRTOS 1.61 Changelog ==
+- minor bug correction - timeout greater than 1000 ticks could lead to a erroneous time to wait value
+- better const support for PIC18 and ATMEGA microcontrollers (strings into the FLASH)
+- New HAL define (OS_SR_SAVE_VAR) for save status register info
+- New HAL define for ATMEGA and PIC18 microcontrollers (TEXT_BUFFER_SIZE) for RAM buffer to copy string from FLASH to RAM

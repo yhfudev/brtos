@@ -46,6 +46,10 @@
 *   Revision: 1.60
 *   Date:     30/11/2010
 *
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.61
+*   Date:     02/12/2010
+*
 *********************************************************************************************************/
 
 
@@ -56,13 +60,30 @@
 #pragma warn_implicitconv off
 #endif
 
-
+#if (PROCESSOR == ATMEGA)
+const CHAR8 version[] PROGMEM = "BRTOS Ver. 1.61";	///< Informs BRTOS version
+PGM_P BRTOSStringTable[] PROGMEM = 
+{
+    version
+};
+#else
+#if (PROCESSOR == PIC18)
+const rom CHAR8 *version=                            ///< Informs BRTOS version
+{
+  "BRTOS Ver. 1.61"
+};
+#else
 const CHAR8 *version=                            ///< Informs BRTOS version
 {
-  "BRTOS Ver. 1.60"
+  "BRTOS Ver. 1.61"
 };
+#endif
+#endif
 
 
+#if ((PROCESSOR == ATMEGA) || (PROCESSOR == PIC18))
+CHAR8 BufferText[TEXT_BUFFER_SIZE];
+#endif
                      
 INT8U PriorityVector[configMAX_TASK_INSTALL];   ///< Allocate task priorities
 INT16U iStackAddress = 0;                       ///< Virtual stack counter - Informs the stack occupation in bytes
@@ -94,9 +115,9 @@ INT8U SelectedTask;
   INT16U OSBlockedList = 0xFFFF;
 #endif
 INT16U counter;                                   ///< Incremented each tick timer - Used in delay and timeout functions
-volatile INT32U OSDuty=0;                                  ///< Used to compute the CPU load
-volatile INT32U OSDutyTmp=0;                               ///< Used to compute the CPU load
-volatile INT16U LastOSDuty = 0;                            ///< Last CPU load computed
+volatile INT32U OSDuty=0;                         ///< Used to compute the CPU load
+volatile INT32U OSDutyTmp=0;                      ///< Used to compute the CPU load
+volatile INT16U LastOSDuty = 0;                   ///< Last CPU load computed
 INT16U DutyCnt = 0;                               ///< Used to compute the CPU load
 INT32U TaskAlloc = 0;                             ///< Used to search a empty task control block
 INT8U  iNesting = 0;                              ///< Used to inform if the current code position is an interrupt handler code
@@ -220,6 +241,7 @@ INT8U OSSchedule(void)
 INT8U DelayTask(INT16U time_wait)
 {
   OS_SR_SAVE_VAR
+  INT32U timeout;
   ContextType *Task = &ContextTask[currentTask];
    
   if (iNesting > 0) {                                // See if caller is an interrupt
@@ -242,15 +264,15 @@ INT8U DelayTask(INT16U time_wait)
             #endif
         #endif    
 
-        time_wait = counter + time_wait;
+        timeout = (INT32U)((INT32U)counter + (INT32U)time_wait);
         
-        if (time_wait >= TickCountOverFlow)
+        if (timeout >= TickCountOverFlow)
         {
-          Task->TimeToWait = time_wait - TickCountOverFlow;
+          Task->TimeToWait = (INT16U)(timeout - TickCountOverFlow);
         }
         else
         {
-          Task->TimeToWait = time_wait;
+          Task->TimeToWait = (INT16U)timeout;
         }
         
         // Put task into delay list
@@ -863,8 +885,7 @@ void Idle(void)
   /* task main loop */
   for (;;)
   {
-     
-     #if (DEBUG == 1)
+	#if (DEBUG == 1)
        #if (COMPUTES_CPU_LOAD == 1)
        OSDutyTmp = TIMER_COUNTER;
        #endif
@@ -873,7 +894,7 @@ void Idle(void)
         IdleHook();
       #endif
       
-      OS_Wait;
+       OS_Wait;
      #else
        #if (COMPUTES_CPU_LOAD == 1)
        if(flag_load == TRUE)
@@ -979,7 +1000,7 @@ INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED
 	Task->StackPoint = StackAddress + NUMBER_MIN_OF_STACKED_BYTES;
 	#else
 	Task->StackPoint = StackAddress + (USER_STACKED_BYTES - NUMBER_MIN_OF_STACKED_BYTES);
-    #endif
+  #endif
                                                                       
    // Virtual Stack Init
 	#if STACK_GROWTH == 1

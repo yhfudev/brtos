@@ -276,6 +276,11 @@ INT8U OSMutexAcquire(BRTOS_Mutex *pont_event)
     // Change Context - Returns on mutex release
     ChangeContext();
     
+    // Exit Critical Section
+    OSExitCritical();
+    // Enter Critical Section
+    OSEnterCritical();    
+    
     // Current task becomes the temporary owner of the mutex
     pont_event->OSEventOwner = currentTask;
     
@@ -284,9 +289,9 @@ INT8U OSMutexAcquire(BRTOS_Mutex *pont_event)
     ///////////////////////////////////////////////////////////////////////////////
     
     // Backup the original task priority
-    pont_event->OSOriginalPriority = ContextTask[currentTask].Priority;
+    pont_event->OSOriginalPriority = iPriority;
     
-    if (pont_event->OSMaxPriority > pont_event->OSOriginalPriority)
+    if (pont_event->OSMaxPriority > iPriority)
     {
       // Receives the priority ceiling temporarily
       ContextTask[currentTask].Priority = pont_event->OSMaxPriority;
