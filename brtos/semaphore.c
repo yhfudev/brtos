@@ -50,6 +50,10 @@
 *   Revision: 1.61
 *   Date:     02/12/2010
 *
+*   Authors:  Douglas França
+*   Revision: 1.62
+*   Date:     13/12/2010
+*
 *********************************************************************************************************/
 
 #include "BRTOS.h"
@@ -84,9 +88,16 @@ INT8U OSSemCreate (INT8U cnt, BRTOS_Sem **event)
   for(i=0;i<=BRTOS_MAX_SEM;i++)
   {
     
-    if(i == BRTOS_MAX_SEM)
+    if(i >= BRTOS_MAX_SEM)
+    {
       // Caso não haja mais blocos disponíveis, retorna exceção
+      
+      // Exit critical Section
+      if (currentTask)
+         OSExitCritical();
+      
       return(NO_AVAILABLE_EVENT);
+    }
           
     
     if(BRTOS_Sem_Table[i].OSEventAllocated != TRUE)

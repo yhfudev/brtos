@@ -42,6 +42,14 @@
 *   Revision: 1.50
 *   Date:     25/10/2010
 *
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.61
+*   Date:     02/12/2010
+*
+*   Authors:  Douglas França
+*   Revision: 1.62
+*   Date:     13/12/2010
+*
 *********************************************************************************************************/
 
 #include "BRTOS.h"
@@ -88,9 +96,16 @@ INT8U OSMutexCreate (BRTOS_Mutex **event, INT8U HigherPriority)
   for(i=0;i<=BRTOS_MAX_MUTEX;i++)
   {
     
-    if(i == BRTOS_MAX_MUTEX)
+    if(i >= BRTOS_MAX_MUTEX)
+    {
       // Caso não haja mais blocos disponíveis, retorna exceção
+      
+      // Exit critical Section
+      if (currentTask)
+         OSExitCritical();
+      
       return(NO_AVAILABLE_EVENT);
+    }
           
     
     if(BRTOS_Mutex_Table[i].OSEventAllocated != TRUE)
@@ -289,9 +304,9 @@ INT8U OSMutexAcquire(BRTOS_Mutex *pont_event)
     ///////////////////////////////////////////////////////////////////////////////
     
     // Backup the original task priority
-    pont_event->OSOriginalPriority = iPriority;
+    pont_event->OSOriginalPriority = ContextTask[currentTask].Priority;
     
-    if (pont_event->OSMaxPriority > iPriority)
+    if (pont_event->OSMaxPriority > pont_event->OSOriginalPriority)
     {
       // Receives the priority ceiling temporarily
       ContextTask[currentTask].Priority = pont_event->OSMaxPriority;

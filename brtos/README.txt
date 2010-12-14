@@ -66,3 +66,7 @@
 - better const support for PIC18 and ATMEGA microcontrollers (strings into the FLASH)
 - New HAL define (OS_SR_SAVE_VAR) for save status register info
 - New HAL define for ATMEGA and PIC18 microcontrollers (TEXT_BUFFER_SIZE) for RAM buffer to copy string from FLASH to RAM
+
+
+== BRTOS 1.62 Changelog ==
+- minor bug correction - lack of OSExitCritical() call in some XXCreate functions of the OS services

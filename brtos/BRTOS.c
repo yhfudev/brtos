@@ -50,6 +50,10 @@
 *   Revision: 1.61
 *   Date:     02/12/2010
 *
+*   Authors:  Douglas França
+*   Revision: 1.62
+*   Date:     13/12/2010
+*
 *********************************************************************************************************/
 
 
@@ -61,7 +65,7 @@
 #endif
 
 #if (PROCESSOR == ATMEGA)
-const CHAR8 version[] PROGMEM = "BRTOS Ver. 1.61";	///< Informs BRTOS version
+const CHAR8 version[] PROGMEM = "BRTOS Ver. 1.62";	///< Informs BRTOS version
 PGM_P BRTOSStringTable[] PROGMEM = 
 {
     version
@@ -70,12 +74,12 @@ PGM_P BRTOSStringTable[] PROGMEM =
 #if (PROCESSOR == PIC18)
 const rom CHAR8 *version=                            ///< Informs BRTOS version
 {
-  "BRTOS Ver. 1.61"
+  "BRTOS Ver. 1.62"
 };
 #else
 const CHAR8 *version=                            ///< Informs BRTOS version
 {
-  "BRTOS Ver. 1.61"
+  "BRTOS Ver. 1.62"
 };
 #endif
 #endif
@@ -1000,7 +1004,7 @@ INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED
 	Task->StackPoint = StackAddress + NUMBER_MIN_OF_STACKED_BYTES;
 	#else
 	Task->StackPoint = StackAddress + (USER_STACKED_BYTES - NUMBER_MIN_OF_STACKED_BYTES);
-  #endif
+    #endif
                                                                       
    // Virtual Stack Init
 	#if STACK_GROWTH == 1

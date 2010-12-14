@@ -50,6 +50,10 @@
 *   Revision: 1.61
 *   Date:     02/12/2010
 *
+*   Authors:  Douglas França
+*   Revision: 1.62
+*   Date:     13/12/2010
+*
 *********************************************************************************************************/
 
 #include "BRTOS.h"
@@ -69,7 +73,7 @@
 INT8U OSQueueCreate(OS_QUEUE *cqueue, INT16U size, BRTOS_Queue **event)
 {
   OS_SR_SAVE_VAR
-  int i=0;
+  INT16S i=0;
   BRTOS_Queue *pont_event;
 
   if (iNesting > 0) {                                // See if caller is an interrupt
@@ -82,6 +86,10 @@ INT8U OSQueueCreate(OS_QUEUE *cqueue, INT16U size, BRTOS_Queue **event)
   
   if ((iQueueAddress + size) > QUEUE_HEAP_SIZE)
   {
+      // Exit critical Section
+      if (currentTask)
+         OSExitCritical();
+      
        return NO_MEMORY;
   }  
   
@@ -89,9 +97,16 @@ INT8U OSQueueCreate(OS_QUEUE *cqueue, INT16U size, BRTOS_Queue **event)
   for(i=0;i<=BRTOS_MAX_QUEUE;i++)
   {
     
-    if(i == BRTOS_MAX_QUEUE)
+    if(i >= BRTOS_MAX_QUEUE)
+    {
       // Caso não haja mais blocos disponíveis, retorna exceção
+      
+      // Exit critical Section
+      if (currentTask)
+         OSExitCritical();
+      
       return(NO_AVAILABLE_EVENT);
+    }
           
     
     if(BRTOS_Queue_Table[i].OSEventAllocated != TRUE)
@@ -668,6 +683,10 @@ INT8U OSQueue16Create(OS_QUEUE_16 *cqueue, INT16U size, BRTOS_Queue **event)
   
   if ((iQueueAddress + (size*sizeof(INT16U))) > QUEUE_HEAP_SIZE)
   {
+      // Exit critical Section
+      if (currentTask)
+         OSExitCritical();
+      
        return NO_MEMORY;
   }  
   
@@ -675,9 +694,16 @@ INT8U OSQueue16Create(OS_QUEUE_16 *cqueue, INT16U size, BRTOS_Queue **event)
   for(i=0;i<=BRTOS_MAX_QUEUE;i++)
   {
     
-    if(i == BRTOS_MAX_QUEUE)
+    if(i >= BRTOS_MAX_QUEUE)
+    {
       // Caso não haja mais blocos disponíveis, retorna exceção
+      
+      // Exit critical Section
+      if (currentTask)
+         OSExitCritical();      
+      
       return(NO_AVAILABLE_EVENT);
+    }
           
     
     if(BRTOS_Queue_Table[i].OSEventAllocated != TRUE)
@@ -899,6 +925,10 @@ INT8U OSQueue32Create(OS_QUEUE_32 *cqueue, INT16U size, BRTOS_Queue **event)
   
   if ((iQueueAddress + (size*sizeof(INT32U))) > QUEUE_HEAP_SIZE)
   {
+      // Exit critical Section
+      if (currentTask)
+         OSExitCritical();
+      
        return NO_MEMORY;
   }  
   
@@ -906,9 +936,16 @@ INT8U OSQueue32Create(OS_QUEUE_32 *cqueue, INT16U size, BRTOS_Queue **event)
   for(i=0;i<=BRTOS_MAX_QUEUE;i++)
   {
     
-    if(i == BRTOS_MAX_QUEUE)
+    if(i >= BRTOS_MAX_QUEUE)
+    {
       // Caso não haja mais blocos disponíveis, retorna exceção
+      
+      // Exit critical Section
+      if (currentTask)
+         OSExitCritical();
+      
       return(NO_AVAILABLE_EVENT);
+    }
           
     
     if(BRTOS_Queue_Table[i].OSEventAllocated != TRUE)
