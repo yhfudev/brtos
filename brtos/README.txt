@@ -70,3 +70,7 @@
 
 == BRTOS 1.62 Changelog ==
 - minor bug correction - lack of OSExitCritical() call in some XXCreate functions of the OS services
+- now with SVN support
+- svn checkout http://brtos.googlecode.com/svn/trunk/brtos (for kernel code checkout)
+- svn checkout http://brtos.googlecode.com/svn/trunk/hal/Compiler_MCU (for HAL code checkout), Where Compiler_MCU must be changed with the required compiler and MCU (e.g. CodeWarrior_CFV1)
+
