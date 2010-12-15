@@ -111,13 +111,19 @@ INT8U NumberOfInstalledTasks;                 ///< Number of Installed tasks at 
 INT8U currentTask;                            ///< Current task being executed
 INT8U SelectedTask;
 
-#if NUMBER_OF_PRIORITIES == 32
-  INT32U OSReadyList = 0;
-  INT32U OSBlockedList = 0xFFFFFFFF;
+#if (NUMBER_OF_PRIORITIES > 16)
+  PriorityType OSReadyList = 0;
+  PriorityType OSBlockedList = 0xFFFFFFFF;
 #else
-  INT16U OSReadyList = 0;
-  INT16U OSBlockedList = 0xFFFF;
+  #if (NUMBER_OF_PRIORITIES > 8)
+    PriorityType OSReadyList = 0;
+    PriorityType OSBlockedList = 0xFFFF;
+  #else
+    PriorityType OSReadyList = 0;
+    PriorityType OSBlockedList = 0xFF;
+  #endif
 #endif
+
 INT16U counter;                                   ///< Incremented each tick timer - Used in delay and timeout functions
 volatile INT32U OSDuty=0;                         ///< Used to compute the CPU load
 volatile INT32U OSDutyTmp=0;                      ///< Used to compute the CPU load
@@ -134,19 +140,26 @@ volatile INT8U flag_load = TRUE;
 #endif
 
 
-#if NUMBER_OF_PRIORITIES == 32
-const INT32U PriorityMask[32]=
-{
-  0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x0100,0x0200,0x0400,0x0800,0x1000,0x2000,0x4000,0x8000,
-  0x010000,0x020000,0x040000,0x080000,0x100000,0x200000,0x400000,0x800000,0x01000000,0x02000000,
-  0x04000000,0x08000000,0x10000000,0x20000000,0x40000000,0x80000000
-};
+#if (NUMBER_OF_PRIORITIES > 16)
+  const PriorityType PriorityMask[configMAX_TASK_PRIORITY+1]=
+  {
+    0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x0100,0x0200,0x0400,0x0800,0x1000,0x2000,0x4000,0x8000,
+    0x010000,0x020000,0x040000,0x080000,0x100000,0x200000,0x400000,0x800000,0x01000000,0x02000000,
+    0x04000000,0x08000000,0x10000000,0x20000000,0x40000000,0x80000000
+  };
 #else
-const INT16U PriorityMask[16]=
-{
-  0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x0100,0x0200,0x0400,0x0800,0x1000,0x2000,0x4000,0x8000
-};
-#endif 
+  #if (NUMBER_OF_PRIORITIES > 8)
+    const PriorityType PriorityMask[configMAX_TASK_PRIORITY+1]=
+    {
+      0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x0100,0x0200,0x0400,0x0800,0x1000,0x2000,0x4000,0x8000
+    };
+  #else
+    const PriorityType PriorityMask[configMAX_TASK_PRIORITY+1]=
+    {
+      0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80
+    };  
+  #endif
+#endif
 
 
 ////////////////////////////////////////////////////////////
@@ -1126,11 +1139,7 @@ INT8U InstallIdle(void(*FctPtr)(void), INT16U USER_STACKED_BYTES)
    ContextTask[NUMBER_OF_TASKS+1].State = READY;  
    #endif
    
-   #if NUMBER_OF_PRIORITIES == 32
-    OSReadyList = OSReadyList | (INT32U)1;
-   #else
-    OSReadyList = OSReadyList | (INT16U)1;
-   #endif
+   OSReadyList = OSReadyList | (PriorityType)1;
    
    if (currentTask)
     // Exit Critical Section
@@ -1209,15 +1218,11 @@ void initEvents(void)
 /////    Sucessive Aproximation Scheduler Algorithm    /////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
-#if NUMBER_OF_PRIORITIES == 32
-INT8U SAScheduler(INT32U ReadyList)
-#else
-INT8U SAScheduler(INT16U ReadyList)
-#endif
+INT8U SAScheduler(PriorityType ReadyList)
 {
   INT8U prio = 0;
   
-  #if NUMBER_OF_PRIORITIES == 32
+  #if (NUMBER_OF_PRIORITIES > 16)
   
   if (ReadyList > 0xFFFF)
   {
@@ -1331,6 +1336,7 @@ INT8U SAScheduler(INT16U ReadyList)
   else
   {
   #endif
+    #if (NUMBER_OF_PRIORITIES > 8)
     if (ReadyList > 0xFF)
     {
       if (ReadyList > 0xFFF)
@@ -1386,6 +1392,7 @@ INT8U SAScheduler(INT16U ReadyList)
     }
     else
     {
+    #endif
       if (ReadyList > 0x0F)
       {
         if (ReadyList > 0x3F)
@@ -1436,8 +1443,10 @@ INT8U SAScheduler(INT16U ReadyList)
           }
         }
       }
+    #if (NUMBER_OF_PRIORITIES > 8)
     }
-  #if NUMBER_OF_PRIORITIES == 32
+    #endif
+  #if (NUMBER_OF_PRIORITIES > 16)
   }
   #endif
   return prio;

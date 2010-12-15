@@ -147,12 +147,20 @@
 
 /// Task Defines
 
-#if NUMBER_OF_PRIORITIES == 32
+#if (NUMBER_OF_PRIORITIES > 16)
   #define configMAX_TASK_INSTALL  32                 ///< Defines the maximum number of tasks that can be installed
   #define configMAX_TASK_PRIORITY 31  
+  typedef INT32U PriorityType;
 #else
-  #define configMAX_TASK_INSTALL  16                 ///< Defines the maximum number of tasks that can be installed
-  #define configMAX_TASK_PRIORITY 15
+  #if (NUMBER_OF_PRIORITIES > 8)
+    #define configMAX_TASK_INSTALL  16                 ///< Defines the maximum number of tasks that can be installed
+    #define configMAX_TASK_PRIORITY 15
+    typedef INT16U PriorityType;
+  #else
+    #define configMAX_TASK_INSTALL  8                 ///< Defines the maximum number of tasks that can be installed
+    #define configMAX_TASK_PRIORITY 7  
+    typedef INT8U PriorityType;
+  #endif
 #endif
 
 ////////////////////////////////////////////////////////////
@@ -218,14 +226,10 @@ typedef struct Context ContextType;
 * Semaphore Control Block Structure
 */
 typedef struct {
-  INT8U  OSEventAllocated;                    ///< Indicate if the event is allocated or not
-  INT8U  OSEventCount;                        ///< Semaphore Count - This value is increased with a post and decremented with a pend
-  INT8U  OSEventWait;                         ///< Counter of waiting Tasks
-  #if NUMBER_OF_PRIORITIES == 32
-  INT32U OSEventWaitList;                     ///< Task wait list for event to occur
-  #else
-  INT16U OSEventWaitList;                     ///< Task wait list for event to occur
-  #endif
+  INT8U        OSEventAllocated;              ///< Indicate if the event is allocated or not
+  INT8U        OSEventCount;                  ///< Semaphore Count - This value is increased with a post and decremented with a pend
+  INT8U        OSEventWait;                   ///< Counter of waiting Tasks
+  PriorityType OSEventWaitList;               ///< Task wait list for event to occur
 } BRTOS_Sem;
 
 ////////////////////////////////////////////////////////////
@@ -248,17 +252,13 @@ typedef struct {
 * Mutex Control Block Structure
 */
 typedef struct {
-  INT8U  OSEventAllocated;                    ///< Indicate if the event is allocated or not
-  INT8U  OSEventState;                        ///< Mutex state - Defines if the resource is available or not
-  INT8U  OSEventOwner;                        ///< Defines mutex owner
-  INT8U  OSMaxPriority;                       ///< Defines max priority accessing resource
-  INT8U  OSOriginalPriority;                  ///< Save original priority of Mutex owner task - used to the priority ceiling implementation
-  INT8U  OSEventWait;                         ///< Counter of waiting Tasks
-  #if NUMBER_OF_PRIORITIES == 32
-  INT32U OSEventWaitList;                     ///< Task wait list for event to occur
-  #else
-  INT16U OSEventWaitList;                     ///< Task wait list for event to occur
-  #endif
+  INT8U        OSEventAllocated;              ///< Indicate if the event is allocated or not
+  INT8U        OSEventState;                  ///< Mutex state - Defines if the resource is available or not
+  INT8U        OSEventOwner;                  ///< Defines mutex owner
+  INT8U        OSMaxPriority;                 ///< Defines max priority accessing resource
+  INT8U        OSOriginalPriority;            ///< Save original priority of Mutex owner task - used to the priority ceiling implementation
+  INT8U        OSEventWait;                   ///< Counter of waiting Tasks
+  PriorityType OSEventWaitList;               ///< Task wait list for event to occur
 } BRTOS_Mutex;
 
 ////////////////////////////////////////////////////////////
@@ -281,15 +281,11 @@ typedef struct {
 * MailBox Control Block Structure
 */
 typedef struct {
-  INT8U  OSEventAllocated;                    ///< Indicate if the event is allocated or not
-  INT8U  OSEventWait;                         ///< Counter of waiting Tasks
-  INT8U  OSEventState;                        ///< Mailbox state - Defines if the message is available or not
-  #if NUMBER_OF_PRIORITIES == 32
-  INT32U OSEventWaitList;                     ///< Task wait list for event to occur
-  #else
-  INT16U OSEventWaitList;                     ///< Task wait list for event to occur
-  #endif
-  void   *OSEventPointer;                     ///< Pointer to the message structure / type
+  INT8U        OSEventAllocated;              ///< Indicate if the event is allocated or not
+  INT8U        OSEventWait;                   ///< Counter of waiting Tasks
+  INT8U        OSEventState;                  ///< Mailbox state - Defines if the message is available or not
+  PriorityType OSEventWaitList;               ///< Task wait list for event to occur
+  void         *OSEventPointer;               ///< Pointer to the message structure / type
 } BRTOS_Mbox;
 
 ////////////////////////////////////////////////////////////
@@ -312,15 +308,11 @@ typedef struct {
 * Queue Control Block Structure
 */
 typedef struct {
-  INT8U  OSEventAllocated;                    ///< Indicate if the event is allocated or not
-  INT8U  OSEventCount;                        ///< Queue Event Count - This value is increased with a post and decremented with a pend
-  INT8U  OSEventWait;                         ///< Counter of waiting Tasks
-  void   *OSEventPointer;                     ///< Pointer to queue structure
-  #if NUMBER_OF_PRIORITIES == 32
-  INT32U OSEventWaitList;                     ///< Task wait list for event to occur
-  #else
-  INT16U OSEventWaitList;                     ///< Task wait list for event to occur
-  #endif
+  INT8U        OSEventAllocated;              ///< Indicate if the event is allocated or not
+  INT8U        OSEventCount;                  ///< Queue Event Count - This value is increased with a post and decremented with a pend
+  INT8U        OSEventWait;                   ///< Counter of waiting Tasks
+  void         *OSEventPointer;               ///< Pointer to queue structure
+  PriorityType OSEventWaitList;               ///< Task wait list for event to occur
 } BRTOS_Queue;
 
 ////////////////////////////////////////////////////////////
@@ -598,16 +590,12 @@ void BRTOS_Init(void);
 INT8U OSSchedule(void);
 
 /*****************************************************************//**
-* \fn INT8U SAScheduler(INT32U ReadyList)
+* \fn INT8U SAScheduler(PriorityType ReadyList)
 * \brief Sucessive Aproximation Scheduler (Internal kernel function).
 * \param ReadyList List of the tasks ready to run
 * \return The priority of the highest priority task ready to run
 *********************************************************************/
-#if NUMBER_OF_PRIORITIES == 32
-  INT8U SAScheduler(INT32U ReadyList);
-#else
-  INT8U SAScheduler(INT16U ReadyList);
-#endif
+INT8U SAScheduler(PriorityType ReadyList);
 
 
 
@@ -999,20 +987,9 @@ void initEvents(void);
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-#if NUMBER_OF_PRIORITIES == 32
-  extern INT32U OSReadyList;
-  extern INT32U OSBlockedList;
-#else
-  extern INT16U OSReadyList;
-  extern INT16U OSBlockedList;
-#endif
-
-
-#if NUMBER_OF_PRIORITIES == 32
-extern const INT32U PriorityMask[32];
-#else
-extern const INT16U PriorityMask[16];
-#endif
+extern       PriorityType OSReadyList;
+extern       PriorityType OSBlockedList;
+extern const PriorityType PriorityMask[configMAX_TASK_PRIORITY+1];
 
 extern ContextType *Tail;
 extern ContextType *Head;
