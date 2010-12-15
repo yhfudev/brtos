@@ -54,6 +54,10 @@
 *   Revision: 1.62
 *   Date:     13/12/2010
 *
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.63
+*   Date:     15/12/2010
+*
 *********************************************************************************************************/
 
 
@@ -65,7 +69,7 @@
 #endif
 
 #if (PROCESSOR == ATMEGA)
-const CHAR8 version[] PROGMEM = "BRTOS Ver. 1.62";	///< Informs BRTOS version
+const CHAR8 version[] PROGMEM = "BRTOS Ver. 1.63";	///< Informs BRTOS version
 PGM_P BRTOSStringTable[] PROGMEM = 
 {
     version
@@ -74,12 +78,12 @@ PGM_P BRTOSStringTable[] PROGMEM =
 #if (PROCESSOR == PIC18)
 const rom CHAR8 *version=                            ///< Informs BRTOS version
 {
-  "BRTOS Ver. 1.62"
+  "BRTOS Ver. 1.63"
 };
 #else
 const CHAR8 *version=                            ///< Informs BRTOS version
 {
-  "BRTOS Ver. 1.62"
+  "BRTOS Ver. 1.63"
 };
 #endif
 #endif

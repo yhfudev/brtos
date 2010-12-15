@@ -23,6 +23,10 @@
 *   Revision: 1.0
 *   Date:     20/03/2009
 *
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.63
+*   Date:     15/12/2010
+*
 *********************************************************************************************************/
 
 #ifndef OS_BRTOS_H
