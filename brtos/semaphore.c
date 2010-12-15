@@ -290,13 +290,19 @@ INT8U OSSemPend (BRTOS_Sem *pont_event, INT16U time_wait)
   // Change Context - Returns on time overflow or semaphore post
   ChangeContext();
 
-  // Exit Critical Section
-  OSExitCritical();
-  // Enter Critical Section
-  OSEnterCritical();
-    
+  
   if (time_wait)
-  {    
+  {   
+      /* Edited by Carlos H. Barriquello */
+      
+      /* Moved critical region to inside test region */
+      // Exit Critical Section
+      OSExitCritical();
+      // Enter Critical Section
+      OSEnterCritical();
+      
+      /* End of edition */
+   
       // Verify if the reason of task wake up was queue timeout
       if(Task->TimeToWait == EXIT_BY_TIMEOUT)
       {
