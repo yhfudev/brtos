@@ -136,6 +136,8 @@ INT16U DutyCnt = 0;                               ///< Used to compute the CPU l
 INT32U TaskAlloc = 0;                             ///< Used to search a empty task control block
 INT8U  iNesting = 0;                              ///< Used to inform if the current code position is an interrupt handler code
 
+ContextType *Tail;
+ContextType *Head;
 
 #if (DEBUG == 0)
 volatile INT8U flag_load = TRUE;
@@ -261,7 +263,6 @@ INT8U DelayTask(INT16U time_wait)
 {
   OS_SR_SAVE_VAR
   INT32U timeout;
-  ContextType *Task_Tail;   /* Tail of delay task list */
   ContextType *Task = &ContextTask[currentTask];
    
   if (iNesting > 0) {                                // See if caller is an interrupt
@@ -296,11 +297,19 @@ INT8U DelayTask(INT16U time_wait)
         }
         
         // Put task into delay list
-        Task_Tail = HEAD;            
-        Task_Tail->Previous->Next = Task;
-        Task->Previous = Task_Tail->Previous;
-        Task_Tail->Previous = Task;
-        Task->Next = HEAD;
+        if(Tail != NULL)
+        { 
+          // Insert task into list
+          Tail->Next = Task;
+          Task->Previous = Tail;
+          Tail = Task;
+          Tail->Next = NULL;
+        }
+        else{
+           // Init delay list
+           Tail = Task;
+           Head = Task; 
+        }    
         
         #if (VERBOSE == 1)
         Task->State = SUSPENDED;
@@ -401,12 +410,12 @@ void OS_TICK_HANDLER(void)
 {
   OS_SR_SAVE_VAR
   INT8U  iPrio = 0;  
-  ContextType *Task = HEAD->Next; /* Start by the next task after the head of the list*/
+  ContextType *Task = Head;  
    
   ////////////////////////////////////////////////////
   // Put task with delay overflow in the ready list //
   ////////////////////////////////////////////////////  
-  while(Task != HEAD)
+  while(Task != NULL)
   {      
       if (Task->TimeToWait == counter)
       {
@@ -430,9 +439,30 @@ void OS_TICK_HANDLER(void)
         OSExitCritical();
         #endif                  
           
-        // Remove from delay list                   
-        Task->Previous->Next = Task->Next;
-        Task->Next->Previous = Task->Previous;
+        // Remove from delay list
+        if(Task == Head)
+        {
+          Head = Task->Next;
+          Head->Previous = NULL;
+          if(Task == Tail)
+          {
+            Tail = Task->Previous;
+            Tail->Next = NULL;
+          }          
+        }
+        else
+        {          
+          if(Task == Tail)
+          {
+            Tail = Task->Previous;
+            Tail->Next = NULL;
+          }
+          else
+          {
+            Task->Next->Previous = Task->Previous;
+            Task->Previous->Next = Task->Next; 
+          }
+        }
       }
  
       Task = Task->Next;    
@@ -533,7 +563,9 @@ void PreInstallTasks(void)
   {
     PriorityVector[i]=EMPTY_PRIO;
   }
-
+    
+  Tail = NULL;
+  Head = NULL;
   
   #if (OSRTCEN == 1)
     OSRTCSetup();

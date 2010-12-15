@@ -64,8 +64,7 @@
 #define NULL  (void*)0
 #endif
 
-/// We use Idle Task as the head of the delay task list (linked list)
-#define HEAD  (ContextType*)(&ContextTask[NUMBER_OF_TASKS+1])  ///< Head of delay task list
+
 
 /// Task States
 #define READY                        (INT8U)0     ///< Task is ready to be executed - waiting for the scheduler authorization
@@ -995,6 +994,9 @@ void initEvents(void);
 extern       PriorityType OSReadyList;
 extern       PriorityType OSBlockedList;
 extern const PriorityType PriorityMask[configMAX_TASK_PRIORITY+1];
+
+extern ContextType *Tail;
+extern ContextType *Head;
 
 extern INT8U iNesting;
 extern INT8U currentTask;
