@@ -74,3 +74,5 @@
 - svn checkout http://brtos.googlecode.com/svn/trunk/brtos (for kernel code checkout)
 - svn checkout http://brtos.googlecode.com/svn/trunk/hal/Compiler_MCU (for HAL code checkout), Where Compiler_MCU must be changed with the required compiler and MCU (e.g. CodeWarrior_CFV1)
 
+== BRTOS 1.63 Changelog ==
+- new PriorityType - Now the user can select 8, 16 or 32 priority levels (better usage of memory and processor)
