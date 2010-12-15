@@ -76,3 +76,4 @@
 
 == BRTOS 1.63 Changelog ==
 - new PriorityType - Now the user can select 8, 16 or 32 priority levels (better usage of memory and processor)
+- changed delay list code used to insert and to remove tasks. 

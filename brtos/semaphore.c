@@ -185,6 +185,7 @@ INT8U OSSemPend (BRTOS_Sem *pont_event, INT16U time_wait)
   OS_SR_SAVE_VAR
   INT8U  iPriority = 0;
   INT32U timeout;
+  ContextType *Task_Tail;   /* Tail of delay task list */
   ContextType *Task;
   
   #if (ERROR_CHECK == 1)
@@ -268,20 +269,12 @@ INT8U OSSemPend (BRTOS_Sem *pont_event, INT16U time_wait)
     }
     
     // Put task into delay list
-    if(Tail != NULL)
-    { 
-      // Insert task into list
-      Tail->Next = Task;
-      Task->Previous = Tail;
-      Tail = Task;
-      Tail->Next = NULL;
-    }
-    else
-    {
-       // Init delay list
-       Tail = Task;
-       Head = Task; 
-    }
+    Task_Tail = HEAD;            
+    Task_Tail->Previous->Next = Task;
+    Task->Previous = Task_Tail->Previous;
+    Task_Tail->Previous = Task;
+    Task->Next = HEAD;
+    
   } else
   {
     Task->TimeToWait = NO_TIMEOUT;
@@ -321,30 +314,9 @@ INT8U OSSemPend (BRTOS_Sem *pont_event, INT16U time_wait)
           // Remove the time to wait condition
           Task->TimeToWait = NO_TIMEOUT;
           
-          // Remove from delay list
-          if(Task == Head)
-          {
-            Head = Task->Next;
-            Head->Previous = NULL;
-            if(Task == Tail)
-            {
-              Tail = Task->Previous;
-              Tail->Next = NULL;
-            }          
-          }
-          else
-          {          
-            if(Task == Tail)
-            {
-              Tail = Task->Previous;
-              Tail->Next = NULL;
-            }
-            else
-            {
-              Task->Next->Previous = Task->Previous;
-              Task->Previous->Next = Task->Next; 
-            }
-          }
+          // Remove from delay list           
+          Task->Next->Previous = Task->Previous;
+          Task->Previous->Next = Task->Next;
       }
      
   }    
