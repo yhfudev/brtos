@@ -304,9 +304,9 @@ INT8U OSMutexAcquire(BRTOS_Mutex *pont_event)
     ///////////////////////////////////////////////////////////////////////////////
     
     // Backup the original task priority
-    pont_event->OSOriginalPriority = ContextTask[currentTask].Priority;
+    pont_event->OSOriginalPriority = iPriority;
     
-    if (pont_event->OSMaxPriority > pont_event->OSOriginalPriority)
+    if (pont_event->OSMaxPriority > iPriority)
     {
       // Receives the priority ceiling temporarily
       ContextTask[currentTask].Priority = pont_event->OSMaxPriority;
@@ -315,7 +315,7 @@ INT8U OSMutexAcquire(BRTOS_Mutex *pont_event)
       PriorityVector[pont_event->OSMaxPriority] = currentTask;
       
       // Remove "original priority current task" from the Ready List
-      OSReadyList = OSReadyList & ~(PriorityMask[pont_event->OSOriginalPriority]);
+      OSReadyList = OSReadyList & ~(PriorityMask[iPriority]);
       // Put the "max priority current task" into Ready List
       OSReadyList = OSReadyList | (PriorityMask[pont_event->OSMaxPriority]);
     }
