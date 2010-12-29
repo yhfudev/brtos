@@ -363,7 +363,7 @@ INT8U DelayTaskHMSM(INT8U hours, INT8U minutes, INT8U seconds, INT16U milisecond
   if (seconds > 59)
     return INVALID_TIME;
   
-  if (minutes > 999)
+  if (miliseconds > 999)
     return INVALID_TIME;  
   
   ticks = (INT32U)hours   * 3600L * configTICK_RATE_HZ
