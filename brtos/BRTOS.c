@@ -58,6 +58,10 @@
 *   Revision: 1.63
 *   Date:     15/12/2010
 *
+*   Authors:  Carlos Henrique Barriquelo
+*   Revision: 1.64
+*   Date:     22/02/2011
+*
 *********************************************************************************************************/
 
 
@@ -308,7 +312,9 @@ INT8U DelayTask(INT16U time_wait)
         else{
            // Init delay list
            Tail = Task;
-           Head = Task; 
+           Head = Task;
+           Task->Next = NULL;
+           Task->Previous = NULL;
         }    
         
         #if (VERBOSE == 1)
@@ -442,13 +448,16 @@ void OS_TICK_HANDLER(void)
         // Remove from delay list
         if(Task == Head)
         {
-          Head = Task->Next;
-          Head->Previous = NULL;
           if(Task == Tail)
           {
-            Tail = Task->Previous;
-            Tail->Next = NULL;
-          }          
+            Tail = NULL;
+            Head = NULL;
+          }
+          else
+          {
+            Head = Task->Next;
+            Head->Previous = NULL;          
+          }
         }
         else
         {          
@@ -465,7 +474,7 @@ void OS_TICK_HANDLER(void)
         }
       }
  
-      Task = Task->Next;    
+      Task = Task->Next;
   }
 
   //////////////////////////////////////////

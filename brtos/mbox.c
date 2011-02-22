@@ -54,6 +54,10 @@
 *   Revision: 1.62
 *   Date:     13/12/2010
 *
+*   Authors:  Carlos Henrique Barriquelo
+*   Revision: 1.64
+*   Date:     22/02/2011
+*
 *********************************************************************************************************/
 
 #include "BRTOS.h"
@@ -283,12 +287,13 @@ INT8U OSMboxPend (BRTOS_Mbox *pont_event, void **Mail, INT16U time_wait)
         Tail = Task;
         Tail->Next = NULL;
       }
-      else
-      {
+      else{
          // Init delay list
          Tail = Task;
-         Head = Task; 
-      }
+         Head = Task;
+         Task->Next = NULL;
+         Task->Previous = NULL;
+      } 
     } else
     {
       Task->TimeToWait = NO_TIMEOUT;
