@@ -73,7 +73,7 @@
 #endif
 
 #if (PROCESSOR == ATMEGA)
-const CHAR8 version[] PROGMEM = "BRTOS Ver. 1.63";	///< Informs BRTOS version
+const CHAR8 version[] PROGMEM = "BRTOS Ver. 1.64";	///< Informs BRTOS version
 PGM_P BRTOSStringTable[] PROGMEM = 
 {
     version
@@ -82,12 +82,12 @@ PGM_P BRTOSStringTable[] PROGMEM =
 #if (PROCESSOR == PIC18)
 const rom CHAR8 *version=                            ///< Informs BRTOS version
 {
-  "BRTOS Ver. 1.63"
+  "BRTOS Ver. 1.64"
 };
 #else
 const CHAR8 *version=                            ///< Informs BRTOS version
 {
-  "BRTOS Ver. 1.63"
+  "BRTOS Ver. 1.64"
 };
 #endif
 #endif
