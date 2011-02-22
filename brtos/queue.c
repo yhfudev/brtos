@@ -472,13 +472,16 @@ INT8U OSQueuePend (BRTOS_Queue *pont_event, INT8U* pdata, INT16U time_wait)
             // Remove from delay list
             if(Task == Head)
             {
-              Head = Task->Next;
-              Head->Previous = NULL;
               if(Task == Tail)
               {
-                Tail = Task->Previous;
-                Tail->Next = NULL;
-              }          
+                Tail = NULL;
+                Head = NULL;
+              }
+              else
+              {
+                Head = Task->Next;
+                Head->Previous = NULL;          
+              }
             }
             else
             {          
