@@ -76,3 +76,6 @@
 
 == BRTOS 1.63 Changelog ==
 - new PriorityType - Now the user can select 8, 16 or 32 priority levels (better usage of memory and processor)
+
+== BRTOS 1.64 Changelog ==
+- minor bug correction - in some CISC architectures the timer linked list could cause a wrong memory rewrite
