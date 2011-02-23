@@ -415,21 +415,7 @@ INT8U OSQueuePend (BRTOS_Queue *pont_event, INT8U* pdata, INT16U time_wait)
       }
     
       // Put task into delay list
-      if(Tail != NULL)
-      { 
-        // Insert task into list
-        Tail->Next = Task;
-        Task->Previous = Tail;
-        Tail = Task;
-        Tail->Next = NULL;
-      }
-      else{
-         // Init delay list
-         Tail = Task;
-         Head = Task;
-         Task->Next = NULL;
-         Task->Previous = NULL;
-      } 
+      IncludeTaskIntoDelayList();
     } else
     {
       Task->TimeToWait = NO_TIMEOUT;
@@ -470,32 +456,7 @@ INT8U OSQueuePend (BRTOS_Queue *pont_event, INT8U* pdata, INT16U time_wait)
             Task->TimeToWait = NO_TIMEOUT;
             
             // Remove from delay list
-            if(Task == Head)
-            {
-              if(Task == Tail)
-              {
-                Tail = NULL;
-                Head = NULL;
-              }
-              else
-              {
-                Head = Task->Next;
-                Head->Previous = NULL;          
-              }
-            }
-            else
-            {          
-              if(Task == Tail)
-              {
-                Tail = Task->Previous;
-                Tail->Next = NULL;
-              }
-              else
-              {
-                Task->Next->Previous = Task->Previous;
-                Task->Previous->Next = Task->Next; 
-              }
-            }
+            RemoveFromDelayList();
         }
        
     }

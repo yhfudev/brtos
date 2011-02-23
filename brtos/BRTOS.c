@@ -301,21 +301,7 @@ INT8U DelayTask(INT16U time_wait)
         }
         
         // Put task into delay list
-        if(Tail != NULL)
-        { 
-          // Insert task into list
-          Tail->Next = Task;
-          Task->Previous = Tail;
-          Tail = Task;
-          Tail->Next = NULL;
-        }
-        else{
-           // Init delay list
-           Tail = Task;
-           Head = Task;
-           Task->Next = NULL;
-           Task->Previous = NULL;
-        }    
+        IncludeTaskIntoDelayList();
         
         #if (VERBOSE == 1)
         Task->State = SUSPENDED;
@@ -446,32 +432,7 @@ void OS_TICK_HANDLER(void)
         #endif                  
           
         // Remove from delay list
-        if(Task == Head)
-        {
-          if(Task == Tail)
-          {
-            Tail = NULL;
-            Head = NULL;
-          }
-          else
-          {
-            Head = Task->Next;
-            Head->Previous = NULL;          
-          }
-        }
-        else
-        {          
-          if(Task == Tail)
-          {
-            Tail = Task->Previous;
-            Tail->Next = NULL;
-          }
-          else
-          {
-            Task->Next->Previous = Task->Previous;
-            Task->Previous->Next = Task->Next; 
-          }
-        }
+        RemoveFromDelayList();
       }
  
       Task = Task->Next;
