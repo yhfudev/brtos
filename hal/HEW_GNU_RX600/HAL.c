@@ -1,25 +1,88 @@
-#include "hardware.h"
+/**
+* \file HAL.c
+* \brief BRTOS Hardware Abstraction Layer Functions.
+*
+* This file contain the functions that are processor dependant.
+*
+*
+**/
+
+/*********************************************************************************************************
+*                                               BRTOS
+*                                Brazilian Real-Time Operating System
+*                            Acronymous of Basic Real-Time Operating System
+*
+*                              
+*                                  Open Source RTOS under MIT License
+*
+*
+*
+*                                   OS HAL Functions to Coldfire V1
+*
+*
+*   Author:   Gustavo Weber Denardin
+*   Revision: 1.0
+*   Date:     20/03/2009
+*
+*********************************************************************************************************/
+
 #include "BRTOS.h"
+#include "interrupt_handlers.h"
 
-INT16U SPvalue = 0;
+#pragma warn_implicitconv off
+#pragma warn_unusedarg off
+
+
+#if (SP_SIZE == 32)
+  INT32U SPvalue;                             ///< Used to save and restore a task stack pointer
+#endif
+
+#if (SP_SIZE == 16)
+  INT16U SPvalue;                             ///< Used to save and restore a task stack pointer
+#endif
+
+
 
 
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
-/////      Tick Timer Setup                            /////
+/////      OS Tick Timer Setup                         /////
 /////                                                  /////
-/////                                                  /////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
+
 void TickTimerSetup(void)
 {
-  // Initialize ATMega368 Timer/Counter0 Peripheral
-  INT16U compare = (configCPU_CLOCK_HZ / configTICK_RATE_HZ) / configTIMER_PRE_SCALER_VALUE;  
-  OCR0A = (INT8U)(compare - 1);     // Adjust for correct value
-  TCCR0A=0x02;                      // Clear Timer on Compare mode
-  TCCR0B = configTIMER_PRE_SCALER;	// Set PreScaler
-  TCNT0=0x00;                       // Reset counter, overflow at 1 mSec
-  TIMSK0=(1<<OCIE0A);               // Enable Output Compare Interrupt
+    INT32U sys_clk;
+    INT32U per_clk;
+    INT32U per_div;
+	INT16U cmcor;	
+
+    sys_clk =  SYSTEM.SCKCR.LONG;
+    per_div = (sys_clk >> 8u) & 0xFu;
+    if (per_div <= 3u)
+	{
+		per_clk =  configCPU_CLOCK_HZ << (3u - per_div);
+		
+		cmcor = per_clk / (32u * configTICK_RATE_HZ);
+
+	    MSTP(CMT0) = 0;                                             /* Enable CMT0 module.                                  */
+
+	    CMT.CMSTR0.BIT.STR0 = 0;                                    /* Stop timer channel 0.                                */
+	    CMT0.CMCR.BIT.CKS   = 1;                                    /* Set peripheral clock divider.                        */
+
+	    CMT0.CMCOR = cmcor - 1u;                                    /* Set compare-match value.                             */
+	    CMT0.CMCNT = 0;                                             /* Clear counter register.                              */
+
+	    IR(CMT0, CMI0)  = 0;                                        /* Clear any pending ISR.                               */
+	    IPR(CMT0,)      = 3;                                        /* Set interrupt priority.                              */
+	    IEN(CMT0, CMI0) = 1;                                        /* Enable interrupt source.                             */
+
+	    CMT0.CMCR.BIT.CMIE = 1;                                     /* Enable interrupt.                                    */
+
+	    CMT.CMSTR0.BIT.STR0 = 1;                                    /* Start timer.                                         */		
+    }
+    
 }
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
@@ -27,18 +90,41 @@ void TickTimerSetup(void)
 ////////////////////////////////////////////////////////////
 
 
+
+
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+/////      OS RTC Setup                                /////
+/////                                                  /////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+void OSRTCSetup(void)
+{  
+
+}
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
-ISR(TIMER0_COMPA_vect, __attribute__ ( ( naked ) ))
+
+
+
+
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+void TickTimer(void)
 {
   // ************************
   // Entrada de interrupção
   // ************************
   OS_SAVE_ISR();
   OS_INT_ENTER();
-    
+  
   // Interrupt handling
   TICKTIMER_INT_HANDLER;
 
@@ -59,7 +145,7 @@ ISR(TIMER0_COMPA_vect, __attribute__ ( ( naked ) ))
   #if (NESTING_INT == 1)
   OS_ENABLE_NESTING();
   #endif   
-
+    
   // ************************
   // Handler code for the tick
   // ************************
@@ -68,7 +154,7 @@ ISR(TIMER0_COMPA_vect, __attribute__ ( ( naked ) ))
   // ************************
   // Interrupt Exit
   // ************************
-  OS_INT_EXIT();  
+  OS_INT_EXIT();
   OS_RESTORE_ISR();
   // ************************  
 }
@@ -92,7 +178,6 @@ ISR(TIMER0_COMPA_vect, __attribute__ ( ( naked ) ))
 * \brief Software interrupt handler routine (Internal kernel function).
 *  Used to switch the tasks context.
 ****************************************************************/
-
 void SwitchContext(void)
 {
   // ************************
@@ -132,48 +217,37 @@ void SwitchContext(void)
 
 void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
 {  
-    // Pointer to Task Entry
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 35] = 17;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 34] = 16;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 33] = 15;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 32] = 14;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 31] = 13;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 30] = 12;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 29] = 11;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 28] = 10;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 27] = 9;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 26] = 8;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 25] = 7;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 24] = 6;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 23] = 5;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 22] = 4;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 21] = 3;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 20] = 2;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 19] = 31;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 18] = 30;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 17] = 29;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 16] = 28;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 15] = 27;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 14] = 26;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 13] = 25;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 12] = 24;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 11] = 23;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 10] = 22;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 9] = 21;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 8] = 20;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 7] = 19;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 6] = 18;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 4] = 0x00;
-   
-   /* The compiler expects R1 to be 0. */
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 3] = 0x00;
-
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 1] = ((unsigned int) (FctPtr)) & 0x00FF;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 2] = ((unsigned int) (FctPtr)) >> 8;  
+   INT32U *stk_pt = (INT32U*)&STACK[iStackAddress + NUMBER_OF_STACKED_BYTES];
+   // Init PSW Register
+   *--stk_pt = (INT32U)PSW_INIT;
+   // Task Pointer
+   *--stk_pt = (INT32U)FctPtr;
+   // FPSW
+   *--stk_pt = 0x00000100u;
+   // General Purpose Registers
+   *--stk_pt = 0x15151515L;
+   *--stk_pt = 0x14141414L;
+   *--stk_pt = 0x13131313L;
+   *--stk_pt = 0x12121212L;
+   *--stk_pt = 0x11111111L;
+   *--stk_pt = 0x10101010L;
+   *--stk_pt = 0x09090909L;
+   *--stk_pt = 0x08080808L;
+   *--stk_pt = 0x07070707L;
+   *--stk_pt = 0x06060606L;
+   *--stk_pt = 0x05050505L;
+   *--stk_pt = 0x04040404L;
+   *--stk_pt = 0x03030303L;
+   *--stk_pt = 0x02020202L;
+   *--stk_pt = 0x00000000L;
+   *--stk_pt = 0x00009ABCu;
+   *--stk_pt = 0x12345678u;
 }
 
 
 
 
-
-
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
