@@ -16,7 +16,7 @@ INT16U SPvalue = 0;
 void TickTimerSetup(void)
 {
 
-		CCPR1 = ( (configCPU_CLOCK_HZ /configTIMER_PRE_SCALER)/ configTICK_RATE_HZ );
+		CCPR1 = ( configCPU_INT_CLOCK_HZ / configTICK_RATE_HZ );
 	
 		TMR1H = ( unsigned char ) 0x00;
 		TMR1L = ( unsigned char ) 0x00;	
@@ -114,12 +114,12 @@ void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
 {  
     // Pointer to Task Entry
     INT8U *stk = &STACK[iStackAddress];
-	INT16U address = &STACK[iStackAddress];
+	INT16U address = (INT16U)&STACK[iStackAddress];
 
 	address = address >> 8;
     *stk++  = 0xF1;                     // <-- FSR1 Pointer position on function call.
-    *stk++  = 0x00;                     // W register 
     *stk++  = 0xA5;                     // STATUS register
+    *stk++  = 0x00;                     // W register 
     *stk++  = 0xB0;                     // BSR register
     *stk++  = (INT8U)address;           // FSR2H register
     *stk++  = 0xF2;                     // FSR2L register
@@ -132,9 +132,41 @@ void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
     *stk++  = 0xD0;                     // PRODL Product Reg low
     *stk++  = 0xD1;                     // PRODH Product Reg high
     *stk++  = 0xA3;						// AARGB3
-    *stk++  = 0xA2;						// AARGB2  // 
-    *stk++  = 0xA1;						// AARGB1 // 0x13
-    *stk++  = 0xA0;						// AARGB0 //0x00
+    *stk++  = 0xA2;						// AARGB2
+    *stk++  = 0xA1;						// AARGB1
+    *stk++  = 0xA0;						// AARGB0
+    *stk++  = 0xB3;						// BARGB3
+    *stk++  = 0xB2;						// BARGB2 
+    *stk++  = 0xB1;						// BARGB1
+    *stk++  = 0xB0;						// BARGB0
+    *stk++  = 0xE3;						// REMB3
+    *stk++  = 0xE2;						// REMB2 
+    *stk++  = 0xE1;						// REMB1
+    *stk++  = 0xE0;						// REMB0 
+    *stk++  = 0xFB;						// __FPFLAGS
+    *stk++  = 0xFF;						// SIGN
+    *stk++  = 0xAE;						// __AEXP
+    *stk++  = 0xBE;						// __BEXP
+    *stk++  = 0xD3;						// __TEMPB3
+    *stk++  = 0xD2;						// __TEMPB2
+    *stk++  = 0xD1;						// __TEMPB1
+    *stk++  = 0xD0;						// __TEMPB0
+    *stk++  = 0x10;						// __tmp_0
+    *stk++  = 0x10;						// __tmp_0
+    *stk++  = 0x10;						// __tmp_0
+    *stk++  = 0x10;						// __tmp_0
+    *stk++  = 0x10;						// __tmp_0
+    *stk++  = 0x10;						// __tmp_0
+    *stk++  = 0x10;						// __tmp_0
+    *stk++  = 0x10;						// __tmp_0
+    *stk++  = 0x10;						// __tmp_0
+    *stk++  = 0x10;						// __tmp_0
+    *stk++  = 0x10;						// __tmp_0
+    *stk++  = 0x10;						// __tmp_0
+    *stk++  = 0x10;						// __tmp_0
+    *stk++  = 0x10;						// __tmp_0
+    *stk++  = 0x10;						// __tmp_0
+    *stk++  = 0x10;						// __tmp_0
 	*stk++  = 0xC1;						// PCLATH
 	*stk++  = 0xC2;						// PCLATU
 
