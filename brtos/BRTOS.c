@@ -43,24 +43,16 @@
 *   Date:     25/10/2010
 *
 *   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
-*   Revision: 1.60
-*   Date:     30/11/2010
-*
-*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
-*   Revision: 1.61
-*   Date:     02/12/2010
+*   Revision: 1.60,         Revision: 1.61
+*   Date:     30/11/2010,   Date:     02/12/2010
 *
 *   Authors:  Douglas França
 *   Revision: 1.62
 *   Date:     13/12/2010
 *
 *   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
-*   Revision: 1.63
-*   Date:     15/12/2010
-*
-*   Authors:  Carlos Henrique Barriquelo
-*   Revision: 1.64
-*   Date:     22/02/2011
+*   Revision: 1.63,         Revision: 1.64       ,  Revision: 1.65
+*   Date:     15/12/2010,   Date:     22/02/2011 ,  Date:     24/03/2011
 *
 *********************************************************************************************************/
 
@@ -73,7 +65,7 @@
 #endif
 
 #if (PROCESSOR == ATMEGA)
-const CHAR8 version[] PROGMEM = "BRTOS Ver. 1.64";	///< Informs BRTOS version
+const CHAR8 version[] PROGMEM = "BRTOS Ver. 1.65";	///< Informs BRTOS version
 PGM_P BRTOSStringTable[] PROGMEM = 
 {
     version
@@ -82,12 +74,12 @@ PGM_P BRTOSStringTable[] PROGMEM =
 #if (PROCESSOR == PIC18)
 const rom CHAR8 *version=                            ///< Informs BRTOS version
 {
-  "BRTOS Ver. 1.64"
+  "BRTOS Ver. 1.65"
 };
 #else
 const CHAR8 *version=                            ///< Informs BRTOS version
 {
-  "BRTOS Ver. 1.64"
+  "BRTOS Ver. 1.65"
 };
 #endif
 #endif
@@ -1192,6 +1184,15 @@ void initEvents(void)
 /////    Sucessive Aproximation Scheduler Algorithm    /////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
+#if (OPTIMIZED_SCHEDULER == 1)
+
+INT8U SAScheduler(PriorityType)
+{
+  Optimezed_Scheduler();
+}
+
+#else
+
 INT8U SAScheduler(PriorityType ReadyList)
 {
   INT8U prio = 0;
