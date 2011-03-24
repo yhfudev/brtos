@@ -1427,4 +1427,4 @@ INT8U SAScheduler(PriorityType ReadyList)
   return prio;
 }
 
-
+#endif
