@@ -79,3 +79,6 @@
 
 == BRTOS 1.64 Changelog ==
 - minor bug correction - in some CISC architectures the timer linked list could cause an undesirable write to RAM memory and/or CPU registers
+
+== BRTOS 1.65 Changelog ==
+- Optimized scheduler support for Coldfire and ARM MCUs 
