@@ -48,6 +48,9 @@
 /// Define the used processor
 #define PROCESSOR 		COLDFIRE_V1
 
+/// Define if the optimized scheduler will be used
+#define OPTIMIZED_SCHEDULER 1
+
 /// Define if nesting interrupt is active
 #define NESTING_INT 1
 
@@ -411,6 +414,18 @@ inline asm __declspec(register_abi) void OSRestoreISR(void) {
 
 #define OS_RESTORE_ISR()  OSRestoreISR()
 
+
+#endif
+
+
+#if (OPTIMIZED_SCHEDULER == 1)
+
+#define Optimezed_Scheduler()   asm                      \
+                                {                        \
+                                  FF1 D0                 \
+                                  NEG D0                 \
+                                  ADDI #31,D0            \
+                                }
 
 #endif
 

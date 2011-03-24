@@ -210,65 +210,69 @@ interrupt void SwitchContext(void)
 
 void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
 {  
+   INT32U *stk_pt = (INT32U*)&STACK[iStackAddress + NUMBER_OF_STACKED_BYTES];
+   
+   // Pointer to Task Entry
+   *--stk_pt = (INT32U)FctPtr;
+
    // First 4 bytes defined to Coldfire Only
    // Format: First 4 bits = processor indicating a two-longword frame, always 0x04 in MCF51QE
    //         Other 4 bits = fault status field, always 0x00 if no error occurred
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 8] = 0x40;
    // Vector
    // The 8-bit vector number, vector[7:0], defines the exception type and is
    // calculated by the processor for all internal faults and represents the
-   // value supplied by the interrupt controller in the case of an interrupt
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 7] = 0x80;
+   // value supplied by the interrupt controller in the case of an interrupt   
    
    // Initial SR Register
    // Interrupts Enabled
-   // CCR = 0x00
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 6] = 0x20;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 5] = 0x00;
-
-   // Pointer to Task Entry
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 1] = ((unsigned long) (FctPtr)) & 0x00FF;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 2] = ((unsigned long) (FctPtr)) >> 8;  
+   // CCR = 0x00   
+   
+   *--stk_pt = (INT32U)0x40802000;
    
    #if (NESTING_INT == 1)  
    
-   // Initialize registers
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 13] = 0xA1;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 17] = 0xA0;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 21] = 0xD2;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 25] = 0xD1;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 29] = 0xD0;
+   // Initialize registers   
+   *--stk_pt = (INT32U)0x00;    // Save Int level
    
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 33] = 0xA6;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 37] = 0xA5;   
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 41] = 0xA4;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 45] = 0xA3;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 49] = 0xA2;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 53] = 0xD7;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 57] = 0xD6;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 61] = 0xD5;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 65] = 0xD4;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 69] = 0xD3;
+   *--stk_pt = (INT32U)0xA1;
+   *--stk_pt = (INT32U)0xA0;
+   *--stk_pt = (INT32U)0xD2;
+   *--stk_pt = (INT32U)0xD1;
+   *--stk_pt = (INT32U)0xD0;
+   
+   *--stk_pt = (INT32U)0xA6;
+   *--stk_pt = (INT32U)0xA5;
+   *--stk_pt = (INT32U)0xA4;
+   *--stk_pt = (INT32U)0xA3;
+   *--stk_pt = (INT32U)0xA2;
+   
+   *--stk_pt = (INT32U)0xD7;   
+   *--stk_pt = (INT32U)0xD6;   
+   *--stk_pt = (INT32U)0xD5;   
+   *--stk_pt = (INT32U)0xD4;   
+   *--stk_pt = (INT32U)0xD3;               
    
    #else
    
    // Initialize registers
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 9] = 0xA1;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 13] = 0xA0;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 17] = 0xD2;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 21] = 0xD1;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 25] = 0xD0;
+   *--stk_pt = (INT32U)0xA1;
+   *--stk_pt = (INT32U)0xA0;
+   *--stk_pt = (INT32U)0xD2;
+   *--stk_pt = (INT32U)0xD1;
+   *--stk_pt = (INT32U)0xD0;
    
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 29] = 0xA6;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 33] = 0xA5;   
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 37] = 0xA4;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 41] = 0xA3;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 45] = 0xA2;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 49] = 0xD7;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 53] = 0xD6;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 57] = 0xD5;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 61] = 0xD4;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 65] = 0xD3;
+   *--stk_pt = (INT32U)0xA6;
+   *--stk_pt = (INT32U)0xA5;
+   *--stk_pt = (INT32U)0xA4;
+   *--stk_pt = (INT32U)0xA3;
+   *--stk_pt = (INT32U)0xA2;
+   
+   *--stk_pt = (INT32U)0xD7;   
+   *--stk_pt = (INT32U)0xD6;   
+   *--stk_pt = (INT32U)0xD5;   
+   *--stk_pt = (INT32U)0xD4;   
+   *--stk_pt = (INT32U)0xD3;
+   
    #endif
 }
 
@@ -295,12 +299,8 @@ INT16U OS_CPU_SR_Save(void)
 void OS_CPU_SR_Restore(INT16U)
 {  
   asm
-  {
-    
-        MOVE.L   D0,-(A7)         // Save D0
-        MOVE.W   2(A7),D0
+  {    
         MOVE.W    D0,SR
-        MOVE.L   (A7)+,D0         // Restore D0
   }
 }
 
