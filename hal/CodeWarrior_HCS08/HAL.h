@@ -15,6 +15,9 @@
 /// Define the used processor
 #define PROCESSOR 		HCS08
 
+/// There is no optimized scheduler for HCS08 MCUs
+#define OPTIMIZED_SCHEDULER 0
+
 /// Define if nesting interrupt is active
 #define NESTING_INT 0
 
