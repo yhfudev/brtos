@@ -125,7 +125,7 @@ void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
     *stk++  = 0xF2;                     // FSR2L register
     *stk++  = 0xF0;                     // FSR0L register
     *stk++  = 0xF0;                     // FSR0H register
-	*stk++  = 0xB2; 					// TABLAT
+	  *stk++  = 0xB2; 					          // TABLAT
     *stk++  = 0xB3;                     // TBLPTRL Prog Mem Table Pointer Low
     *stk++  = 0xB4;                     // TBLPTRH Prog Mem Table Pointer High
     *stk++  = 0xB5;                     // TBLPTRU Prog Mem Table Pointer Upper
@@ -167,8 +167,8 @@ void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
     *stk++  = 0x10;						// __tmp_0
     *stk++  = 0x10;						// __tmp_0
     *stk++  = 0x10;						// __tmp_0
-	*stk++  = 0xC1;						// PCLATH
-	*stk++  = 0xC2;						// PCLATU
+	  *stk++  = 0xC1;						// PCLATH
+	  *stk++  = 0xC2;						// PCLATU
 
     // first return address, the task address, goes on the hardware return stack in a context switch
     *stk++  = (INT8U)((INT16U)(FctPtr)) & 0x00FF; 	// TOSL
@@ -191,6 +191,7 @@ void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
 // High priority interrupt vector
 void TickTimerHandler(void);
 void SerialRx(void);
+void SerialTx(void);
 
 // High priority interrupt routine
 #pragma code highVector=0x008
@@ -209,6 +210,14 @@ void HighInterrupt( void )
 	{
 		_asm
 			goto SerialRx
+		_endasm
+	}
+
+	/* Was the interrupt a serial transmission completed? */
+	if( PIR1bits.TXIF )
+	{
+		_asm
+			goto SerialTx
 		_endasm
 	}
 }
