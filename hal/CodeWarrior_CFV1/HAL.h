@@ -431,4 +431,10 @@ inline asm __declspec(register_abi) void OSRestoreISR(void) {
 
 
 
+#define BTOSStartFirstTask()      OS_RESTORE_SP();       \
+                                  OS_RESTORE_CONTEXT();  \
+                                  OS_RESTORE_ISR()
+
+
+
 #endif
