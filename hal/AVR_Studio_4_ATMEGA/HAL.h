@@ -167,7 +167,9 @@ void SwitchContext(void);
 }
 
 
-
+#define BTOSStartFirstTask()      OS_RESTORE_SP();       \
+                                  OS_RESTORE_CONTEXT();  \
+                                  OS_RESTORE_ISR()
 
     
 
