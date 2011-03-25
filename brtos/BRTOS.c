@@ -492,9 +492,7 @@ INT8U BRTOSStart(void)
 
   currentTask = OSSchedule();
   SPvalue = ContextTask[currentTask].StackPoint;
-  OS_RESTORE_SP();
-  OS_RESTORE_CONTEXT();
-  OS_RESTORE_ISR();
+  BTOSStartFirstTask();
   return OK;
 }
 ////////////////////////////////////////////////////////////
