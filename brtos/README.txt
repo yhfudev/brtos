@@ -82,3 +82,4 @@
 
 == BRTOS 1.65 Changelog ==
 - Optimized scheduler support for Coldfire and ARM MCUs 
+- Added support for ARM Cortex-M MCUs
