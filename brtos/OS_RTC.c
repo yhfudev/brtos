@@ -45,6 +45,11 @@
 // estrutura - Hora
   OSTime Hora;
   OSDate Data;
+  static volatile OS_RTC OSRtc;
+  
+  // Lookup table holding the length of each mont. The first element is a dummy.
+  static const INT8U MonthLength[13] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  static INT8U LeapMonth;
 
 
 
@@ -302,3 +307,108 @@ OSDate OSUpDate(void)
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
+
+void OSUpdateCalendar(void) 
+{  
+    OSRtc.Sec++;               // increment second
+
+    if (OSRtc.Sec == 60)
+    {
+        OSRtc.Sec = 0;
+        OSRtc.Min++;        
+        
+        if (OSRtc.Min > 59)
+        {
+            OSRtc.Min = 0;
+            OSRtc.Hour++;
+            
+            if (OSRtc.Hour > 23)
+            {
+                OSRtc.Hour = 0;
+                OSRtc.Day++;
+
+                // Check for leap year if month == February
+                if (OSRtc.Month == 2)
+                    if (!(OSRtc.Year & 0x0003))              // if (gYEAR%4 == 0)
+                        if (OSRtc.Year%100 == 0)
+                            if (OSRtc.Year%400 == 0)
+                                LeapMonth = 1;
+                            else
+                                LeapMonth = 0;
+                        else
+                            LeapMonth = 1;
+                    else
+                        LeapMonth = 0;
+                else
+                    LeapMonth = 0;
+
+                // Now, we can check for month length
+                if (OSRtc.Day > (MonthLength[OSRtc.Month] + LeapMonth))
+                {
+                    OSRtc.Day = 1;
+                    OSRtc.Month++;
+
+                    if (OSRtc.Month > 12)
+                    {
+                        OSRtc.Month = 1;
+                        OSRtc.Year++;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+/////      Return Calendar Function                    /////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+void GetCalendar(OS_RTC *rtc)
+{
+  UserEnterCritical();
+  *rtc = OSRtc;
+  UserExitCritical();
+}
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+/////      Set Calendar Function                       /////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+void SetCalendar(OS_RTC *rtc)
+{
+  UserEnterCritical();
+  OSRtc = *rtc;
+  UserExitCritical();
+}
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+
+void Init_Calendar(void)
+{
+  OS_RTC rtc;
+  
+  rtc.Year  = 2011;
+  rtc.Month = 3;
+  rtc.Day   = 28;
+  rtc.Hour  = 9;
+  rtc.Min   = 0;
+  rtc.Sec   = 30;
+  
+  SetCalendar(&rtc);
+}
+

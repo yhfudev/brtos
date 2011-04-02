@@ -111,6 +111,20 @@ typedef struct {
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
+
+
+struct _OSRTC
+{
+  INT16U Year;
+  INT8U  Month;
+  INT8U  Day;
+  INT8U  Hour;
+  INT8U  Min;
+  INT8U  Sec;
+};
+
+
+typedef struct _OSRTC OS_RTC;
   
 
 
@@ -143,6 +157,12 @@ void OSUpdateUptime(OSTime *Ptr_Hora,OSDate *Ptr_Dia);
 OSTime OSUptime(void);
 
 OSDate OSUpDate(void);
+
+// Calendar Functions
+void OSUpdateCalendar(void);
+void GetCalendar(OS_RTC *rtc);
+void SetCalendar(OS_RTC *rtc);
+void Init_Calendar(void);
  
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
