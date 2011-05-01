@@ -1012,7 +1012,13 @@ extern INT16U counter;
 extern volatile INT32U OSDuty;
 extern INT8U PriorityVector[configMAX_TASK_INSTALL];
 extern volatile INT32U OSDutyTmp;
-extern volatile INT16U LastOSDuty;
+
+#ifdef TICK_TIMER_32BITS
+  extern volatile INT32U LastOSDuty;
+#else
+  extern volatile INT16U LastOSDuty;
+#endif
+
 extern INT8U STACK[HEAP_SIZE];
 extern INT32U TaskAlloc;
 

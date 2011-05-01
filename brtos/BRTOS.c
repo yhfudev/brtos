@@ -127,7 +127,13 @@ INT8U SelectedTask;
 INT16U counter;                                   ///< Incremented each tick timer - Used in delay and timeout functions
 volatile INT32U OSDuty=0;                         ///< Used to compute the CPU load
 volatile INT32U OSDutyTmp=0;                      ///< Used to compute the CPU load
+
+#ifdef TICK_TIMER_32BITS
+volatile INT32U LastOSDuty = 0;                   ///< Last CPU load computed
+#else
 volatile INT16U LastOSDuty = 0;                   ///< Last CPU load computed
+#endif
+
 INT16U DutyCnt = 0;                               ///< Used to compute the CPU load
 INT32U TaskAlloc = 0;                             ///< Used to search a empty task control block
 INT8U  iNesting = 0;                              ///< Used to inform if the current code position is an interrupt handler code
@@ -440,7 +446,11 @@ void OS_TICK_HANDLER(void)
      {
        DutyCnt = 0;
        OSDuty = (INT32U)((INT32U)OSDuty + (INT32U)OSDutyTmp);
-       LastOSDuty = (INT16U)(OSDuty >> 10);
+       #ifdef TICK_TIMER_32BITS
+        LastOSDuty = OSDuty >> 10;
+       #else
+        LastOSDuty = (INT16U)(OSDuty >> 10);
+       #endif
        OSDuty = 0;
      }else
      {    
