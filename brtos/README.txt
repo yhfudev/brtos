@@ -83,3 +83,6 @@
 == BRTOS 1.65 Changelog ==
 - Optimized scheduler support for Coldfire and ARM MCUs 
 - Added support for ARM Cortex-M MCUs
+
+== BRTOS 1.66 Changelog ==
+- Added support for 32 bits tick timer register in cpu load computing (commonly used in ARM Cortex-M MCUs)
