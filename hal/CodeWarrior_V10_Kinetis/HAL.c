@@ -17,12 +17,13 @@
 *
 *
 *
-*                                   OS HAL Functions to Coldfire V1
+*                                     OS HAL Header for ARM Cortex-M4
 *
 *
-*   Author:   Gustavo Weber Denardin
+*
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
 *   Revision: 1.0
-*   Date:     20/03/2009
+*   Date:     30/04/2011
 *
 *********************************************************************************************************/
 
@@ -96,6 +97,7 @@ void TickTimer(void)
   // ************************
   // Entrada de interrupção
   // ************************
+  OS_SAVE_ISR();
   OS_INT_ENTER();
   
   // Interrupt handling
@@ -128,7 +130,7 @@ void TickTimer(void)
   // Interrupt Exit
   // ************************
   OS_INT_EXIT();
-  OS_RESTORE_ISR();
+  OS_RESTORE_ISR();  
   // ************************  
 }
 ////////////////////////////////////////////////////////////
@@ -156,6 +158,7 @@ void SwitchContext(void)
   // ************************
   // Entrada de interrupção
   // ************************
+  OS_SAVE_ISR();
   OS_INT_ENTER();
 
   // Interrupt Handling
@@ -175,6 +178,7 @@ void SwitchContext(void)
 
 void SwitchContextToFirstTask(void)
 {
+	__asm("LDM	   SP!,{R3-R11,LR}");
 	OS_RESTORE_SP();
 	OS_RESTORE_CONTEXT();
 	OS_RESTORE_ISR();

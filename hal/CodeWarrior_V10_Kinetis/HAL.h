@@ -17,16 +17,13 @@
 *
 *
 *
-*                                     OS HAL Header to Coldfire V1
+*                                     OS HAL Header for ARM Cortex-M4
 *
 *
-*   Author:   Gustavo Weber Denardin
-*   Revision: 1.0
-*   Date:     20/03/2009
 *
 *   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
-*   Revision: 1.2
-*   Date:     01/10/2010
+*   Revision: 1.0
+*   Date:     30/04/2011
 *
 *********************************************************************************************************/
 
@@ -50,11 +47,17 @@
 /// Define the used processor
 #define PROCESSOR 		ARM_Cortex_M4
 
+/// Define if the optimized scheduler will be used
+#define OPTIMIZED_SCHEDULER 1
+
+/// Define if 32 bits register for tick timer will be used
+#define TICK_TIMER_32BITS   1
+
 /// Define if nesting interrupt is active
 #define NESTING_INT 1
 
 /// Define the Reset Watchdog macro
-#define RESET_WATCHDOG()		__asm(CPSID I);			\
+#define RESET_WATCHDOG()		__asm(CPSID I);		\
 								WDOG_REFRESH = 0xA602;	\
 								WDOG_REFRESH = 0xB480;	\
 								__asm(CPSIE I)
@@ -90,22 +93,16 @@ extern INT32U SPvalue;
 /////      Port Defines                                /////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
-/// Defines the change context command of the choosen processor
-/* Talvez tenha que desbloquear as interrupções (As vezes o BRTOS chama está função
-*  com as interrupções bloqueadas !!!!!
-*  Talvez chamar a função OSExitCritical antes para limpar o backup de condição crítica
-*  OS_CPU_SR  
-*/
+
 #define ChangeContext(void) __asm(										\
 									"LDR     R0, =NVIC_INT_CTRL		\n"	\
 									"LDR     R1, =NVIC_PENDSVSET	\n" \
 									"STR     R1, [R0]				\n"	\
-									"BX      LR						\n"	\
 									"CPSIE I						\n" \
 								   )
 
 INT32U OS_CPU_SR_Save(void);
-#define  OSEnterCritical()  (CPU_SR = OS_CPU_SR_Save())	 // Disable interrupts    
+#define  OSEnterCritical() (CPU_SR = OS_CPU_SR_Save())	 // Disable interrupts    
 void OS_CPU_SR_Restore(INT32U);
 #define  OSExitCritical()  (OS_CPU_SR_Restore(CPU_SR))	 // Enable interrupts
 
@@ -115,11 +112,11 @@ void OS_CPU_SR_Restore(INT32U);
 #define UserExitCritical()  __asm(CPSIE I)
 
 /// Defines the low power command of the choosen microcontroller
-#define OS_Wait //__asm(WFI);
+#define OS_Wait __asm(WFI);
 /// Defines the tick timer interrupt handler code (clear flag) of the choosen microcontroller
 #define TICKTIMER_INT_HANDLER
-#define TIMER_MODULE
-#define TIMER_COUNTER
+#define TIMER_MODULE  SYST_RVR
+#define TIMER_COUNTER SYST_CVR
 
 
 // stacked by the RTI interrupt process
@@ -166,12 +163,14 @@ void OSRTCSetup(void);
 * \return NONE
 *********************************************************************************************/
 /// Save Context Define
-#define OS_SAVE_CONTEXT() __asm(								\
-							  "MRS     R0, PSP			\n"		\
-							  "SUBS    R0, R0, #0x20	\n"		\
-							  "STM     R0, {R4-R11}		\n"		\
-						  )
+#define OS_SAVE_CONTEXT() __asm(									\
+								  "LDM	   SP!,{R3-R11,LR}	\n"		\
+								  "MRS     R0, PSP			\n"		\
+								  "SUBS    R0, R0, #0x20	\n"		\
+								  "STM     R0, {R4-R11}		\n"		\
+							)
 ////////////////////////////////////////////////////////////
+
 
 
 /*****************************************************************************************//**
@@ -180,13 +179,17 @@ void OSRTCSetup(void);
 * \return NONE
 *********************************************************************************************/
 /// Restore Context Define
-#define OS_RESTORE_CONTEXT() __asm(											\
-								  /* Restore r4-11 from new process stack */\
-								  "LDM     R0, {R4-R11}		\n"				\
-								  "ADDS    R0, R0, #0x20	\n"				\
-								  /* Load PSP with new process SP */		\
-								  "MSR     PSP, R0			\n"				\
-								  )
+#define OS_RESTORE_CONTEXT() __asm(														  \
+									/* Restore r4-11 from new process stack */			  \
+									"LDM     R0, {R4-R11}		\n"						  \
+									"ADDS    R0, R0, #0x20		\n"						  \
+									/* Load PSP with new process SP */					  \
+									"MSR     PSP, R0			\n"						  \
+								    " ORR    LR,LR,#0x04    \n"							  \
+								    /* Exception return will restore remaining context */ \
+								    "CPSIE   I					\n"						  \
+								    " BX     LR               	\n"						  \
+								 )
 ////////////////////////////////////////////////////////////
 
 
@@ -241,39 +244,24 @@ inline void CriticalDecNesting(void)
 }
 
 
-/*
- * Este é o normal do BRTOS, mas não serve para o ARM
- * Acredito que este código vá para a interrupção SVC (usada para iniciar o sistema)
-#define BTOSStartFirstTask()	OS_RESTORE_SP();	  \
-								OS_RESTORE_CONTEXT(); \
-								OS_RESTORE_ISR();
- */
 #define BTOSStartFirstTask() __asm( /* Call SVC to start the first task. */		\
 									"cpsie i				\n"					\
 									"svc 0					\n"					\
 								  )
 
-/* Definir prioridade da interrupção de troca de contexto 
-	   
-#define OS_RESTORE_INT()	__asm(	"LDR     R0, =NVIC_SYSPRI14		\n"	\
-									"LDR     R1, =NVIC_PENDSV_PRI	\n"	\
-									"STRB    R1, [R0]				\n"	\
 
-*/
+/// Save Context Define
+#define OS_SAVE_ISR()
 
-#define OS_RESTORE_ISR() __asm(	  /* Ensure exception return uses process stack */		\
-								  "ORR     LR, LR, #0x04	\n"							\
-								  "CPSIE   I				\n"							\
-								  /* Exception return will restore remaining context */ \
-								  "BX      LR               \n"							\
-								  )
+#define OS_RESTORE_ISR() __asm(CPSIE I)
 
-//#define CHANGE_SP() 	__asm( " PUSH {LR}");											\
-						ChangeSP();														\
-						__asm( " POP {LR}")
-								  
-/* Pelo que vi a troca de contexto deve ser realizada dentro de uma exceção
-   No FreeRTOS utilizaram a exceção SVC para iniciar a primeira task (parece ser a melhor opção) */
+#if (OPTIMIZED_SCHEDULER == 1)
+
+#define Optimezed_Scheduler()   __asm(	"CLZ R0, R0		 \n"	\
+										"RSB R0,R0,#0x1F \n"	\
+                                )
+
+#endif
 
 
 #endif
