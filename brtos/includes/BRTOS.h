@@ -57,16 +57,19 @@
 
 /// False and True defines
 #ifndef FALSE
-#define FALSE (INT8U)0
+#define FALSE 0
 #endif
 
 #ifndef TRUE
-#define TRUE  (INT8U)1
+#define TRUE  1
 #endif
 
 #ifndef NULL
 #define NULL  (void*)0
 #endif
+
+#define BRTOS_BIG_ENDIAN              (0)
+#define BRTOS_LITTLE_ENDIAN           (1)
 
 
 
