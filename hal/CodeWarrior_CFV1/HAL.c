@@ -33,11 +33,11 @@
 
 
 #if (SP_SIZE == 32)
-  INT32U SPvalue;                             ///< Used to save and restore a task stack pointer
+  volatile INT32U SPvalue;           ///< Used to save and restore a task stack pointer
 #endif
 
 #if (SP_SIZE == 16)
-  INT16U SPvalue;                             ///< Used to save and restore a task stack pointer
+  volatile INT16U SPvalue;           ///< Used to save and restore a task stack pointer
 #endif
 
 
@@ -210,7 +210,8 @@ interrupt void SwitchContext(void)
 
 void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
 {  
-   INT32U *stk_pt = (INT32U*)&STACK[iStackAddress + NUMBER_OF_STACKED_BYTES];
+   OS_CPU_TYPE *stk_pt = (OS_CPU_TYPE*)&STACK[iStackAddress + (NUMBER_OF_STACKED_BYTES / sizeof(OS_CPU_TYPE))];
+   //INT32U *stk_pt = (INT32U*)&STACK[iStackAddress + NUMBER_OF_STACKED_BYTES];
    
    // Pointer to Task Entry
    *--stk_pt = (INT32U)FctPtr;

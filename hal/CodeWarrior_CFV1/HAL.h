@@ -48,6 +48,9 @@
 /// Define the used processor
 #define PROCESSOR 		COLDFIRE_V1
 
+/// Define the CPU type
+#define OS_CPU_TYPE 	INT32U
+
 /// Define if the optimized scheduler will be used
 #define OPTIMIZED_SCHEDULER 1
 
@@ -68,8 +71,8 @@
 #define SP_SIZE 32
 
 
-extern INT8U iNesting;
-extern INT32U SPvalue;
+extern INT8U           iNesting;
+extern volatile INT32U SPvalue;
 
 
 
