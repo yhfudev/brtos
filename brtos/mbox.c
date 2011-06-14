@@ -244,7 +244,7 @@ INT8U OSMboxPend (BRTOS_Mbox *pont_event, void **Mail, INT16U time_wait)
   }
   else
   {
-    Task = &ContextTask[currentTask];
+    Task = (ContextType*)&ContextTask[currentTask];
       
     // Copy task priority to local scope
     iPriority = Task->Priority;

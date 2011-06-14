@@ -238,7 +238,7 @@ INT8U OSSemPend (BRTOS_Sem *pont_event, INT16U time_wait)
     return OK;
   } 
  
-  Task = &ContextTask[currentTask];
+  Task = (ContextType*)&ContextTask[currentTask];
     
   // Copy task priority to local scope
   iPriority = Task->Priority;

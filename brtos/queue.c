@@ -386,7 +386,7 @@ INT8U OSQueuePend (BRTOS_Queue *pont_event, INT8U* pdata, INT16U time_wait)
   }
   else
   {
-    Task = &ContextTask[currentTask];
+    Task = (ContextType*)&ContextTask[currentTask];
     
     // Copy task priority to local scope
     iPriority = Task->Priority;
