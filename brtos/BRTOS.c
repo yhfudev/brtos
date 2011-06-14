@@ -51,8 +51,8 @@
 *   Date:     13/12/2010
 *
 *   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
-*   Revision: 1.63,         Revision: 1.64       ,  Revision: 1.65        ,  Revision: 1.66
-*   Date:     15/12/2010,   Date:     22/02/2011 ,  Date:     24/03/2011  ,  Date:     30/04/2011
+*   Revision: 1.63,         Revision: 1.64       ,  Revision: 1.65        ,  Revision: 1.66         ,  Revision: 1.67
+*   Date:     15/12/2010,   Date:     22/02/2011 ,  Date:     24/03/2011  ,  Date:     30/04/2011   ,  Date:     14/06/2011
 *
 *********************************************************************************************************/
 
@@ -65,7 +65,7 @@
 #endif
 
 #if (PROCESSOR == ATMEGA)
-const CHAR8 version[] PROGMEM = "BRTOS Ver. 1.66";	///< Informs BRTOS version
+const CHAR8 version[] PROGMEM = "BRTOS Ver. 1.67";	///< Informs BRTOS version
 PGM_P BRTOSStringTable[] PROGMEM = 
 {
     version
@@ -74,12 +74,12 @@ PGM_P BRTOSStringTable[] PROGMEM =
 #if (PROCESSOR == PIC18)
 const rom CHAR8 *version=                            ///< Informs BRTOS version
 {
-  "BRTOS Ver. 1.66"
+  "BRTOS Ver. 1.67"
 };
 #else
 const CHAR8 *version=                            ///< Informs BRTOS version
 {
-  "BRTOS Ver. 1.66"
+  "BRTOS Ver. 1.67"
 };
 #endif
 #endif
@@ -108,8 +108,8 @@ INT16U StackAddress = (INT16U)&STACK;           ///< Virtual stack pointer
 // global variables
 // Task Manager Variables
 INT8U NumberOfInstalledTasks;                 ///< Number of Installed tasks at the moment
-INT8U currentTask;                            ///< Current task being executed
-INT8U SelectedTask;
+volatile INT8U currentTask;                            ///< Current task being executed
+volatile INT8U SelectedTask;
 
 #if (NUMBER_OF_PRIORITIES > 16)
   PriorityType OSReadyList = 0;
@@ -205,23 +205,26 @@ volatile INT8U flag_load = TRUE;
 
 
 ///// RAM definitions
+#ifdef OS_CPU_TYPE
+  #if (PROCESSOR == PIC18)
+  #pragma udata stackram
+  #endif
+  OS_CPU_TYPE STACK[(HEAP_SIZE / sizeof(OS_CPU_TYPE))];  			       ///< Virtual Task stack
 
-#if (PROCESSOR == PIC18)
-#pragma udata stackram
+  #if (PROCESSOR == PIC18)
+  #pragma udata queueram
+  #endif
+  OS_CPU_TYPE QUEUE_STACK[(QUEUE_HEAP_SIZE / sizeof(OS_CPU_TYPE))];  ///< Queue heap
+#else
+	#error("You must define the OS_CPU_TYPE !!!")
 #endif
-INT8U STACK[HEAP_SIZE];   						///< Virtual Task stack
-
-#if (PROCESSOR == PIC18)
-#pragma udata queueram 
-#endif
-INT8U QUEUE_STACK[QUEUE_HEAP_SIZE];             ///< Queue heap
 
 #if (PROCESSOR == PIC18)
 #pragma udata ctxram
 #endif
-ContextType ContextTask[NUMBER_OF_TASKS + 2]; ///< Task context info
-                                              ///< ContextTask[0] not used
-                                              ///< Last ContexTask is the Idle Task
+volatile ContextType ContextTask[NUMBER_OF_TASKS + 2]; ///< Task context info
+                                                       ///< ContextTask[0] not used
+                                                       ///< Last ContexTask is the Idle Task
 
 
 ////////////////////////////////////////////////////////////
@@ -265,7 +268,7 @@ INT8U DelayTask(INT16U time_wait)
 {
   OS_SR_SAVE_VAR
   INT32U timeout;
-  ContextType *Task = &ContextTask[currentTask];
+  ContextType *Task = (ContextType*)&ContextTask[currentTask];
    
   if (iNesting > 0) {                                // See if caller is an interrupt
      return(IRQ_PEND_ERR);                           // Can't be blocked by interrupt
@@ -921,7 +924,10 @@ INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED
   
    if (currentTask)
     // Enter Critical Section
-    OSEnterCritical();  
+    OSEnterCritical();
+    
+   // Fix the stack size to the cpu type
+   USER_STACKED_BYTES = USER_STACKED_BYTES - (USER_STACKED_BYTES % sizeof(OS_CPU_TYPE));
 
    if (USER_STACKED_BYTES < NUMBER_MIN_OF_STACKED_BYTES)
    {
@@ -931,7 +937,7 @@ INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED
        return STACK_SIZE_TOO_SMALL;
    }
    
-   if ((iStackAddress + USER_STACKED_BYTES) > HEAP_SIZE)
+   if ((iStackAddress + (USER_STACKED_BYTES / sizeof(OS_CPU_TYPE))) > (HEAP_SIZE / sizeof(OS_CPU_TYPE)))
    {
        if (currentTask)
         // Exit Critical Section
@@ -981,7 +987,7 @@ INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED
       }
    }   
    
-   Task = &ContextTask[TaskNumber];   
+   Task = (ContextType*)&ContextTask[TaskNumber];   
    
    Task->TaskName = TaskName;
 
@@ -1012,7 +1018,7 @@ INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED
    CreateVirtualStack(FctPtr, USER_STACKED_BYTES);   
    
    // Incrementa o contador de bytes do stack virtual (HEAP)
-   iStackAddress = iStackAddress + USER_STACKED_BYTES;
+   iStackAddress = iStackAddress + (USER_STACKED_BYTES / sizeof(OS_CPU_TYPE));
    
    // Posiciona o endereço de stack virtual p/ a próxima tarefa instalada
    StackAddress = StackAddress + USER_STACKED_BYTES;
@@ -1060,6 +1066,9 @@ INT8U InstallIdle(void(*FctPtr)(void), INT16U USER_STACKED_BYTES)
     // Enter Critical Section
     OSEnterCritical();
     
+   // Fix the stack size to the cpu type
+   USER_STACKED_BYTES = USER_STACKED_BYTES - (USER_STACKED_BYTES % sizeof(OS_CPU_TYPE));
+    
    if (USER_STACKED_BYTES < NUMBER_MIN_OF_STACKED_BYTES)
    {
        if (currentTask)
@@ -1068,7 +1077,7 @@ INT8U InstallIdle(void(*FctPtr)(void), INT16U USER_STACKED_BYTES)
        return STACK_SIZE_TOO_SMALL;
    }    
    
-   if ((iStackAddress + USER_STACKED_BYTES) > HEAP_SIZE)
+   if ((iStackAddress + (USER_STACKED_BYTES / sizeof(OS_CPU_TYPE))) > (HEAP_SIZE / sizeof(OS_CPU_TYPE)))
    {
       if (currentTask)
        // Exit Critical Section
@@ -1101,7 +1110,7 @@ INT8U InstallIdle(void(*FctPtr)(void), INT16U USER_STACKED_BYTES)
    CreateVirtualStack(FctPtr, USER_STACKED_BYTES);    
    
    // Incrementa o contador de bytes do stack virtual (HEAP)
-   iStackAddress = iStackAddress + USER_STACKED_BYTES;
+   iStackAddress = iStackAddress + (USER_STACKED_BYTES / sizeof(OS_CPU_TYPE));
    
    // Posiciona o endereço de stack virtual p/ a próxima tarefa instalada
    StackAddress = StackAddress + USER_STACKED_BYTES;   

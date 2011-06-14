@@ -1005,16 +1005,16 @@ extern const PriorityType PriorityMask[configMAX_TASK_PRIORITY+1];
 extern ContextType *Tail;
 extern ContextType *Head;
 
-extern INT8U iNesting;
-extern INT8U currentTask;
-extern INT8U SelectedTask;
-extern ContextType ContextTask[NUMBER_OF_TASKS + 2];
-extern INT16U iStackAddress;
-extern INT8U NumberOfInstalledTasks;
-extern INT16U counter;
-extern volatile INT32U OSDuty;
-extern INT8U PriorityVector[configMAX_TASK_INSTALL];
-extern volatile INT32U OSDutyTmp;
+extern INT8U                iNesting;
+extern volatile INT8U       currentTask;
+extern volatile INT8U       SelectedTask;
+extern volatile ContextType ContextTask[NUMBER_OF_TASKS + 2];
+extern INT16U               iStackAddress;
+extern INT8U                NumberOfInstalledTasks;
+extern INT16U               counter;
+extern volatile INT32U      OSDuty;
+extern INT8U                PriorityVector[configMAX_TASK_INSTALL];
+extern volatile INT32U      OSDutyTmp;
 
 #ifdef TICK_TIMER_32BITS
   extern volatile INT32U LastOSDuty;
@@ -1022,10 +1022,14 @@ extern volatile INT32U OSDutyTmp;
   extern volatile INT16U LastOSDuty;
 #endif
 
-extern INT8U STACK[HEAP_SIZE];
-extern INT32U TaskAlloc;
+#ifdef OS_CPU_TYPE
+  extern OS_CPU_TYPE STACK[(HEAP_SIZE / sizeof(OS_CPU_TYPE))];
+  extern OS_CPU_TYPE QUEUE_STACK[(QUEUE_HEAP_SIZE / sizeof(OS_CPU_TYPE))];
+#else
+	#error("You must define the OS_CPU_TYPE !!!")
+#endif
 
-extern INT8U  QUEUE_STACK[QUEUE_HEAP_SIZE];
+extern INT32U TaskAlloc;
 extern INT16U iQueueAddress;
 
 #if (PROCESSOR == ATMEGA)

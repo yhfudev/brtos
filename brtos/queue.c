@@ -88,7 +88,13 @@ INT8U OSQueueCreate(OS_QUEUE *cqueue, INT16U size, BRTOS_Queue **event)
   if (currentTask)
      OSEnterCritical();
   
-  if ((iQueueAddress + size) > QUEUE_HEAP_SIZE)
+  // Fix the queue size to the OS_CPU_TYPE
+  if (size % sizeof(OS_CPU_TYPE))
+  {
+    size = size + (sizeof(OS_CPU_TYPE) - (size % sizeof(OS_CPU_TYPE)));
+  }
+  
+  if ((iQueueAddress + (size / sizeof(OS_CPU_TYPE))) > (QUEUE_HEAP_SIZE / sizeof(OS_CPU_TYPE)))
   {
       // Exit critical Section
       if (currentTask)
@@ -123,7 +129,7 @@ INT8U OSQueueCreate(OS_QUEUE *cqueue, INT16U size, BRTOS_Queue **event)
   
   // Configura dados de evento de lista
   cqueue->OSQPtr = (INT8U *)&QUEUE_STACK[iQueueAddress];
-  iQueueAddress  = iQueueAddress + size;
+  iQueueAddress  = iQueueAddress + (size / sizeof(OS_CPU_TYPE));
   cqueue->OSQSize =  size;
   cqueue->OSQEntries =  0;
   cqueue->OSQStart = cqueue->OSQPtr;
@@ -650,7 +656,13 @@ INT8U OSQueue16Create(OS_QUEUE_16 *cqueue, INT16U size, BRTOS_Queue **event)
   if (currentTask)
      OSEnterCritical();
   
-  if ((iQueueAddress + (size*sizeof(INT16U))) > QUEUE_HEAP_SIZE)
+  // Fix the queue size to the OS_CPU_TYPE
+  if ((size*sizeof(INT16U)) % sizeof(OS_CPU_TYPE))
+  {
+    size = size + 1;
+  }
+  
+  if ((iQueueAddress + ((size*sizeof(INT16U)) / sizeof(OS_CPU_TYPE))) > (QUEUE_HEAP_SIZE / sizeof(OS_CPU_TYPE)))
   {
       // Exit critical Section
       if (currentTask)
@@ -685,7 +697,7 @@ INT8U OSQueue16Create(OS_QUEUE_16 *cqueue, INT16U size, BRTOS_Queue **event)
   
   // Configura dados de evento de lista
   cqueue->OSQPtr = (INT16U *)&QUEUE_STACK[iQueueAddress];
-  iQueueAddress  = iQueueAddress + (size*sizeof(INT16U));
+  iQueueAddress  = iQueueAddress + ((size*sizeof(INT16U)) / sizeof(OS_CPU_TYPE));
   cqueue->OSQSize =  size;
   cqueue->OSQEntries =  0;
   cqueue->OSQStart = cqueue->OSQPtr;
@@ -892,7 +904,13 @@ INT8U OSQueue32Create(OS_QUEUE_32 *cqueue, INT16U size, BRTOS_Queue **event)
   if (currentTask)
      OSEnterCritical();
   
-  if ((iQueueAddress + (size*sizeof(INT32U))) > QUEUE_HEAP_SIZE)
+  // Fix the queue size to the OS_CPU_TYPE
+  if ((size*sizeof(INT32U)) % sizeof(OS_CPU_TYPE))
+  {
+    size = size + 1;
+  }
+  
+  if ((iQueueAddress + ((size*sizeof(INT32U)) / sizeof(OS_CPU_TYPE))) > (QUEUE_HEAP_SIZE / sizeof(OS_CPU_TYPE)))
   {
       // Exit critical Section
       if (currentTask)
@@ -927,7 +945,7 @@ INT8U OSQueue32Create(OS_QUEUE_32 *cqueue, INT16U size, BRTOS_Queue **event)
   
   // Configura dados de evento de lista
   cqueue->OSQPtr = (INT32U *)&QUEUE_STACK[iQueueAddress];
-  iQueueAddress  = iQueueAddress + (size*sizeof(INT32U));
+  iQueueAddress  = iQueueAddress + ((size*sizeof(INT32U)) / sizeof(OS_CPU_TYPE));
   cqueue->OSQSize =  size;
   cqueue->OSQEntries =  0;
   cqueue->OSQStart = cqueue->OSQPtr;
