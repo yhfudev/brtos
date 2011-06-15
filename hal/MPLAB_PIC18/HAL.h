@@ -15,6 +15,8 @@
 /// Define the used processor
 #define PROCESSOR 		PIC18
 
+#define OS_CPU_TYPE		INT8U
+
 /// Define if nesting interrupt is active
 #define NESTING_INT 0
 
