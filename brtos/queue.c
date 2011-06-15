@@ -904,12 +904,6 @@ INT8U OSQueue32Create(OS_QUEUE_32 *cqueue, INT16U size, BRTOS_Queue **event)
   if (currentTask)
      OSEnterCritical();
   
-  // Fix the queue size to the OS_CPU_TYPE
-  if ((size*sizeof(INT32U)) % sizeof(OS_CPU_TYPE))
-  {
-    size = size + 1;
-  }
-  
   if ((iQueueAddress + ((size*sizeof(INT32U)) / sizeof(OS_CPU_TYPE))) > (QUEUE_HEAP_SIZE / sizeof(OS_CPU_TYPE)))
   {
       // Exit critical Section
