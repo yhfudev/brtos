@@ -15,6 +15,9 @@
 /// Define the used processor
 #define PROCESSOR 		HCS08
 
+/// Define the CPU type
+#define OS_CPU_TYPE 	INT8U
+
 /// There is no optimized scheduler for HCS08 MCUs
 #define OPTIMIZED_SCHEDULER 0
 
