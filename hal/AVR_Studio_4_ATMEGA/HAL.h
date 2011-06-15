@@ -14,6 +14,9 @@
 /// Define the used processor
 #define PROCESSOR 		ATMEGA
 
+/// Define the CPU type
+#define OS_CPU_TYPE 	INT8U
+
 /// Define if nesting interrupt is active
 #define NESTING_INT 1
 
