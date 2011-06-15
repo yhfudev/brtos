@@ -1008,7 +1008,7 @@ extern ContextType *Head;
 extern INT8U                iNesting;
 extern volatile INT8U       currentTask;
 extern volatile INT8U       SelectedTask;
-extern volatile ContextType ContextTask[NUMBER_OF_TASKS + 2];
+extern ContextType          ContextTask[NUMBER_OF_TASKS + 2];
 extern INT16U               iStackAddress;
 extern INT8U                NumberOfInstalledTasks;
 extern INT16U               counter;

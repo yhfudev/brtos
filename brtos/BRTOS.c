@@ -222,7 +222,7 @@ volatile INT8U flag_load = TRUE;
 #if (PROCESSOR == PIC18)
 #pragma udata ctxram
 #endif
-volatile ContextType ContextTask[NUMBER_OF_TASKS + 2]; ///< Task context info
+ContextType ContextTask[NUMBER_OF_TASKS + 2];          ///< Task context info
                                                        ///< ContextTask[0] not used
                                                        ///< Last ContexTask is the Idle Task
 
