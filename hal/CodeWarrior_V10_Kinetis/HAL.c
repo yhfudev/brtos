@@ -199,7 +199,7 @@ void          OS_TaskReturn             (void);
 
 void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
 {  
-	INT32U *stk_pt = (INT32U*)&STACK[iStackAddress + NUMBER_OF_STACKED_BYTES];
+	OS_CPU_TYPE *stk_pt = (OS_CPU_TYPE*)&STACK[iStackAddress + (NUMBER_OF_STACKED_BYTES / sizeof(OS_CPU_TYPE))];
 	
 	*--stk_pt = (INT32U)INITIAL_XPSR;                   	/* xPSR                                                   */
     *--stk_pt = (INT32U)FctPtr;                             /* Entry Point                                            */
@@ -252,6 +252,16 @@ void OS_CPU_SR_Restore(INT32U)
   
 
 #endif
+
+asm unsigned short int _psp_swap2byte(unsigned short int n) {
+	rev16 r0, r0
+	bx lr
+}
+
+asm unsigned long int _psp_swap4byte(unsigned long int n) {
+	rev r0, r0
+	bx lr
+}
 
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////

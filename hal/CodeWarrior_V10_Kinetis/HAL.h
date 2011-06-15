@@ -47,6 +47,9 @@
 /// Define the used processor
 #define PROCESSOR 		ARM_Cortex_M4
 
+/// Define the CPU type
+#define OS_CPU_TYPE 	INT32U
+
 /// Define if the optimized scheduler will be used
 #define OPTIMIZED_SCHEDULER 1
 
@@ -85,6 +88,12 @@ extern INT32U SPvalue;
 #define NVIC_SYSPRI14       0xE000ED22         						// System priority register (priority 14).
 #define NVIC_PENDSV_PRI     0xFF        	 						// PendSV priority value (lowest).
 #define NVIC_PENDSVSET      0x10000000         						// Value to trigger PendSV exception.
+
+unsigned short int _psp_swap2byte(unsigned short int n);
+unsigned long int _psp_swap4byte(unsigned long int n);
+
+#define _PSP_SWAP2BYTE(n)   _psp_swap2byte(n)
+#define _PSP_SWAP4BYTE(n)   _psp_swap4byte(n)
 
 
 
