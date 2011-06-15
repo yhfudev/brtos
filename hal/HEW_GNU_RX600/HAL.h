@@ -48,6 +48,10 @@
 
 /// Define the used processor
 #define PROCESSOR 		RX600
+
+/// Define the CPU type
+#define OS_CPU_TYPE 	INT32U
+
 #define PSW_INIT     	0x00010000u
 
 /// Define if nesting interrupt is active
