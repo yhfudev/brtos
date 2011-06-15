@@ -33,11 +33,11 @@
 
 
 #if (SP_SIZE == 32)
-  volatile INT32U SPvalue;           ///< Used to save and restore a task stack pointer
+  INT32U SPvalue;             ///< Used to save and restore a task stack pointer
 #endif
 
 #if (SP_SIZE == 16)
-  volatile INT16U SPvalue;           ///< Used to save and restore a task stack pointer
+  INT16U SPvalue;             ///< Used to save and restore a task stack pointer
 #endif
 
 

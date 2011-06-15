@@ -71,8 +71,8 @@
 #define SP_SIZE 32
 
 
-extern INT8U           iNesting;
-extern volatile INT32U SPvalue;
+extern INT8U  iNesting;
+extern INT32U SPvalue;
 
 
 
