@@ -64,6 +64,8 @@
 /// Define CPU Stack Pointer Size
 #define SP_SIZE 16
 
+/// Define CPU Type
+#define OS_CPU_TYPE INT16U
 
 extern INT8U iNesting;
 
