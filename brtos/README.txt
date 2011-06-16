@@ -86,3 +86,7 @@
 
 == BRTOS 1.66 Changelog ==
 - Added support for 32 bits tick timer register in cpu load computing (commonly used in ARM Cortex-M MCUs)
+
+== BRTOS 1.67 Changelog ==
+- now virtual stack and queue stack are declared in OS_CPU_TYPE. This helps the BRTOS memory allocation process to avoid memory misalignment.
+- some kernel variables are now declared as volatile. This enables BRTOS to successfully compile with gcc compiler optimizations.
