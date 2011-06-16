@@ -211,41 +211,24 @@ void SwitchContext(void)
 
 
 void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
-{  
-   // First SR should be 0
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 4] = 0x08;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 3] = 0x00;
-	  
-   // Pointer to Task Entry
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 2] = ((unsigned int) (FctPtr)) & 0x00FF;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 1] = ((unsigned int) (FctPtr)) >> 8;   
+{
 
-	// Initialize registers
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 5] = 0x00;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 6] = 0x15;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 7] = 0x00;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 8] = 0x14;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 9] = 0x00;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 10] = 0x13;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 11] = 0x00;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 12] = 0x12;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 13] = 0x00;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 14] = 0x11;
+   OS_CPU_TYPE *stk_pt = (OS_CPU_TYPE*)&STACK[iStackAddress + (NUMBER_OF_STACKED_BYTES / sizeof(OS_CPU_TYPE))];
    
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 15] = 0x00;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 16] = 0x10;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 17] = 0x00;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 18] = 0x09;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 19] = 0x00;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 20] = 0x08;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 21] = 0x00;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 22] = 0x07;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 23] = 0x00;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 24] = 0x06;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 25] = 0x00;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 26] = 0x05;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 27] = 0x00;
-   STACK[iStackAddress + NUMBER_OF_STACKED_BYTES - 28] = 0x04;
+   *--stk_pt = ((OS_CPU_TYPE) (FctPtr)); // Pointer to Task Entry
+   *--stk_pt = 0x0008; 					   // First SR should be 0
+   *--stk_pt = 0x0015;
+   *--stk_pt = 0x0014;
+   *--stk_pt = 0x0013;
+   *--stk_pt = 0x0012;
+   *--stk_pt = 0x0011;
+   *--stk_pt = 0x0010;
+   *--stk_pt = 0x0009;
+   *--stk_pt = 0x0008;
+   *--stk_pt = 0x0007;
+   *--stk_pt = 0x0006;
+   *--stk_pt = 0x0005;
+   *--stk_pt = 0x0004;
    
 }
 
