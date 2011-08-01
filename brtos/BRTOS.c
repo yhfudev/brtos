@@ -990,63 +990,66 @@ INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED
    // Verifica se encontrou lugar para o contexto da tarefa
    if (TaskNumber == 0) 
    {    
-     Task = (ContextType*)&ContextTask[TaskNumber];      
-     Task->TaskName = TaskName;
-
-     // Posiciona o inicio do stack da tarefa
-     // no inicio da disponibilidade de RAM do HEAP
-  	#if STACK_GROWTH == 1
-  	Task->StackPoint = StackAddress + NUMBER_MIN_OF_STACKED_BYTES;
-  	#else
-  	Task->StackPoint = StackAddress + (USER_STACKED_BYTES - NUMBER_MIN_OF_STACKED_BYTES);
-      #endif
-                                                                        
-     // Virtual Stack Init
-  	#if STACK_GROWTH == 1
-  	Task->StackInit = StackAddress;
-  	#else
-  	Task->StackInit = StackAddress + USER_STACKED_BYTES;
-  	#endif
-      
-
-     // Determina a prioridade da função
-     Task->Priority = iPriority;
-
-     // Determina a tarefa que irá ocupar esta prioridade
-     PriorityVector[iPriority] = TaskNumber;
-     // set the function entry address in the context
-     
-     // Fill the virtual task stack
-     CreateVirtualStack(FctPtr, USER_STACKED_BYTES);   
-     
-     // Incrementa o contador de bytes do stack virtual (HEAP)
-     iStackAddress = iStackAddress + (USER_STACKED_BYTES / sizeof(OS_CPU_TYPE));
-     
-     // Posiciona o endereço de stack virtual p/ a próxima tarefa instalada
-     StackAddress = StackAddress + USER_STACKED_BYTES;
-     
-
-     Task->TimeToWait = NO_TIMEOUT;
-     Task->Next     =  NULL;
-     Task->Previous =  NULL;
-     
-     #if (VERBOSE == 1)
-     Task->Blocked = FALSE;
-     Task->State = READY;
-     #endif   
-     
-     OSReadyList = OSReadyList | (PriorityMask[iPriority]);
-     
-     if (currentTask)
-      // Exit Critical Section
-      OSExitCritical();   
-     
-     return OK;
+      if (currentTask)
+      {        
+        // Exit Critical Section
+        OSExitCritical();   
+      }
+      return END_OF_AVAILABLE_TCB;
    }
-   else
-   {
-     return END_OF_AVAILABLE_TCB;
-   }
+     
+   Task = (ContextType*)&ContextTask[TaskNumber];      
+   Task->TaskName = TaskName;
+
+   // Posiciona o inicio do stack da tarefa
+   // no inicio da disponibilidade de RAM do HEAP
+	#if STACK_GROWTH == 1
+	Task->StackPoint = StackAddress + NUMBER_MIN_OF_STACKED_BYTES;
+	#else
+	Task->StackPoint = StackAddress + (USER_STACKED_BYTES - NUMBER_MIN_OF_STACKED_BYTES);
+    #endif
+                                                                      
+   // Virtual Stack Init
+	#if STACK_GROWTH == 1
+	Task->StackInit = StackAddress;
+	#else
+	Task->StackInit = StackAddress + USER_STACKED_BYTES;
+	#endif
+    
+
+   // Determina a prioridade da função
+   Task->Priority = iPriority;
+
+   // Determina a tarefa que irá ocupar esta prioridade
+   PriorityVector[iPriority] = TaskNumber;
+   // set the function entry address in the context
+   
+   // Fill the virtual task stack
+   CreateVirtualStack(FctPtr, USER_STACKED_BYTES);   
+   
+   // Incrementa o contador de bytes do stack virtual (HEAP)
+   iStackAddress = iStackAddress + (USER_STACKED_BYTES / sizeof(OS_CPU_TYPE));
+   
+   // Posiciona o endereço de stack virtual p/ a próxima tarefa instalada
+   StackAddress = StackAddress + USER_STACKED_BYTES;
+   
+
+   Task->TimeToWait = NO_TIMEOUT;
+   Task->Next     =  NULL;
+   Task->Previous =  NULL;
+   
+   #if (VERBOSE == 1)
+   Task->Blocked = FALSE;
+   Task->State = READY;
+   #endif   
+   
+   OSReadyList = OSReadyList | (PriorityMask[iPriority]);
+   
+   if (currentTask)
+    // Exit Critical Section
+    OSExitCritical();   
+   
+   return OK;
 }
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
