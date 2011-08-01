@@ -97,6 +97,7 @@
 #define CANNOT_ASSIGN_IDLE_TASK_PRIO (INT8U)7     ///< Error - A task can not be assigned into the idle task slot
 #define NOT_VALID_TASK               (INT8U)8     ///< There current task number is not valid for this function
 #define NO_TASK_DELAY                (INT8U)9     ///< Error - No valid time to wait
+#define END_OF_AVAILABLE_TCB         (INT8U)10    ///< Error - There are no more task control blocks (Context task)
 
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
