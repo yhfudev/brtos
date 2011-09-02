@@ -53,6 +53,9 @@
 *   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
 *   Revision: 1.63,         Revision: 1.64       ,  Revision: 1.65        ,  Revision: 1.66         ,  Revision: 1.67
 *   Date:     15/12/2010,   Date:     22/02/2011 ,  Date:     24/03/2011  ,  Date:     30/04/2011   ,  Date:     14/06/2011
+*   Revision: 1.68
+*   Date:     02/09/2011
+*
 *
 *********************************************************************************************************/
 
@@ -441,43 +444,19 @@ void OS_TICK_HANDLER(void)
 
   //////////////////////////////////////////
   // System Load                          //
-  //////////////////////////////////////////
-  
+  //////////////////////////////////////////  
   #if (COMPUTES_CPU_LOAD == 1)
-  #if(DEBUG == 1)
-     if (DutyCnt >= 1024)
+     if (DutyCnt >= 1000)
      {
        DutyCnt = 0;
-       OSDuty = (INT32U)((INT32U)OSDuty + (INT32U)OSDutyTmp);
-       #ifdef TICK_TIMER_32BITS
-        LastOSDuty = OSDuty >> 10;
-       #else
-        LastOSDuty = (INT16U)(OSDuty >> 10);
-       #endif
+       LastOSDuty = OSDuty;
        OSDuty = 0;
      }else
      {    
-       OSDuty = (INT32U)((INT32U)OSDuty + (INT32U)OSDutyTmp);
+       if (!OSDutyTmp) OSDuty++;
+       OSDutyTmp = 0;
        DutyCnt++;
      }
-     OSDutyTmp = TIMER_MODULE;   
-   #else   
-     extern volatile INT8U flag_load;
-     flag_load = TRUE;
-     
-     if (DutyCnt >= 128)
-     {
-       DutyCnt = 0;
-       OSDuty = (INT32U)((INT32U)OSDuty + (INT32U)OSDutyTmp);
-       LastOSDuty = OSDuty >> 7;
-       OSDuty = 0;
-     }else
-     {    
-       OSDuty = (INT32U)((INT32U)OSDuty + (INT32U)OSDutyTmp);    
-       DutyCnt++;
-     }
-     OSDutyTmp = TIMER_MODULE;
-     #endif
   #endif
   //////////////////////////////////////////
 	
@@ -879,31 +858,17 @@ void Idle(void)
   /* task main loop */
   for (;;)
   {
-	#if (DEBUG == 1)
-       #if (COMPUTES_CPU_LOAD == 1)
-       OSDutyTmp = TIMER_COUNTER;
-       #endif
-	
-      #if (IDLE_HOOK_EN == 1)
+     #if (IDLE_HOOK_EN == 1)
         IdleHook();
-      #endif
-      
-       OS_Wait;
-     #else
-       #if (COMPUTES_CPU_LOAD == 1)
-       if(flag_load == TRUE)
-       {
-           flag_load = FALSE;
-           OSDutyTmp = TIMER_COUNTER;
-	
-           #if (IDLE_HOOK_EN == 1)
-             IdleHook();
-           #endif
-  
-       }
-       #endif
      #endif
-
+     
+     #if (COMPUTES_CPU_LOAD == 1)
+        OSDutyTmp = 1;
+     #endif            
+     
+     #if (DEBUG == 1)
+        OS_Wait;
+     #endif
   }
 }
 ////////////////////////////////////////////////////////////
