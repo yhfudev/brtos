@@ -90,3 +90,6 @@
 == BRTOS 1.67 Changelog ==
 - now virtual stack and queue stack are declared in OS_CPU_TYPE. This helps the BRTOS memory allocation process to avoid memory misalignment.
 - some kernel variables are now declared as volatile. This enables BRTOS to successfully compile with gcc compiler optimizations.
+
+== BRTOS 1.68 Changelog ==
+- The method to calculate the CPU load has been changed. Now we use a very simple method based on how many times the system goes into wait task in 1 milisecond.
