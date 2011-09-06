@@ -44,11 +44,13 @@ extern INT16U SPvalue;
 #define OSExitCritical() asm ("CLI");
 #define OS_Wait _Wait;
 #define OS_ENABLE_NESTING() OSExitCritical()
+#define UserEnterCritical   OSEnterCritical
+#define UserExitCritical   OSExitCritical
 
 /// Defines the tick timer interrupt handler code (clear flag) of the choosen microcontroller
 #define TICKTIMER_INT_HANDLER TPM1SC_TOF = 0
-#define TIMER_MODULE TPM1MOD
-#define TIMER_COUNTER TPM1CNT
+#define TIMER_MODULE 
+#define TIMER_COUNTER 1
 
 
 //Stack Defines
