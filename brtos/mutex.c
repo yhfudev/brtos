@@ -236,6 +236,15 @@ INT8U OSMutexAcquire(BRTOS_Mutex *pont_event)
       #endif 
   #endif    
   
+  
+  // Verifies if the task is trying to acquire the mutex again
+  if (currentTask == pont_event->OSEventOwner) 
+  {
+    // It is already the mutex owner
+    OSExitCritical();
+    return OK;
+  }
+  
   // Verify if the shared resource is available
   if (pont_event->OSEventState == AVAILABLE_RESOURCE)
   {
@@ -411,6 +420,9 @@ INT8U OSMutexRelease(BRTOS_Mutex *pont_event)
     ContextTask[currentTask].Priority = pont_event->OSOriginalPriority;
   }
 
+  // Release mutex ownership
+  pont_event->OSEventOwner = 0;
+  
   // See if any task is waiting for mutex release
   if (pont_event->OSEventWait != 0)
   {
