@@ -50,6 +50,10 @@
 *   Revision: 1.62
 *   Date:     13/12/2010
 *
+*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
+*   Revision: 1.69
+*   Date:     05/11/2011
+*
 *********************************************************************************************************/
 
 #include "BRTOS.h"

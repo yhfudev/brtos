@@ -93,3 +93,6 @@
 
 == BRTOS 1.68 Changelog ==
 - The method to calculate the CPU load has been changed. Now we use a very simple method based on how many times the system goes into wait task in 1 milisecond.
+
+== BRTOS 1.69 Changelog ==
+- Minor fix for mutex acquire and release functions
