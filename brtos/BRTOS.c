@@ -373,7 +373,7 @@ INT8U DelayTaskHMSM(INT8U hours, INT8U minutes, INT8U seconds, INT16U milisecond
       loops = ticks / 60000L;
       ticks = ticks % 60000L;
       
-      (void)DelayTask(ticks);
+      (void)DelayTask((INT16U)ticks);
       
       while(loops > 0)
       {
