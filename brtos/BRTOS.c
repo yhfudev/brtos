@@ -51,10 +51,10 @@
 *   Date:     13/12/2010
 *
 *   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
-*   Revision: 1.63,         Revision: 1.64       ,  Revision: 1.65        ,  Revision: 1.66         ,  Revision: 1.67
-*   Date:     15/12/2010,   Date:     22/02/2011 ,  Date:     24/03/2011  ,  Date:     30/04/2011   ,  Date:     14/06/2011
-*   Revision: 1.68          Revision: 1.69
-*   Date:     02/09/2011    Date:     05/11/2011
+*   Revision: 1.63,      ,  Revision: 1.64       ,  Revision: 1.65        ,  Revision: 1.66         ,  Revision: 1.67
+*   Date:     15/12/2010 ,  Date:     22/02/2011 ,  Date:     24/03/2011  ,  Date:     30/04/2011   ,  Date:     14/06/2011
+*   Revision: 1.68       ,  Revision: 1.69       ,  Revision: 1.70
+*   Date:     02/09/2011 ,  Date:     05/11/2011 ,  Date:     06/06/2012
 *
 *
 *********************************************************************************************************/
@@ -68,7 +68,7 @@
 #endif
 
 #if (PROCESSOR == ATMEGA)
-const CHAR8 version[] PROGMEM = "BRTOS Ver. 1.69";	///< Informs BRTOS version
+const CHAR8 version[] PROGMEM = BRTOS_VERSION;	///< Informs BRTOS version
 PGM_P BRTOSStringTable[] PROGMEM = 
 {
     version
@@ -77,12 +77,12 @@ PGM_P BRTOSStringTable[] PROGMEM =
 #if (PROCESSOR == PIC18)
 const rom CHAR8 *version=                            ///< Informs BRTOS version
 {
-  "BRTOS Ver. 1.69"
+  BRTOS_VERSION
 };
 #else
 const CHAR8 *version=                            ///< Informs BRTOS version
 {
-  "BRTOS Ver. 1.69"
+  BRTOS_VERSION
 };
 #endif
 #endif
@@ -1178,7 +1178,7 @@ void initEvents(void)
 ////////////////////////////////////////////////////////////
 #if (OPTIMIZED_SCHEDULER == 1)
 
-INT8U SAScheduler(PriorityType)
+INT8U SAScheduler(PriorityType READY_LIST_VAR)
 {
   Optimezed_Scheduler();
 }

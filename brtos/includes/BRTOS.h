@@ -19,17 +19,13 @@
 *                                          BRTOS Kernel Header
 *
 *
-*   Author:   Gustavo Weber Denardin
-*   Revision: 1.0
-*   Date:     20/03/2009
+*   Author:   Gustavo W. Denardin   ,   Authors:  Carlos H. Barriquelo e Gustavo W. Denardin
+*   Revision: 1.0                   ,   Revision: 1.63 
+*   Date:     20/03/2009            ,   Date:     15/12/2010
 *
-*   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
-*   Revision: 1.63
-*   Date:     15/12/2010
-*
-*   Authors:  Carlos Henrique Barriquelo
-*   Revision: 1.64
-*   Date:     22/02/2011
+*   Authors:  Carlos H. Barriquelo  ,   Authors:  Gustavo W. Denardin
+*   Revision: 1.64                  ,   Revision: 1.70
+*   Date:     22/02/2011            ,   Date:     06/06/2012
 *
 *********************************************************************************************************/
 
@@ -42,8 +38,6 @@
 #include "BRTOSConfig.h"
 
 
-
-
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
 /////                                                     /////
@@ -54,6 +48,9 @@
 ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
 
+
+// Brtos version
+#define BRTOS_VERSION   "BRTOS Ver. 1.70"
 
 /// False and True defines
 #ifndef FALSE
@@ -68,9 +65,12 @@
 #define NULL  (void*)0
 #endif
 
+#ifndef READY_LIST_VAR
+#define READY_LIST_VAR
+#endif
+
 #define BRTOS_BIG_ENDIAN              (0)
 #define BRTOS_LITTLE_ENDIAN           (1)
-
 
 
 /// Task States
