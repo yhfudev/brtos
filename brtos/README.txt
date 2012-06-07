@@ -96,3 +96,6 @@
 
 == BRTOS 1.69 Changelog ==
 - Minor fix for mutex acquire and release functions
+
+== BRTOS 1.70 Changelog ==
+- Minor fix in order to correct compiler issues in some IDEs
