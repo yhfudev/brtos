@@ -54,7 +54,7 @@
 
 
 // Brtos version
-#define BRTOS_VERSION   "BRTOS Ver. 1.70"
+#define BRTOS_VERSION   "BRTOS Ver. 1.75"
 
 /// False and True defines
 #ifndef FALSE

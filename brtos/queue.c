@@ -1127,11 +1127,11 @@ INT8U OSCleanQueue32(OS_QUEUE_32 *cqueue)
 
 ///// Memory allocation definition tests
 #ifndef BRTOS_ALLOC
-	#error("You must define the BRTOS memory allocation method !!!")
+	#error("You must define the BRTOS memory allocation method in BRTOSConfig.h file !!!")
 #endif
 
 #ifndef BRTOS_DEALLOC
-	#error("You must define the BRTOS memory deallocation method !!!")
+	#error("You must define the BRTOS memory deallocation method in BRTOSConfig.h file !!!")
 #endif
 
 ////////////////////////////////////////////////////////////
