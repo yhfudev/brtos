@@ -120,7 +120,7 @@ interrupt void TickTimer(void)
   TICKTIMER_INT_HANDLER;
 
   counter++;
-  if (counter == TickCountOverFlow) counter = 0;
+  if (counter == TICK_COUNT_OVERFLOW) counter = 0;
   
   // BRTOS TRACE SUPPORT
   #if (OSTRACE == 1) 
