@@ -99,3 +99,7 @@
 
 == BRTOS 1.70 Changelog ==
 - Minor fix in order to correct compiler issues in some IDEs
+
+== BRTOS 1.75 Changelog ==
+- Add a function to get the current tick count
+- Add support for dinamic queue (now it is possible to allocate and deallocate queues with different sizes of data)

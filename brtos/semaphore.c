@@ -262,9 +262,9 @@ INT8U OSSemPend (BRTOS_Sem *pont_event, INT16U time_wait)
   {  
     timeout = (INT32U)((INT32U)counter + (INT32U)time_wait);
     
-    if (timeout >= TickCountOverFlow)
+    if (timeout >= TICK_COUNT_OVERFLOW)
     {
-      Task->TimeToWait = (INT16U)(timeout - TickCountOverFlow);
+      Task->TimeToWait = (INT16U)(timeout - TICK_COUNT_OVERFLOW);
     }
     else
     {

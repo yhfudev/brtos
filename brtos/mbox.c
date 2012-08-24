@@ -269,9 +269,9 @@ INT8U OSMboxPend (BRTOS_Mbox *pont_event, void **Mail, INT16U time_wait)
     {  
       timeout = (INT32U)((INT32U)counter + (INT32U)time_wait);
       
-      if (timeout >= TickCountOverFlow)
+      if (timeout >= TICK_COUNT_OVERFLOW)
       {
-        Task->TimeToWait = (INT16U)(timeout - TickCountOverFlow);
+        Task->TimeToWait = (INT16U)(timeout - TICK_COUNT_OVERFLOW);
       }
       else
       {

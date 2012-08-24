@@ -53,8 +53,8 @@
 *   Authors:  Carlos Henrique Barriquelo e Gustavo Weber Denardin
 *   Revision: 1.63,      ,  Revision: 1.64       ,  Revision: 1.65        ,  Revision: 1.66         ,  Revision: 1.67
 *   Date:     15/12/2010 ,  Date:     22/02/2011 ,  Date:     24/03/2011  ,  Date:     30/04/2011   ,  Date:     14/06/2011
-*   Revision: 1.68       ,  Revision: 1.69       ,  Revision: 1.70
-*   Date:     02/09/2011 ,  Date:     05/11/2011 ,  Date:     06/06/2012
+*   Revision: 1.68       ,  Revision: 1.69       ,  Revision: 1.70        ,  Revision: 1.75
+*   Date:     02/09/2011 ,  Date:     05/11/2011 ,  Date:     06/06/2012  ,  Date:     24/08/2012
 *
 *
 *********************************************************************************************************/
@@ -262,6 +262,30 @@ INT8U OSSchedule(void)
 
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
+/////      Get the current tick count                  /////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+INT16U OSGetTickCount(void) 
+{
+  OS_SR_SAVE_VAR
+  INT16U cnt;
+  
+  OSEnterCritical();
+  cnt = counter;
+  OSExitCritical();
+  return cnt;
+}
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+
+
+
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
 /////      Task Delay Function in Tick Times           /////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
@@ -295,9 +319,9 @@ INT8U DelayTask(INT16U time_wait)
 
         timeout = (INT32U)((INT32U)counter + (INT32U)time_wait);
         
-        if (timeout >= TickCountOverFlow)
+        if (timeout >= TICK_COUNT_OVERFLOW)
         {
-          Task->TimeToWait = (INT16U)(timeout - TickCountOverFlow);
+          Task->TimeToWait = (INT16U)(timeout - TICK_COUNT_OVERFLOW);
         }
         else
         {

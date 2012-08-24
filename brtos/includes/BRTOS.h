@@ -27,6 +27,10 @@
 *   Revision: 1.64                  ,   Revision: 1.70
 *   Date:     22/02/2011            ,   Date:     06/06/2012
 *
+*   Author:   Gustavo W. Denardin
+*   Revision: 1.75
+*   Date:     24/08/2012
+*
 *********************************************************************************************************/
 
 #ifndef OS_BRTOS_H
@@ -84,7 +88,8 @@
 /// Timer defines
 #define NO_TIMEOUT                  (INT16U)65000
 #define EXIT_BY_TIMEOUT             (INT16U)65001
-#define TickCountOverFlow           (INT16U)64000       ///< Determines the tick timer overflow
+#define TICK_COUNT_OVERFLOW         (INT16U)64000       ///< Determines the tick timer overflow
+#define TickCountOverFlow           (INT16U)64000       ///< Compatibility with BRTOS less than or equal to 1.7
 
 /// Error codes
 #define OK                           (INT8U)0     ///< OK define
@@ -109,17 +114,19 @@
 // Return defines to events control blocks
 #define ALLOC_EVENT_OK          (INT8U)0      ///< Event allocated with success
 #define NO_AVAILABLE_EVENT      (INT8U)1      ///< No event control blocks available
-#define IRQ_PEND_ERR            (INT8U)2      ///< Function can not be called inside an interrupt
-#define ERR_SEM_OVF             (INT8U)3      ///< Semaphore counter overflow
-#define ERR_MUTEX_OVF           (INT8U)4      ///< Mutex counter overflow
-#define ERR_EVENT_NO_CREATED    (INT8U)5      ///< There are no task waiting for the event
-#define NULL_EVENT_POINTER      (INT8U)6      ///< The passed event pointer is NULL
-#define ERR_EVENT_OWNER         (INT8U)7      ///< Function caller is not the owner of the event control block. Used to mutex implementation
-#define DELETE_EVENT_OK         (INT8U)8      ///< Event deleted with success
-#define AVAILABLE_RESOURCE      (INT8U)9      ///< The resource is available
-#define BUSY_RESOURCE           (INT8U)10      ///< The resource is busy
-#define AVAILABLE_MESSAGE       (INT8U)11     ///< There is a message
-#define NO_MESSAGE              (INT8U)12     ///< There is no message
+#define NO_AVAILABLE_MEMORY     (INT8U)2      ///< Error - Lack of memory to allocate an event
+#define INVALID_PARAMETERS      (INT8U)3      ///< There is at least one invalid parameter
+#define IRQ_PEND_ERR            (INT8U)4      ///< Function can not be called inside an interrupt
+#define ERR_SEM_OVF             (INT8U)5      ///< Semaphore counter overflow
+#define ERR_MUTEX_OVF           (INT8U)6      ///< Mutex counter overflow
+#define ERR_EVENT_NO_CREATED    (INT8U)7      ///< There are no task waiting for the event
+#define NULL_EVENT_POINTER      (INT8U)8      ///< The passed event pointer is NULL
+#define ERR_EVENT_OWNER         (INT8U)9      ///< Function caller is not the owner of the event control block. Used to mutex implementation
+#define DELETE_EVENT_OK         (INT8U)10     ///< Event deleted with success
+#define AVAILABLE_RESOURCE      (INT8U)11     ///< The resource is available
+#define BUSY_RESOURCE           (INT8U)12     ///< The resource is busy
+#define AVAILABLE_MESSAGE       (INT8U)13     ///< There is a message
+#define NO_MESSAGE              (INT8U)14     ///< There is no message
 
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
@@ -347,7 +354,6 @@ typedef struct {
 */
 typedef struct
 {
-  INT8U        *OSQPtr;                 ///< Pointer returned by the memory allocation function
   INT8U        *OSQStart;               ///< Pointer to the queue start
   INT8U        *OSQEnd;                 ///< Pointer to the queue end
   INT8U        *OSQIn;                  ///< Pointer to the next queue entry
@@ -364,6 +370,37 @@ typedef struct
 
 
 
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+/////      Dynamic Queue Structure                     /////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+/**
+* \struct OS_QUEUE
+* Dynamic Queue Control Block Structure
+*/
+typedef struct
+{
+  INT8U        *OSQStart;               ///< Pointer to the queue start
+  INT8U        *OSQEnd;                 ///< Pointer to the queue end
+  INT8U        *OSQIn;                  ///< Pointer to the next queue entry
+  INT8U        *OSQOut;                 ///< Pointer to the next data in the queue output
+  INT16U       OSQTSize;                ///< Size of the queue type - Defined in the create queue function
+  INT16U       OSQLength;               ///< Length of the queue - Defined in the create queue function
+  INT16U       OSQEntries;              ///< Size of data inside the queue
+} OS_DQUEUE;
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+
+
+
+
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 /////      Queue 16 Structure                          /////
@@ -376,7 +413,6 @@ typedef struct
 */
 typedef struct
 {
-  INT16U  *OSQPtr;                 ///< Pointer returned by the memory allocation function
   INT16U  *OSQStart;               ///< Pointer to the queue start
   INT16U  *OSQEnd;                 ///< Pointer to the queue end
   INT16U  *OSQIn;                  ///< Pointer to the next queue entry
@@ -405,7 +441,6 @@ typedef struct
 */
 typedef struct
 {
-  INT32U  *OSQPtr;                 ///< Pointer returned by the memory allocation function
   INT32U  *OSQStart;               ///< Pointer to the queue start
   INT32U  *OSQEnd;                 ///< Pointer to the queue end
   INT32U  *OSQIn;                  ///< Pointer to the next queue entry
@@ -518,6 +553,14 @@ INT8U DelayTask(INT16U time);
 * \return INVALID_TIME The specified parameters are outside of the permitted range
 *********************************************************************************************/  
 INT8U DelayTaskHMSM(INT8U hours, INT8U minutes, INT8U seconds, INT16U miliseconds);
+
+/*****************************************************************************************//**
+* \fn INT16U OSGetTickCount(INT16U time)
+* \brief Return current tick count.
+*  The user must call this function in order to receive the current tick count.
+* \return current tick count
+*********************************************************************************************/
+INT16U OSGetTickCount(void);
 
 /*****************************************************************************************//**
 * \fn void PreInstallTasks(void)
@@ -817,7 +860,7 @@ void initEvents(void);
   * \return ALLOC_EVENT_OK Queue control block successfully allocated
   *********************************************************************************************/
   INT8U OSQueueCreate(OS_QUEUE *cqueue, INT16U size, BRTOS_Queue **event);
-  
+ 
   /*****************************************************************************************//**
   * \fn OSWQueue(OS_QUEUE *cqueue,INT8U data)
   * \brief Writes new data in the specified queue
@@ -982,6 +1025,73 @@ void initEvents(void);
   *********************************************************************************************/  
   INT8U OSCleanQueue32(OS_QUEUE_32 *cqueue);
     
+#endif
+
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+
+
+
+
+
+#if (BRTOS_DYNAMIC_QUEUE_ENABLED == 1)
+
+  /*****************************************************************************************//**
+  * \fn INT8U OSDQueueCreate(INT16U queue_lenght, OS_CPU_TYPE type_size, BRTOS_Queue **event)
+  * \brief Allocates a queue control block and queue data size
+  * \param queue_lenght Queue lenght
+  * \param type_size Queue type size
+  * \param **event Queue event pointer
+  * \return INVALID_PARAMETERS There is at least one invalid parameter
+  * \return NO_AVAILABLE_MEMORY There is no memory for allocate the queue
+  * \return IRQ_PEND_ERR Can not use queue create function from interrupt handler code
+  * \return NO_AVAILABLE_EVENT No queue control blocks available
+  * \return ALLOC_EVENT_OK Queue control block successfully allocated
+  *********************************************************************************************/
+  INT8U OSDQueueCreate(INT16U queue_lenght, OS_CPU_TYPE type_size, BRTOS_Queue **event);
+  
+  /*****************************************************************************************//**
+  * \fn INT8U OSDQueueDelete (BRTOS_Queue **event)
+  * \brief Releases a queue control block
+  * \param **event Address of the queue control block pointer
+  * \return IRQ_PEND_ERR Can not use queue delete function from interrupt handler code
+  * \return DELETE_EVENT_OK Queue control block released with success
+  *********************************************************************************************/  
+  INT8U OSDQueueDelete (BRTOS_Queue **event);
+  
+  /*****************************************************************************************//**
+  * \fn INT8U OSDQueueClean(BRTOS_Queue *pont_event)
+  * \brief Clean data in the specified queue
+  * \param **event Queue event pointer
+  * \return CLEAN_BUFFER_OK Queue successfully cleaned
+  *********************************************************************************************/  
+  INT8U OSDQueueClean(BRTOS_Queue *pont_event);
+  
+  /*****************************************************************************************//**
+  * \fn INT8U OSDQueuePend (BRTOS_Queue *pont_event, void *pdata, INT16U time_wait)
+  * \brief Wait for a queue post 
+  *  A task exits a pending state with a queue post or by timeout.
+  * \param *pont_event Queue event pointer
+  * \param timeout Timeout to the queue pend exits
+  * \param *pdata First data in the output buffer of the specified queue
+  * \return ERR_EVENT_NO_CREATED The pont_event is not valid
+  * \return TIMEOUT The queue pend exit by timeout
+  * \return READ_BUFFER_OK The queue was successfully read
+  *********************************************************************************************/
+  INT8U OSDQueuePend (BRTOS_Queue *pont_event, void *pdata, INT16U time_wait);
+  
+  /*****************************************************************************************//**
+  * \fn INT8U OSDQueuePost(BRTOS_Queue *pont_event, void *pdata)
+  * \brief Queue post
+  *  A task exits a pending state with a queue post or by timeout.
+  * \param *pont_event Queue event pointer
+  * \param *pdata Pointer of the data to be written in the queue
+  * \param timeout Timeout to the queue pend exits
+  * \return
+  *********************************************************************************************/
+  INT8U OSDQueuePost(BRTOS_Queue *pont_event, void *pdata);
 #endif
 
 ////////////////////////////////////////////////////////////
