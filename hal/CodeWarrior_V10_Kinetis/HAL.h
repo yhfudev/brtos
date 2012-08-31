@@ -56,6 +56,9 @@
 /// Define if 32 bits register for tick timer will be used
 #define TICK_TIMER_32BITS   1
 
+/// Define if InstallTask function will support parameters
+#define TASK_WITH_PARAMETERS 0
+
 /// Define if nesting interrupt is active
 #define NESTING_INT 1
 
@@ -142,7 +145,11 @@ void OS_CPU_SR_Restore(INT32U);
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES);
+#if (TASK_WITH_PARAMETERS == 1)
+  void CreateVirtualStack(void(*FctPtr)(void*), INT16U NUMBER_OF_STACKED_BYTES, void *parameters);
+#else
+  void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES);
+#endif
 
 /*****************************************************************************************//**
 * \fn void TickTimerSetup(void)

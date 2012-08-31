@@ -197,7 +197,11 @@ void SwitchContextToFirstTask(void)
 
 void          OS_TaskReturn             (void);
 
-void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
+#if (TASK_WITH_PARAMETERS == 1)
+  void CreateVirtualStack(void(*FctPtr)(void*), INT16U NUMBER_OF_STACKED_BYTES, void *parameters)
+#else
+  void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
+#endif
 {  
 	OS_CPU_TYPE *stk_pt = (OS_CPU_TYPE*)&STACK[iStackAddress + (NUMBER_OF_STACKED_BYTES / sizeof(OS_CPU_TYPE))];
 	
@@ -211,7 +215,11 @@ void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
     *--stk_pt = (INT32U)0x02020202u;                        /* R2                                                     */
     //*--stk_pt = (INT32U)p_stk_limit;                        /* R1                                                     */
 	*--stk_pt = (INT32U)(NUMBER_OF_STACKED_BYTES / 10);		/* R1                                                     */
+   #if (TASK_WITH_PARAMETERS == 1)
+    *--stk_pt = (INT32U)parameters;                         /* R0 : argument                                          */	
+   #else
     *--stk_pt = (INT32U)0;                              	/* R0 : argument                                          */
+   #endif 
                                                             /* Remaining registers saved on process stack             */
     *--stk_pt = (INT32U)0x11111111u;                        /* R11                                                    */
     *--stk_pt = (INT32U)0x10101010u;                        /* R10                                                    */
