@@ -501,7 +501,11 @@ void OS_TICK_HANDLER(void)
 
 INT8U BRTOSStart(void)
 {
+ #if (TASK_WITH_PARAMETERS == 1)
+  if (InstallIdle(&Idle,IDLE_STACK_SIZE,(void*)NULL) != OK) 
+ #else
   if (InstallIdle(&Idle,IDLE_STACK_SIZE) != OK)
+ #endif
   {
     return NO_MEMORY;
   };
@@ -875,9 +879,16 @@ INT8U UnBlockMultipleTask(INT8U TaskStart, INT8U TaskNumber)
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-void Idle(void)
+#if (TASK_WITH_PARAMETERS == 1) 
+  void Idle(void *parameters)
+#else
+  void Idle(void)
+#endif
 {
   /* task setup */
+  #if (TASK_WITH_PARAMETERS == 1)  
+  (void)parameters;
+  #endif
   
   /* task main loop */
   for (;;)
@@ -903,8 +914,11 @@ void Idle(void)
 
 
 
-
-INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED_BYTES,INT8U iPriority)
+#if (TASK_WITH_PARAMETERS == 1)
+  INT8U InstallTask(void(*FctPtr)(void *),const CHAR8 *TaskName, INT16U USER_STACKED_BYTES,INT8U iPriority, void *parameters)
+#else
+  INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED_BYTES,INT8U iPriority)
+#endif
 {
   OS_SR_SAVE_VAR
   INT8U i = 0; 
@@ -1014,7 +1028,11 @@ INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED
    // set the function entry address in the context
    
    // Fill the virtual task stack
-   CreateVirtualStack(FctPtr, USER_STACKED_BYTES);   
+   #if (TASK_WITH_PARAMETERS == 1)
+      CreateVirtualStack(FctPtr, USER_STACKED_BYTES, parameters);
+   #else
+      CreateVirtualStack(FctPtr, USER_STACKED_BYTES);   
+   #endif
    
    // Incrementa o contador de bytes do stack virtual (HEAP)
    iStackAddress = iStackAddress + (USER_STACKED_BYTES / sizeof(OS_CPU_TYPE));
@@ -1057,7 +1075,11 @@ INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED
 /////                                                  /////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
-INT8U InstallIdle(void(*FctPtr)(void), INT16U USER_STACKED_BYTES)
+#if (TASK_WITH_PARAMETERS == 1) 
+  INT8U InstallIdle(void(*FctPtr)(void*), INT16U USER_STACKED_BYTES, void *parameters)
+#else
+  INT8U InstallIdle(void(*FctPtr)(void), INT16U USER_STACKED_BYTES)
+#endif
 { 
   OS_SR_SAVE_VAR
 
@@ -1106,7 +1128,11 @@ INT8U InstallIdle(void(*FctPtr)(void), INT16U USER_STACKED_BYTES)
    PriorityVector[0] = NUMBER_OF_TASKS+1;
    
    // Fill the virtual task stack
-   CreateVirtualStack(FctPtr, USER_STACKED_BYTES);    
+   #if (TASK_WITH_PARAMETERS == 1)   
+      CreateVirtualStack(FctPtr, USER_STACKED_BYTES, parameters);
+   #else
+      CreateVirtualStack(FctPtr, USER_STACKED_BYTES);   
+   #endif
    
    // Incrementa o contador de bytes do stack virtual (HEAP)
    iStackAddress = iStackAddress + (USER_STACKED_BYTES / sizeof(OS_CPU_TYPE));

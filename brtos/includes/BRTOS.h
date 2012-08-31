@@ -476,7 +476,11 @@ typedef struct
 * \return END_OF_AVAILABLE_PRIORITIES All the available priorities are busy
 * \return BUSY_PRIORITY Desired priority busy
 *********************************************************************************************/
-INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED_BYTES,INT8U iPriority);
+#if (TASK_WITH_PARAMETERS == 1)
+  INT8U InstallTask(void(*FctPtr)(void*),const CHAR8 *TaskName, INT16U USER_STACKED_BYTES,INT8U iPriority, void *parameters);
+#else
+  INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED_BYTES,INT8U iPriority);
+#endif
 
 /*****************************************************************************************//**
 * \fn INT8U InstallIdle(void(*FctPtr)(void), INT16U USER_STACKED_BYTES)
@@ -486,14 +490,22 @@ INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED
 * \return OK Idle task successfully installed
 * \return NO_MEMORY Not enough memory available to install the idle task
 *********************************************************************************************/
-INT8U InstallIdle(void(*FctPtr)(void), INT16U USER_STACKED_BYTES);
+#if (TASK_WITH_PARAMETERS == 1)
+  INT8U InstallIdle(void(*FctPtr)(void*), INT16U USER_STACKED_BYTES, void *parameters);
+#else
+  INT8U InstallIdle(void(*FctPtr)(void), INT16U USER_STACKED_BYTES);
+#endif
 
 /*****************************************************************************************//**
 * \fn void Idle(void)
 * \brief Idle Task. May be used to implement low power commands.
 * \return NONE
 *********************************************************************************************/
-void Idle(void);
+#if (TASK_WITH_PARAMETERS == 1)
+  void Idle(void *parameters);
+#else
+  void Idle(void);
+#endif
 
 /*****************************************************************************************//**
 * \fn void BRTOS_TimerHook(void)
