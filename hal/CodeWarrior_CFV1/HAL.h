@@ -57,6 +57,8 @@
 /// Define if nesting interrupt is active
 #define NESTING_INT 1
 
+#define TASK_WITH_PARAMETERS 1
+
 /// Define if its necessary to save status register / interrupt info
 #if NESTING_INT == 1
   #define OS_SR_SAVE_VAR INT16U CPU_SR = 0;
@@ -144,7 +146,11 @@ extern INT32U SPvalue;
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES);
+#if (TASK_WITH_PARAMETERS == 1)
+  void CreateVirtualStack(void(*FctPtr)(void*), INT16U NUMBER_OF_STACKED_BYTES, void *parameters);
+#else
+  void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES);
+#endif
 
 /*****************************************************************************************//**
 * \fn void TickTimerSetup(void)

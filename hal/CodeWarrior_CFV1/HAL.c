@@ -207,8 +207,11 @@ interrupt void SwitchContext(void)
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-
-void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
+#if (TASK_WITH_PARAMETERS == 1)
+  void CreateVirtualStack(void(*FctPtr)(void*), INT16U NUMBER_OF_STACKED_BYTES, void *parameters)
+#else
+  void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
+#endif
 {  
    OS_CPU_TYPE *stk_pt = (OS_CPU_TYPE*)&STACK[iStackAddress + (NUMBER_OF_STACKED_BYTES / sizeof(OS_CPU_TYPE))];
    //INT32U *stk_pt = (INT32U*)&STACK[iStackAddress + NUMBER_OF_STACKED_BYTES];
@@ -236,7 +239,13 @@ void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
    *--stk_pt = (INT32U)0x00;    // Save Int level
    
    *--stk_pt = (INT32U)0xA1;
+
+#if (TASK_WITH_PARAMETERS == 1)   
+   *--stk_pt = (INT32U)parameters;
+#else
    *--stk_pt = (INT32U)0xA0;
+#endif
+
    *--stk_pt = (INT32U)0xD2;
    *--stk_pt = (INT32U)0xD1;
    *--stk_pt = (INT32U)0xD0;
@@ -257,7 +266,13 @@ void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
    
    // Initialize registers
    *--stk_pt = (INT32U)0xA1;
+   
+#if (TASK_WITH_PARAMETERS == 1)   
+   *--stk_pt = (INT32U)parameters;
+#else
    *--stk_pt = (INT32U)0xA0;
+#endif
+   
    *--stk_pt = (INT32U)0xD2;
    *--stk_pt = (INT32U)0xD1;
    *--stk_pt = (INT32U)0xD0;
