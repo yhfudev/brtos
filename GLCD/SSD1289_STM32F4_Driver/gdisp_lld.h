@@ -51,7 +51,7 @@ typedef int32_t         bool_t;
 	 *			just valid.
 	 */
 	#ifndef GDISP_NEED_VALIDATION
-		#define GDISP_NEED_VALIDATION	TRUE
+		#define GDISP_NEED_VALIDATION	FALSE
 	#endif
 
 	/**

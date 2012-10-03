@@ -41,7 +41,8 @@
 
 //#include "ssd1289_lld.c.h"
 static __inline void lld_lcdWriteIndex(uint16_t index)		{ LCD_REG = index; }
-static __inline void lld_lcdWriteData(uint16_t data)		{ LCD_RAM = data; }
+//static __inline void lld_lcdWriteData(uint16_t data)		{ LCD_RAM = data; }
+#define lld_lcdWriteData(x)	LCD_RAM = x
 static __inline void lld_lcdWriteReg(uint16_t lcdReg,uint16_t lcdRegValue) {
   LCD_REG = lcdReg;
   LCD_RAM = lcdRegValue;
@@ -246,6 +247,7 @@ bool_t GDISP_LLD(init)(void) {
 
 		const unsigned char FSMC_Bank = 0;
 		/* FSMC timing */
+
 		FSMC_Bank1->BTCR[FSMC_Bank+1] = (FSMC_BTR1_ADDSET_1 | FSMC_BTR1_ADDSET_3) \
 				| (FSMC_BTR1_DATAST_1 | FSMC_BTR1_DATAST_3) \
 				| (FSMC_BTR1_BUSTURN_1 | FSMC_BTR1_BUSTURN_3) ;
@@ -263,6 +265,7 @@ bool_t GDISP_LLD(init)(void) {
 		#error "Please define LCD_USE_FSMC or LCD_USE_GPIO"
 	#endif
 
+#if 0
 		lld_lcdWriteReg(0x0007,0x0021);    DelayTask(1);
 		lld_lcdWriteReg(0x0000,0x0001);    DelayTask(1);
 		lld_lcdWriteReg(0x0007,0x0023);    DelayTask(1);
@@ -308,7 +311,7 @@ bool_t GDISP_LLD(init)(void) {
 		lld_lcdWriteReg(0x0025,0x8000);    DelayTask(1);
 		lld_lcdWriteReg(0x004f,0x0000);    DelayTask(1);
 		lld_lcdWriteReg(0x004e,0x0000);    DelayTask(1);
-#if 0
+#endif
 	lld_lcdWriteReg(0x0000,0x0001);		lld_lcdDelay(5);
     lld_lcdWriteReg(0x0003,0xA8A4);    	lld_lcdDelay(5);
     lld_lcdWriteReg(0x000C,0x0000);    	lld_lcdDelay(5);
@@ -350,7 +353,7 @@ bool_t GDISP_LLD(init)(void) {
     lld_lcdWriteReg(0x0025,0x8000);    	lld_lcdDelay(5);
     lld_lcdWriteReg(0x004f,0x0000);		lld_lcdDelay(5);
     lld_lcdWriteReg(0x004e,0x0000);		lld_lcdDelay(5);
-#endif
+
 
 	#if defined(LCD_USE_FSMC)
 		/* FSMC delay reduced as the controller now runs at full speed */
