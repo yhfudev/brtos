@@ -47,7 +47,10 @@
 
 #define GDISP_PIXELFORMAT				GDISP_PIXELFORMAT_RGB565
 
-
+#define LCD_USE_FSMC
+#define STM32F4XX
+#define SCREEN_WIDTH	320
+#define SCREEN_HEIGHT	240
 
 #if defined(LCD_USE_FSMC)
 	/* LCD Registers */
