@@ -29,10 +29,6 @@
 
 //#if HAL_USE_GDISP || defined(__DOXYGEN__)
 
-#define LCD_USE_FSMC
-#define STM32F4XX
-#define SCREEN_WIDTH	320
-#define SCREEN_HEIGHT	240
 
 /*===========================================================================*/
 /* Driver constants.														 */
