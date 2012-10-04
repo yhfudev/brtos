@@ -132,7 +132,7 @@ void TP_Read(void)
 		{
 		   pen_tmp = Pen_Point.X0;
 		   Pen_Point.X0 = Pen_Point.Y0;
-		   Pen_Point.Y0 = (SCREEN_HEIGHT - 1) - pen_tmp;
+		   Pen_Point.Y0 = (SCREEN_WIDTH - 1) - pen_tmp;
 		}
    }
 #else
@@ -213,7 +213,8 @@ void calib_touch(void)
 		  // Read position
 		  x2=Read_TP_Axis(AXIS_X);
 		  y2=Read_TP_Axis(AXIS_Y);
-		  break;
+		  if ((x2 > 1000) || (y2 > 1000))
+			  break;
 	  }
 	  DelayTask(2);
 	}
