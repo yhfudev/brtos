@@ -91,7 +91,7 @@ typedef int32_t         bool_t;
 	 * @details	Defaults to FALSE
 	 */
 	#ifndef GDISP_NEED_SCROLL
-		#define GDISP_NEED_SCROLL		TRUE
+		#define GDISP_NEED_SCROLL		FALSE
 	#endif
 
 	/**
