@@ -128,7 +128,7 @@ typedef enum fontmetric {fontHeight, fontDescendersHeight, fontLineSpacing, font
 /* External declarations.                                                    */
 /*===========================================================================*/
 
-//#if GDISP_NEED_TEXT || defined(__DOXYGEN__)
+#if GDISP_NEED_TEXT || defined(__DOXYGEN__)
 /**
  * @brief   Predefined fonts.
  */
@@ -147,7 +147,7 @@ extern const struct font fontUI2Narrow;
 extern const struct font fontLargeNumbers;
 extern const struct font fontLargeNumbersDouble;
 extern const struct font fontLargeNumbersNarrow;
-//#endif
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -248,7 +248,7 @@ extern "C" {
 void gdispDrawBox(coord_t x, coord_t y, coord_t cx, coord_t cy, color_t color);
 
 /* Extra Text Functions */
-#if 1//GDISP_NEED_TEXT
+#if GDISP_NEED_TEXT
 	void gdispDrawString(coord_t x, coord_t y, const char *str, font_t font, color_t color);
 	void gdispFillString(coord_t x, coord_t y, const char *str, font_t font, color_t color, color_t bgcolor);
 	void gdispFillStringBox(coord_t x, coord_t y, coord_t cx, coord_t cy, const char* str, font_t font, color_t color, color_t bgColor, justify_t justify);

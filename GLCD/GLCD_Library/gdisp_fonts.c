@@ -26,7 +26,7 @@
 
 //#if HAL_USE_GDISP || defined(__DOXYGEN__)
 
-#if 1//GDISP_NEED_TEXT
+#if GDISP_NEED_TEXT
 
 #include "gdisp_fonts.h"
 

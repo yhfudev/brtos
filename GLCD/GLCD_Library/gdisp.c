@@ -25,8 +25,6 @@
  * @addtogroup GDISP
  * @{
  */
-//#include "ch.h"
-//#include "hal.h"
 #include "gdisp.h"
 
 #ifndef _GDISP_C
@@ -748,7 +746,7 @@ void gdispDrawBox(coord_t x, coord_t y, coord_t cx, coord_t cy, color_t color) {
 }
 
 
-#if 1// GDISP_NEED_TEXT || defined(__DOXYGEN__)
+#if GDISP_NEED_TEXT || defined(__DOXYGEN__)
 	/**
 	 * @brief   Draw a text string.
 	 * @pre     The GDISP unit must be in powerOn or powerSleep mode.
@@ -788,7 +786,7 @@ void gdispDrawBox(coord_t x, coord_t y, coord_t cx, coord_t cy, color_t color) {
 	}
 #endif
 	
-#if 1//GDISP_NEED_TEXT || defined(__DOXYGEN__)
+#if GDISP_NEED_TEXT || defined(__DOXYGEN__)
 	/**
 	 * @brief   Draw a text string.
 	 * @pre     The GDISP unit must be in powerOn or powerSleep mode.
@@ -831,7 +829,7 @@ void gdispDrawBox(coord_t x, coord_t y, coord_t cx, coord_t cy, color_t color) {
 	}
 #endif
 	
-#if 1//GDISP_NEED_TEXT || defined(__DOXYGEN__)
+#if GDISP_NEED_TEXT || defined(__DOXYGEN__)
 	/**
 	 * @brief   Draw a text string verticly centered within the specified box.
 	 * @pre     The GDISP unit must be in powerOn or powerSleep mode.
@@ -974,7 +972,7 @@ void gdispDrawBox(coord_t x, coord_t y, coord_t cx, coord_t cy, color_t color) {
 	}
 #endif
 	
-#if 1//GDISP_NEED_TEXT || defined(__DOXYGEN__)
+#if GDISP_NEED_TEXT || defined(__DOXYGEN__)
 	/**
 	 * @brief   Get a metric of a font.
 	 * @return  The metric requested in pixels.
@@ -998,7 +996,7 @@ void gdispDrawBox(coord_t x, coord_t y, coord_t cx, coord_t cy, color_t color) {
 	}
 #endif
 	
-#if 1//GDISP_NEED_TEXT || defined(__DOXYGEN__)
+#if GDISP_NEED_TEXT || defined(__DOXYGEN__)
 	/**
 	 * @brief   Get the pixel width of a character.
 	 * @return  The width of the character in pixels. Does not include any between character padding.
@@ -1014,7 +1012,7 @@ void gdispDrawBox(coord_t x, coord_t y, coord_t cx, coord_t cy, color_t color) {
 	}
 #endif
 	
-#if 1//GDISP_NEED_TEXT || defined(__DOXYGEN__)
+#if GDISP_NEED_TEXT || defined(__DOXYGEN__)
 	/**
 	 * @brief   Get the pixel width of a string.
 	 * @return  The width of the string in pixels.
