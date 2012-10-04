@@ -6,6 +6,20 @@
  extern "C" {
 #endif
  
+
+#define OLD_SSD1289 		0
+#define SSD1289 			1
+
+#define TOUCH_GLCD_DRIVER	SSD1289
+
+
+#if (TOUCH_GLCD_DRIVER == OLD_SSD1289)
+#include "SSD1289.h"
+#elif (TOUCH_GLCD_DRIVER == SSD1289)
+#include "gdisp.h"
+#endif
+
+
 #include "stm32f4xx.h"	
 typedef struct 
 {
@@ -20,6 +34,9 @@ typedef struct
 	float yfac;
 	short xoff;
 	short yoff;
+	#if (TOUCH_GLCD_DRIVER == SSD1289)
+	gdisp_orientation_t CalibOrientation;
+	#endif
 }Pen_Holder;
 extern Pen_Holder Pen_Point;
 #define TOUCH_CS_PORT	 GPIOC

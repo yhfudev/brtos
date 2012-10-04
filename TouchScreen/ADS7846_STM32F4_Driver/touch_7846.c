@@ -1,6 +1,5 @@
 #include "BRTOS.h"
 #include "touch_7846.h"
-#include "SSD1289.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -94,27 +93,86 @@ static u16 Read_TP_Axis(u8 axis)
 
 void TP_Read(void)
 {
+#if (TOUCH_GLCD_DRIVER == SSD1289)
+   u16 pen_tmp;
+#endif
    Pen_Point.X=Read_TP_Axis(AXIS_X);
    Pen_Point.Y=Read_TP_Axis(AXIS_Y);
 
    Pen_Point.X0=(int)((Pen_Point.X-Pen_Point.xoff)/Pen_Point.xfac);
    Pen_Point.Y0=(int)((Pen_Point.Y-Pen_Point.yoff)/Pen_Point.yfac);
+
+#if (TOUCH_GLCD_DRIVER == SSD1289)
+   if (Pen_Point.CalibOrientation == portrait)
+   {
+	   if(Pen_Point.X0>=SCREEN_HEIGHT)
+	   {
+		 Pen_Point.X0=(SCREEN_HEIGHT-1);
+	   }
+	   if(Pen_Point.Y0>=SCREEN_WIDTH)
+	   {
+		 Pen_Point.Y0=(SCREEN_WIDTH-1);
+	   }
+   }
+   if (Pen_Point.CalibOrientation == landscape)
+   {
+	   if(Pen_Point.X0>=SCREEN_WIDTH)
+	   {
+		 Pen_Point.X0=(SCREEN_WIDTH-1);
+	   }
+	   if(Pen_Point.Y0>=SCREEN_HEIGHT)
+	   {
+		 Pen_Point.Y0=(SCREEN_HEIGHT-1);
+	   }
+   }
+
+   if (Pen_Point.CalibOrientation != gdispGetOrientation())
+   {
+	   if ((Pen_Point.CalibOrientation == portrait) && (gdispGetOrientation() == landscape))
+		{
+		   pen_tmp = Pen_Point.Y0;
+		   Pen_Point.Y0 = Pen_Point.X0;
+		   Pen_Point.X0 = (SCREEN_WIDTH - 1) - pen_tmp;
+		}
+
+	   if ((Pen_Point.CalibOrientation == landscape) && (gdispGetOrientation() == portrait))
+		{
+		   pen_tmp = Pen_Point.X0;
+		   Pen_Point.X0 = Pen_Point.Y0;
+		   Pen_Point.Y0 = (SCREEN_HEIGHT - 1) - pen_tmp;
+		}
+   }
+#else
    if(Pen_Point.X0>=240)
    {
      Pen_Point.X0=239;
    }
    if(Pen_Point.Y0>=320)
    {
-     Pen_Point.X0=319;
+     Pen_Point.Y0=319;
    }
+#endif
 }
 
 void calib_touch(void)
 {
 	u16 x1,x2,y1,y2;
 
+	#if (TOUCH_GLCD_DRIVER == SSD1289)
+	Pen_Point.CalibOrientation = gdispGetOrientation();
+	gdispClear(Black);
+	gdispDrawString(40,35, "Toque na marca para calibrar !", &fontUI2Double, White);
+	#endif
+
+	#if (TOUCH_GLCD_DRIVER == OLD_SSD1289)
 	LCD_DrawLine(5, 5, 10, LCD_DIR_HORIZONTAL);
 	LCD_DrawLine(10, 0, 10, LCD_DIR_VERTICAL);
+	#endif
+
+	#if (TOUCH_GLCD_DRIVER == SSD1289)
+	gdispDrawLine(5, 5, 15, 5, White);
+	gdispDrawLine(10, 0, 10, 10, White);
+	#endif
 
 	while(1)
 	{
@@ -132,10 +190,27 @@ void calib_touch(void)
 	while(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_8)==0);
 	DelayTask(100);
 
+	#if (TOUCH_GLCD_DRIVER == OLD_SSD1289)
 	LCD_Clear(BLACK);
-
 	LCD_DrawLine(115, 160, 10, LCD_DIR_HORIZONTAL);
 	LCD_DrawLine(120, 155, 10, LCD_DIR_VERTICAL);
+	#endif
+
+	#if (TOUCH_GLCD_DRIVER == SSD1289)
+	gdispClear(Black);
+	if (gdispGetOrientation() == portrait)
+	{
+		gdispDrawString(((SCREEN_HEIGHT / 2) + 25),((SCREEN_WIDTH / 2) + 25), "Toque na marca para calibrar !", &fontUI2Double, White);
+		gdispDrawLine(((SCREEN_HEIGHT / 2) - 5) , (SCREEN_WIDTH / 2), ((SCREEN_HEIGHT / 2) + 5), (SCREEN_WIDTH / 2), White);
+		gdispDrawLine((SCREEN_HEIGHT / 2) , ((SCREEN_WIDTH / 2) - 5), (SCREEN_HEIGHT / 2), ((SCREEN_WIDTH / 2) + 5), White);
+	}
+	if (gdispGetOrientation() == landscape)
+	{
+		gdispDrawString(((SCREEN_WIDTH / 2) + 25),((SCREEN_HEIGHT / 2) + 25), "Toque na marca para calibrar !", &fontUI2Double, White);
+		gdispDrawLine(((SCREEN_WIDTH / 2) - 5) , (SCREEN_HEIGHT / 2), ((SCREEN_WIDTH / 2) + 5), (SCREEN_HEIGHT / 2), White);
+		gdispDrawLine((SCREEN_WIDTH / 2) , ((SCREEN_HEIGHT / 2) - 5), (SCREEN_WIDTH / 2), ((SCREEN_HEIGHT / 2) + 5), White);
+	}
+	#endif
 
 	while(1)
 	{
@@ -153,6 +228,7 @@ void calib_touch(void)
 	while(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_8)==0);
 	DelayTask(300);
 
+	#if (TOUCH_GLCD_DRIVER == OLD_SSD1289)
 	Pen_Point.xfac = (float)((float)(x2 - x1) / (float)(120 - 10));
 	Pen_Point.yfac = (float)((float)(y2 - y1) / (float)(160 - 5));
 
@@ -160,6 +236,29 @@ void calib_touch(void)
 	Pen_Point.yoff = y1 - (short)(5 * Pen_Point.yfac);
 
 	LCD_Clear(BLACK);
+	#endif
+
+	#if (TOUCH_GLCD_DRIVER == SSD1289)
+	if (Pen_Point.CalibOrientation == portrait)
+	{
+		Pen_Point.xfac = (float)((float)(x2 - x1) / (float)((SCREEN_HEIGHT / 2) - 10));
+		Pen_Point.yfac = (float)((float)(y2 - y1) / (float)((SCREEN_WIDTH / 2) - 5));
+
+		Pen_Point.xoff = x1 - (short)(10 * Pen_Point.xfac);
+		Pen_Point.yoff = y1 - (short)(5 * Pen_Point.yfac);
+	}
+
+	if (Pen_Point.CalibOrientation == landscape)
+	{
+		Pen_Point.xfac = (float)((float)(y1 - y2) / (float)((SCREEN_WIDTH / 2) - 5));
+		Pen_Point.yfac = (float)((float)(x2 - x1) / (float)((SCREEN_HEIGHT / 2) - 10));
+
+		Pen_Point.xoff = y1 - (short)(((SCREEN_WIDTH - 1) - 5) * Pen_Point.xfac);
+		Pen_Point.yoff = x1 - (short)(10 * Pen_Point.yfac);
+	}
+
+	gdispClear(Black);
+	#endif
 }
 
 
@@ -255,6 +354,7 @@ void EXTI9_5_IRQHandler(void)
 }
 */
 
+#if (TOUCH_GLCD_DRIVER == OLD_SSD1289)
 void Drow_Touch_Point(uint16_t x,uint16_t y)
 {
 	LCD_DrawUniLine(x-12,y,x+13,y);
@@ -271,4 +371,5 @@ void Draw_Big_Point(uint16_t x,uint16_t y)
 	Pixel(x+1,y,BLUE);
 	Pixel(x,y+1,BLUE);
 	Pixel(x+1,y+1,BLUE);
-}		
+}
+#endif
