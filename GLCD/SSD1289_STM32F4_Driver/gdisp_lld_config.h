@@ -30,6 +30,7 @@
 #define _GDISP_LLD_CONFIG_H
 
 //#if HAL_USE_GDISP
+#include "BRTOS.h"
 
 /*===========================================================================*/
 /* Driver hardware support.                                                  */
