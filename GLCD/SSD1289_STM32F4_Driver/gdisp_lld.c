@@ -355,10 +355,11 @@ bool_t GDISP_LLD(init)(void) {
 		lld_lcdWriteReg(0x004e,0x0000);    DelayTask(1);
 #endif
 
-
-//		FSMC_Bank1->BTCR[FSMC_Bank+1] = (FSMC_BTR1_ADDSET_1 | FSMC_BTR1_ADDSET_3) \
-//				| (FSMC_BTR1_DATAST_1 | FSMC_BTR1_DATAST_3) \
-//				| (FSMC_BTR1_BUSTURN_1 | FSMC_BTR1_BUSTURN_3) ;
+#if 0
+		FSMC_Bank1->BTCR[FSMC_Bank+1] = (FSMC_BTR1_ADDSET_1 | FSMC_BTR1_ADDSET_3) \
+				| (FSMC_BTR1_DATAST_1 | FSMC_BTR1_DATAST_3) \
+				| (FSMC_BTR1_BUSTURN_1 | FSMC_BTR1_BUSTURN_3) ;
+#endif
 
 	#if 1//defined(LCD_USE_FSMC)
 		/* FSMC delay reduced as the controller now runs at full speed */
