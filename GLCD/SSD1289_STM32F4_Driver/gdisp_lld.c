@@ -130,7 +130,7 @@ static void lld_lcdSetViewPort(uint16_t x, uint16_t y, uint16_t cx, uint16_t cy)
       lld_lcdWriteReg(0x46, (y+cy-1) & 0x01FF);
       break;
     case landscape:
-      lld_lcdWriteReg(0x44, (((x+cx-1) << 8) & 0xFF00) | ((y+cy) & 0x00FF));
+      lld_lcdWriteReg(0x44, (((y+cy-1) << 8) & 0xFF00) | (y & 0x00FF));
       lld_lcdWriteReg(0x45, x & 0x01FF);
       lld_lcdWriteReg(0x46, (x+cx-1) & 0x01FF);
       break;
@@ -148,19 +148,19 @@ static void lld_lcdSetViewPort(uint16_t x, uint16_t y, uint16_t cx, uint16_t cy)
   lld_lcdSetCursor(x, y);
 }
 
-static __inline void lld_lcdResetViewPort(void){
+static void lld_lcdResetViewPort(void){
 	switch(GDISP.Orientation) {
 		case portrait:
-			lld_lcdSetViewPort(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+			lld_lcdSetViewPort(0, 0, SCREEN_HEIGHT, SCREEN_WIDTH);
 			break;
 		case portraitInv:
-			lld_lcdSetViewPort(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+			lld_lcdSetViewPort(0, 0, SCREEN_HEIGHT, SCREEN_WIDTH);
 			break;
 		case landscape:
-			lld_lcdSetViewPort(0, 0, SCREEN_HEIGHT, SCREEN_WIDTH);
+			lld_lcdSetViewPort(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 			break;
 		case landscapeInv:
-			lld_lcdSetViewPort(0, 0, SCREEN_HEIGHT, SCREEN_WIDTH);
+			lld_lcdSetViewPort(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 			break;
 	}
 }
@@ -317,11 +317,6 @@ bool_t GDISP_LLD(init)(void) {
 		lld_lcdWriteReg(0x004f,0x0000);    DelayTask(1);
 		lld_lcdWriteReg(0x004e,0x0000);    DelayTask(1);
 
-#if 0
-		FSMC_Bank1->BTCR[FSMC_Bank+1] = (FSMC_BTR1_ADDSET_1 | FSMC_BTR1_ADDSET_3) \
-				| (FSMC_BTR1_DATAST_1 | FSMC_BTR1_DATAST_3) \
-				| (FSMC_BTR1_BUSTURN_1 | FSMC_BTR1_BUSTURN_3) ;
-#endif
 
 	#if defined(LCD_USE_FSMC)
 		/* FSMC delay reduced as the controller now runs at full speed */
@@ -391,7 +386,7 @@ void GDISP_LLD(drawpixel)(coord_t x, coord_t y, color_t color) {
 	 */
 	void GDISP_LLD(clear)(color_t color) {
 	    unsigned i;
-
+	    lld_lcdResetViewPort();
 	    lld_lcdSetCursor(0, 0);
 	    lld_lcdWriteStreamStart();
 
