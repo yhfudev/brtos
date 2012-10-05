@@ -170,11 +170,6 @@ void SwitchContext(void)
 
 
 
-void ChangeContext(void)
-{
-	*(NVIC_INT_CTRL) = NVIC_PENDSVSET;
-	UserExitCritical();
-}
 
 
 ////////////////////////////////////////////////////////////
@@ -211,6 +206,9 @@ void          OS_TaskReturn             (void);
 	*--stk_pt = (INT32U)parameters;                         /* R0 : argument                                          */
 #else
 	*--stk_pt = (INT32U)0;                              	/* R0 : argument                                          */
+#endif
+#if (FPU_SUPPORT == 1)
+    *--stk_pt = (INT32U)0xFFFFFFFDu;                        /* R14                                                    */
 #endif
                                                             /* Remaining registers saved on process stack             */
     *--stk_pt = (INT32U)0x11111111u;                        /* R11                                                    */

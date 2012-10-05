@@ -47,10 +47,13 @@
 
 
 /// Define the used processor
-#define PROCESSOR 		ARM_Cortex_M4
+#define PROCESSOR 		    ARM_Cortex_M4
 
 /// Define the CPU type
-#define OS_CPU_TYPE 	INT32U
+#define OS_CPU_TYPE 	    INT32U
+
+/// Define MCU FPU hardware support
+#define FPU_SUPPORT			1
 
 /// Define if the optimized scheduler will be used
 #define OPTIMIZED_SCHEDULER 1
@@ -62,7 +65,7 @@
 #define TICK_TIMER_32BITS   1
 
 /// Define if nesting interrupt is active
-#define NESTING_INT 1
+#define NESTING_INT			1
 
 /// Define if its necessary to save status register / interrupt info
 #define OS_SR_SAVE_VAR INT32U CPU_SR = 0;
@@ -89,7 +92,8 @@ extern volatile INT32U SPvalue;
 #define NVIC_PENDSVSET      	0x10000000         						// Value to trigger PendSV exception.
 #define NVIC_SYSTICK_CTRL       ( ( volatile unsigned long *) 0xe000e010 )
 #define NVIC_SYSTICK_LOAD       ( ( volatile unsigned long *) 0xe000e014 )
-#define NVIC_INT_CTRL           ( ( volatile unsigned long *) 0xe000ed04 )	// Interrupt control state register.
+#define NVIC_INT_CTRL_P         ( ( volatile unsigned long *) 0xe000ed04 )	// Interrupt control state register.
+#define FPU_FPCCR				((volatile unsigned long *)0xE000EF34)
 
 #define NVIC_SYSTICK_CLK        0x00000004
 #define NVIC_SYSTICK_INT        0x00000002
@@ -106,7 +110,10 @@ extern volatile INT32U SPvalue;
 /////      Port Defines                                /////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
-void ChangeContext(void);
+#define ChangeContext()		*(NVIC_INT_CTRL_P) = NVIC_PENDSVSET;	\
+							UserExitCritical()
+
+#define Clear_PendSV(void)	*(NVIC_INT_CTRL_P) = NVIC_PENDSVCLR
 								   
 
 INT32U OS_CPU_SR_Save(void);
@@ -128,7 +135,11 @@ void OS_CPU_SR_Restore(INT32U);
 
 
 // stacked by the RTI interrupt process
+#if (FPU_SUPPORT == 1)
+#define NUMBER_MIN_OF_STACKED_BYTES 68
+#else
 #define NUMBER_MIN_OF_STACKED_BYTES 64
+#endif
 
 
 
@@ -174,10 +185,21 @@ void OSRTCSetup(void);
 * \return NONE
 *********************************************************************************************/
 /// Save Context Define
-#define OS_SAVE_CONTEXT() __asm(	" MRS     R0, PSP		\n"		\
+#if (FPU_SUPPORT == 1)
+#define OS_SAVE_CONTEXT() __asm(  " POP      {R3, LR}           \n"		\
+								  " MRS      R0, PSP			\n"		\
+								  " TST 	 R14,#0x10			\n"		\
+								  " IT		 EQ					\n"		\
+								  " VSTMDBEQ R0!,{S16-S31}		\n"		\
+								  " STMDB 	 R0!, {r4-r11, R14}	\n"		\
+							)
+#else
+#define OS_SAVE_CONTEXT() __asm(	" POP     {R3, LR}      \n"		\
+									" MRS     R0, PSP		\n"		\
 							  		" SUBS    R0, R0, #0x20	\n"		\
 							  		" STM     R0, {R4-R11}	\n"		\
 						  )
+#endif
 ////////////////////////////////////////////////////////////
 
 
@@ -187,13 +209,33 @@ void OSRTCSetup(void);
 * \return NONE
 *********************************************************************************************/
 /// Restore Context Define
+#if (FPU_SUPPORT == 1)
+#define OS_RESTORE_CONTEXT() __asm(														  \
+									/* Restore r4-11 from new process stack */			  \
+									" LDMIA    R0!, {R4-R11, R14}	\n"					  \
+									" TST	   R14, #0x10			\n"					  \
+									" IT 	   EQ					\n"					  \
+									" VLDMIAEQ R0!, {S16-S31}		\n"					  \
+									/* Load PSP with new process SP */					  \
+									" MSR      PSP, R0				\n"					  \
+									" ORR      LR,LR,#0x04     		\n"					  \
+								    /* Exception return will restore remaining context */ \
+	    							" CPSIE    I					\n"					  \
+								    " BX       LR               	\n"					  \
+								 )
+#else
 #define OS_RESTORE_CONTEXT() __asm(														\
 								  /* Restore r4-11 from new process stack */			\
 								  " LDM     R0, {R4-R11}		\n"						\
 								  " ADDS    R0, R0, #0x20		\n"						\
 								  /* Load PSP with new process SP */					\
 								  " MSR     PSP, R0				\n"						\
+								  " ORR      LR,LR,#0x04     	\n"					    \
+								  /* Exception return will restore remaining context */ \
+	    						  " CPSIE    I					\n"					  	\
+								  " BX       LR               	\n"					  	\
 								  )
+#endif
 ////////////////////////////////////////////////////////////
 
 
@@ -257,10 +299,11 @@ inline void CriticalDecNesting(void)
 	   
 
 #define OS_RESTORE_ISR() __asm(	  /* Ensure exception return uses process stack */		\
+								  " POP		{R3,LR}			\n"							\
 								  " ORR     LR, LR, #0x04	\n"							\
 								  " CPSIE   I				\n"							\
 								  /* Exception return will restore remaining context */ \
-								  " BX      LR               \n"							\
+								  " BX      LR               \n"						\
 								  )
 
 
