@@ -148,7 +148,22 @@ static void lld_lcdSetViewPort(uint16_t x, uint16_t y, uint16_t cx, uint16_t cy)
   lld_lcdSetCursor(x, y);
 }
 
-static __inline void lld_lcdResetViewPort(void)							{}
+static __inline void lld_lcdResetViewPort(void){
+	switch(GDISP.Orientation) {
+		case portrait:
+			lld_lcdSetViewPort(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+			break;
+		case portraitInv:
+			lld_lcdSetViewPort(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+			break;
+		case landscape:
+			lld_lcdSetViewPort(0, 0, SCREEN_HEIGHT, SCREEN_WIDTH);
+			break;
+		case landscapeInv:
+			lld_lcdSetViewPort(0, 0, SCREEN_HEIGHT, SCREEN_WIDTH);
+			break;
+	}
+}
 
 /*===========================================================================*/
 /* Driver interrupt handlers.                                                */
@@ -171,77 +186,70 @@ static __inline void lld_lcdResetViewPort(void)							{}
  */
 bool_t GDISP_LLD(init)(void) {
 	#ifdef LCD_USE_FSMC
-		#if defined(STM32F1XX) || defined(STM32F3XX)
-			/* FSMC setup for F1/F3 */
-			//rccEnableAHB(RCC_AHBENR_FSMCEN, 0);
 
-		#elif defined(STM32F4XX) || defined(STM32F2XX)
-			/* STM32F2-F4 FSMC init */
-			//rccEnableAHB3(RCC_AHB3ENR_FSMCEN, 0);
-			RCC_AHB3PeriphClockCmd(RCC_AHB3Periph_FSMC, ENABLE);
-		#else
-		#error "FSMC not implemented for this device"
-		#endif
+	  /* Enable FSMC clock */
+	  RCC->AHB3ENR |= RCC_AHB3ENR_FSMCEN;
 
+	  /* Enable GPIOD and GPIOE clock */
+	  RCC->AHB1ENR |= (RCC_AHB1ENR_GPIODEN | RCC_AHB1ENR_GPIOEEN);
 
-	  /* FSMC pin configuration */
-	  GPIO_InitTypeDef GPIO_InitStructure;
-	  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD | RCC_AHB1Periph_GPIOE, ENABLE);
+	  /* FSMC GPIOD pin setting as Alternate Function, 100MHz */
+	  /* Pin:     15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
+	   * Mask32b: 00 00 11 11 11 00 00 00 00 11 00 00 11 11 00 00 = 00001111110000000011000011110000 = 0x0FC030F0
+	   * Mask16b:  0  0  1  1  1  0  0  0  0  1  0  0  1  1  0  0 = 0011100001001100 = 0x384C
+	   * MODER:   10 10 00 00 00 10 10 10 10 00 10 10 00 00 10 10 = 10100000001010101000101000001010 = 0xA02A8A0A
+	   * OSPEEDR: 11 11 00 00 00 11 11 11 11 00 11 11 00 00 11 11 = 11110000001111111100111100001111 = 0xF03FCF0F
+	   * OTYPER:  all zero (using mask16b)
+	   * PUPDR:   all zero (using mask32b)
+	   * */
+	  GPIOD->MODER &= 0x0FC030F0; /* Reseting bits to be configured */
+	  GPIOD->MODER |= 0xA02A8A0A; /* Configuring bits for AF */
+	  GPIOD->OSPEEDR &= 0x0FC030F0;
+	  GPIOD->OSPEEDR |= 0xF03FCF0F; /* Configuring bits for speed 100MHz */
+	  GPIOD->OTYPER &= 0x384C;  /* Output type push-pull */
+	  GPIOD->PUPDR &= 0x0FC030F0;  /* No pull-up or pull-down */
 
-	  GPIO_PinAFConfig(GPIOD, GPIO_PinSource0, GPIO_AF_FSMC);		// D2
-	  GPIO_PinAFConfig(GPIOD, GPIO_PinSource1, GPIO_AF_FSMC);		// D3
-	  GPIO_PinAFConfig(GPIOD, GPIO_PinSource4, GPIO_AF_FSMC);		// NOE -> RD
-	  GPIO_PinAFConfig(GPIOD, GPIO_PinSource5, GPIO_AF_FSMC);		// NWE -> WR
-	  GPIO_PinAFConfig(GPIOD, GPIO_PinSource7, GPIO_AF_FSMC);		// NE1 -> CS
-	  GPIO_PinAFConfig(GPIOD, GPIO_PinSource8, GPIO_AF_FSMC);		// D13
-	  GPIO_PinAFConfig(GPIOD, GPIO_PinSource9, GPIO_AF_FSMC);		// D14
-	  GPIO_PinAFConfig(GPIOD, GPIO_PinSource10, GPIO_AF_FSMC);		// D15
-	  //GPIO_PinAFConfig(GPIOD, GPIO_PinSource11, GPIO_AF_FSMC);		// A16 -> RS
-	  GPIO_PinAFConfig(GPIOD, GPIO_PinSource14, GPIO_AF_FSMC);		// D0
-	  GPIO_PinAFConfig(GPIOD, GPIO_PinSource15, GPIO_AF_FSMC);		// D1
+	  /* FSMC GPIOE pin setting as Alternate Function, 100MHz */
+	  /* Pin:     15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
+	   * Mask32b: 00 00 00 00 00 00 00 00 00 11 11 00 11 11 11 11 = 00000000000000000011110011111111 = 0x00003CFF
+	   * Mask16b:  0  0  0  0  0  0  0  0  0  1  1  0  1  1  1  1 = 0000000001101111 = 0x006F
+	   * MODER:   10 10 10 10 10 10 10 10 10 00 00 10 00 00 00 00 = 10101010101010101000001000000000 = 0xAAAA8200
+	   * OSPEEDR: 11 11 11 11 11 11 11 11 11 00 00 11 00 00 00 00 = 11111111111111111100001100000000 = 0xFFFFC300
+	   * OTYPER:  all zero (using mask16b)
+	   * PUPDR:   all zero (using mask32b)
+	   * */
+	  GPIOE->MODER &= 0x00003CFF; /* Reseting bits to be configured */
+	  GPIOE->MODER |= 0xAAAA8200; /* Configuring bits for AF */
+	  GPIOE->OSPEEDR &= 0x00003CFF; /* Reseting bits to be configured */
+	  GPIOE->OSPEEDR |= 0xFFFFC300; /* Configuring bits for speed 100MHz */
+	  GPIOE->OTYPER &= 0x006F;  /* Output type push-pull */
+	  GPIOE->PUPDR &= 0x00003CFF;  /* No pull-up or pull-down */
 
-	  GPIO_PinAFConfig(GPIOE, GPIO_PinSource4, GPIO_AF_FSMC);		// A20 -> RS
-	  GPIO_PinAFConfig(GPIOE, GPIO_PinSource7, GPIO_AF_FSMC);		// D4
-	  GPIO_PinAFConfig(GPIOE, GPIO_PinSource8, GPIO_AF_FSMC);		// D5
-	  GPIO_PinAFConfig(GPIOE, GPIO_PinSource9, GPIO_AF_FSMC);		// D6
-	  GPIO_PinAFConfig(GPIOE, GPIO_PinSource10, GPIO_AF_FSMC);		// D7
-	  GPIO_PinAFConfig(GPIOE, GPIO_PinSource11, GPIO_AF_FSMC);		// D8
-	  GPIO_PinAFConfig(GPIOE, GPIO_PinSource12, GPIO_AF_FSMC);		// D9
-	  GPIO_PinAFConfig(GPIOE, GPIO_PinSource13, GPIO_AF_FSMC);		// D10
-	  GPIO_PinAFConfig(GPIOE, GPIO_PinSource14, GPIO_AF_FSMC);		// D11
-	  GPIO_PinAFConfig(GPIOE, GPIO_PinSource15, GPIO_AF_FSMC);		// D12
+	  /* FSMC GPIOD pin alternate function setup (0xC) */
+	  /* Pin AFRL:  07   06   05   04   03   02   01   00
+	   * MaskAFRL: 0000 1111 0000 0000 1111 1111 0000 0000 = 0x0F00FF00
+	   * AFRL:     1100 0000 1100 1100 0000 0000 1100 1100 = 0xC0CC00CC
+	   * Pin AFRH:  15   14   13   12   11   10   09   08
+	   * MaskAFRH: 0000 0000 1111 1111 1111 0000 0000 0000 = 0x00FFF000
+	   * AFRH:     1100 1100 0000 0000 0000 1100 1100 1100 = 0xCC000CCC
+	   * */
+	  GPIOD->AFR[0] &= 0x0F00FF00;
+	  GPIOD->AFR[0] |= 0xC0CC00CC;
+	  GPIOD->AFR[1] &= 0x00FFF000;
+	  GPIOD->AFR[1] |= 0xCC000CCC;
 
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_4 | GPIO_Pin_5 |
-									  GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 |
-									  GPIO_Pin_14 | GPIO_Pin_15;
+	  /* FSMC GPIOE pin alternate function setup (0xC) */
+	  /* Pin AFRL:  07   06   05   04   03   02   01   00
+	   * MaskAFRL: 0000 1111 1111 0000 1111 1111 1111 1111 = 0x0FF0FFFF
+	   * AFRL:     1100 0000 0000 1100 0000 0000 0000 0000 = 0xC00C0000
+	   * Pin AFRH:  15   14   13   12   11   10   09   08
+	   * MaskAFRH: 0000 0000 0000 0000 0000 0000 0000 0000 = 0x00000000
+	   * AFRH:     1100 1100 1100 1100 1100 1100 1100 1100 = 0xCCCCCCCC
+	   * */
+	  GPIOE->AFR[0] &= 0x0FF0FFFF;
+	  GPIOE->AFR[0] |= 0xC00C0000;
+	  GPIOE->AFR[1] = 0xCCCCCCCC;
 
-	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	  GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
-	  GPIO_Init(GPIOD, &GPIO_InitStructure);
-
-	  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 |
-									  GPIO_Pin_11 | GPIO_Pin_12 | GPIO_Pin_13 | GPIO_Pin_14 |
-									  GPIO_Pin_15;
-
-	  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-	  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
-	  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	  GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
-
-	  GPIO_Init(GPIOE, &GPIO_InitStructure);
-
-
-//		/* set pins to FSMC mode (using A20) */
-//		IOBus busD = {GPIOD, (1 << 0) | (1 << 1) | (1 << 4) | (1 << 5) | (1 << 7) | (1 << 8) |
-//								(1 << 9) | (1 << 10) | (1 << 14) | (1 << 15), 0};
-//
-//		IOBus busE = {GPIOE, (1 << 4) | (1 << 7) | (1 << 8) | (1 << 9) | (1 << 10) | (1 << 11) |
-//								(1 << 12) | (1 << 13) | (1 << 14) | (1 << 15), 0};
-//
-//		palSetBusMode(&busD, PAL_MODE_ALTERNATE(12));
-//		palSetBusMode(&busE, PAL_MODE_ALTERNATE(12));
 
 		const unsigned char FSMC_Bank = 0;
 		/* FSMC timing */
@@ -263,51 +271,6 @@ bool_t GDISP_LLD(init)(void) {
 		#error "Please define LCD_USE_FSMC or LCD_USE_GPIO"
 	#endif
 
-#if 0
-	lld_lcdWriteReg(0x0000,0x0001);		lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0003,0xA8A4);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x000C,0x0000);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x000D,0x080C);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x000E,0x2B00);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x001E,0x00B0);    	lld_lcdDelay(5);
-	lld_lcdWriteReg(0x0001,0x2B3F);		lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0002,0x0600);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0010,0x0000);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0011,0x6070);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0005,0x0000);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0006,0x0000);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0016,0xEF1C);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0017,0x0003);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0007,0x0133);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x000B,0x0000);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x000F,0x0000);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0041,0x0000);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0042,0x0000);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0048,0x0000);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0049,0x013F);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x004A,0x0000);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x004B,0x0000);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0044,0xEF00);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0045,0x0000);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0046,0x013F);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0030,0x0707);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0031,0x0204);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0032,0x0204);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0033,0x0502);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0034,0x0507);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0035,0x0204);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0036,0x0204);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0037,0x0502);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x003A,0x0302);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x003B,0x0302);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0023,0x0000);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0024,0x0000);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x0025,0x8000);    	lld_lcdDelay(5);
-    lld_lcdWriteReg(0x004f,0x0000);		lld_lcdDelay(5);
-    lld_lcdWriteReg(0x004e,0x0000);		lld_lcdDelay(5);
-#endif
-
-#if 1
 		lld_lcdWriteReg(0x0007,0x0021);    DelayTask(1);
 		lld_lcdWriteReg(0x0000,0x0001);    DelayTask(1);
 		lld_lcdWriteReg(0x0007,0x0023);    DelayTask(1);
@@ -353,7 +316,6 @@ bool_t GDISP_LLD(init)(void) {
 		lld_lcdWriteReg(0x0025,0x8000);    DelayTask(1);
 		lld_lcdWriteReg(0x004f,0x0000);    DelayTask(1);
 		lld_lcdWriteReg(0x004e,0x0000);    DelayTask(1);
-#endif
 
 #if 0
 		FSMC_Bank1->BTCR[FSMC_Bank+1] = (FSMC_BTR1_ADDSET_1 | FSMC_BTR1_ADDSET_3) \
@@ -361,7 +323,7 @@ bool_t GDISP_LLD(init)(void) {
 				| (FSMC_BTR1_BUSTURN_1 | FSMC_BTR1_BUSTURN_3) ;
 #endif
 
-	#if 1//defined(LCD_USE_FSMC)
+	#if defined(LCD_USE_FSMC)
 		/* FSMC delay reduced as the controller now runs at full speed */
 		FSMC_Bank1->BTCR[FSMC_Bank+1] = FSMC_BTR1_ADDSET_1 | FSMC_BTR1_DATAST_2 | FSMC_BTR1_BUSTURN_0 ;
 		FSMC_Bank1->BTCR[FSMC_Bank] = FSMC_BCR1_MWID_0 | FSMC_BCR1_WREN | FSMC_BCR1_MBKEN;
