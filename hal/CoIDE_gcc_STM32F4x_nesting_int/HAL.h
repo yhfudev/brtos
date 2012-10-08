@@ -95,10 +95,10 @@ extern INT32U SPvalue;
 #define INITIAL_XPSR		0x01000000
 
 /* Cortex-M specific definitions. */
-	#define configPRIO_BITS       		                4        /* 15 priority levels */
+	#define PRIO_BITS       		                      4        /* 15 priority levels */
 
-#define configLIBRARY_LOWEST_INTERRUPT_PRIORITY			0xf
-#define configKERNEL_INTERRUPT_PRIORITY 		        (configLIBRARY_LOWEST_INTERRUPT_PRIORITY << (8 - configPRIO_BITS) )
+#define LOWEST_INTERRUPT_PRIORITY			              0xf
+#define KERNEL_INTERRUPT_PRIORITY 		              (LOWEST_INTERRUPT_PRIORITY << (8 - PRIO_BITS) )
 
 /* Constants required to manipulate the NVIC. */
 #define NVIC_INT_CTRL		0xE000ED04								// Interrupt control state register.
@@ -106,6 +106,7 @@ extern INT32U SPvalue;
 #define NVIC_PENDSV_PRI     0xFF        	 						// PendSV priority value (lowest).
 #define NVIC_PENDSVSET      0x10000000         						// Value to trigger PendSV exception.
 #define NVIC_PENDSVCLR      0x08000000         						// Value to clear PendSV exception.
+#define NVIC_PENDSV_PRI     0x00FF0000               // PendSV priority value (lowest)
 
 #define NVIC_SYSTICK_CTRL_P     ( ( volatile unsigned long *) 0xe000e010 )
 #define NVIC_SYSTICK_LOAD       ( ( volatile unsigned long *) 0xe000e014 )
@@ -113,8 +114,8 @@ extern INT32U SPvalue;
 #define FPU_FPCCR				        ( ( volatile unsigned long *) 0xE000EF34 )
 #define portNVIC_SYSPRI2			  ( ( volatile unsigned long *) 0xe000ed20 )
 
-#define portNVIC_PENDSV_PRI			( ( ( unsigned long ) configKERNEL_INTERRUPT_PRIORITY ) << 16 )
-#define portNVIC_SYSTICK_PRI		( ( ( unsigned long ) configKERNEL_INTERRUPT_PRIORITY ) << 24 )
+#define portNVIC_PENDSV_PRI			( ( ( unsigned long ) KERNEL_INTERRUPT_PRIORITY ) << 16 )
+#define portNVIC_SYSTICK_PRI		( ( ( unsigned long ) KERNEL_INTERRUPT_PRIORITY ) << 24 )
 
 #define NVIC_SYSTICK_CLK        0x00000004
 #define NVIC_SYSTICK_INT        0x00000002
