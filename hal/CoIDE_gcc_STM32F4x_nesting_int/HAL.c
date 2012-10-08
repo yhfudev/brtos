@@ -172,8 +172,8 @@ __attribute__ ((naked)) void SwitchContext(void)
 __attribute__ ((naked)) void SwitchContextToFirstTask(void)
 {
 	/* Make PendSV and SysTick the lowest priority interrupts. */
-	*(portNVIC_SYSPRI2) |= portNVIC_PENDSV_PRI;
-	*(portNVIC_SYSPRI2) |= portNVIC_SYSTICK_PRI;
+	*(NVIC_SYSPRI3) |= NVIC_PENDSV_PRI;
+	*(NVIC_SYSPRI3) |= NVIC_SYSTICK_PRI;
 	OS_RESTORE_SP();
 	OS_RESTORE_CONTEXT();
 	OS_RESTORE_ISR();

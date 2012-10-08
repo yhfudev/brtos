@@ -112,10 +112,10 @@ extern INT32U SPvalue;
 #define NVIC_SYSTICK_LOAD       ( ( volatile unsigned long *) 0xe000e014 )
 #define NVIC_INT_CTRL_P         ( ( volatile unsigned long *) 0xe000ed04 )	// Interrupt control state register.
 #define FPU_FPCCR				        ( ( volatile unsigned long *) 0xE000EF34 )
-#define portNVIC_SYSPRI2			  ( ( volatile unsigned long *) 0xe000ed20 )
+#define NVIC_SYSPRI3			      ( ( volatile unsigned long *) 0xe000ed20 )
 
-#define portNVIC_PENDSV_PRI			( ( ( unsigned long ) KERNEL_INTERRUPT_PRIORITY ) << 16 )
-#define portNVIC_SYSTICK_PRI		( ( ( unsigned long ) KERNEL_INTERRUPT_PRIORITY ) << 24 )
+#define NVIC_PENDSV_PRI			    ( ( ( unsigned long ) KERNEL_INTERRUPT_PRIORITY ) << 16 )
+#define NVIC_SYSTICK_PRI		    ( ( ( unsigned long ) KERNEL_INTERRUPT_PRIORITY ) << 24 )
 
 #define NVIC_SYSTICK_CLK        0x00000004
 #define NVIC_SYSTICK_INT        0x00000002
