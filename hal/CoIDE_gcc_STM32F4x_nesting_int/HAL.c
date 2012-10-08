@@ -51,9 +51,9 @@ void TickTimerSetup(void)
 {
 	INT32U 		module  = configCPU_CLOCK_HZ / (INT32U)configTICK_RATE_HZ;
 	
-	*(NVIC_SYSTICK_CTRL_P) = 0;			// Disable Sys Tick Timer
+	*(NVIC_SYSTICK_CTRL) = 0;			// Disable Sys Tick Timer
     *(NVIC_SYSTICK_LOAD) = module - 1u;	// Set tick timer module
-    *(NVIC_SYSTICK_CTRL_P) = NVIC_SYSTICK_CLK | NVIC_SYSTICK_INT | NVIC_SYSTICK_ENABLE;
+    *(NVIC_SYSTICK_CTRL) = NVIC_SYSTICK_CLK | NVIC_SYSTICK_INT | NVIC_SYSTICK_ENABLE;
 }
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////

@@ -92,34 +92,33 @@ extern INT32U SPvalue;
 
 
 /* Constants required to set up the initial stack. */
-#define INITIAL_XPSR		0x01000000
+#define INITIAL_XPSR					0x01000000
 
 /* Cortex-M specific definitions. */
-	#define PRIO_BITS       		                      4        /* 15 priority levels */
+#define PRIO_BITS       		        4        					// 15 priority levels
+#define LOWEST_INTERRUPT_PRIORITY		0xF
+#define KERNEL_INTERRUPT_PRIORITY 		(LOWEST_INTERRUPT_PRIORITY << (8 - PRIO_BITS) )
 
-#define LOWEST_INTERRUPT_PRIORITY			              0xf
-#define KERNEL_INTERRUPT_PRIORITY 		              (LOWEST_INTERRUPT_PRIORITY << (8 - PRIO_BITS) )
+/* Constants required to manipulate the NVIC PendSV */
+#define NVIC_PENDSVSET      			0x10000000         			// Value to trigger PendSV exception.
+#define NVIC_PENDSVCLR      			0x08000000         			// Value to clear PendSV exception.
 
-/* Constants required to manipulate the NVIC. */
-#define NVIC_INT_CTRL		0xE000ED04								// Interrupt control state register.
-#define NVIC_SYSPRI14       0xE000ED22         						// System priority register (priority 14).
-#define NVIC_PENDSV_PRI     0xFF        	 						// PendSV priority value (lowest).
-#define NVIC_PENDSVSET      0x10000000         						// Value to trigger PendSV exception.
-#define NVIC_PENDSVCLR      0x08000000         						// Value to clear PendSV exception.
-#define NVIC_PENDSV_PRI     0x00FF0000               // PendSV priority value (lowest)
+// Constants required to manipulate the NVIC SysTick
+#define NVIC_SYSTICK_CLK        		0x00000004
+#define NVIC_SYSTICK_INT        		0x00000002
+#define NVIC_SYSTICK_ENABLE     		0x00000001
 
-#define NVIC_SYSTICK_CTRL_P     ( ( volatile unsigned long *) 0xe000e010 )
-#define NVIC_SYSTICK_LOAD       ( ( volatile unsigned long *) 0xe000e014 )
-#define NVIC_INT_CTRL_P         ( ( volatile unsigned long *) 0xe000ed04 )	// Interrupt control state register.
-#define FPU_FPCCR				        ( ( volatile unsigned long *) 0xE000EF34 )
-#define NVIC_SYSPRI3			      ( ( volatile unsigned long *) 0xe000ed20 )
+// ARM Cortex-Mx registers
+#define NVIC_SYSTICK_CTRL       		( ( volatile unsigned long *) 0xe000e010 )
+#define NVIC_SYSTICK_LOAD       		( ( volatile unsigned long *) 0xe000e014 )
+#define NVIC_INT_CTRL           		( ( volatile unsigned long *) 0xe000ed04 )
+#define FPU_FPCCR						( ( volatile unsigned long *) 0xE000EF34 )
+#define NVIC_SYSPRI3					( ( volatile unsigned long *) 0xe000ed20 )
 
-#define NVIC_PENDSV_PRI			    ( ( ( unsigned long ) KERNEL_INTERRUPT_PRIORITY ) << 16 )
-#define NVIC_SYSTICK_PRI		    ( ( ( unsigned long ) KERNEL_INTERRUPT_PRIORITY ) << 24 )
+// Kernel interrupt priorities
+#define NVIC_PENDSV_PRI					( ( ( unsigned long ) KERNEL_INTERRUPT_PRIORITY ) << 16 )
+#define NVIC_SYSTICK_PRI				( ( ( unsigned long ) KERNEL_INTERRUPT_PRIORITY ) << 24 )
 
-#define NVIC_SYSTICK_CLK        0x00000004
-#define NVIC_SYSTICK_INT        0x00000002
-#define NVIC_SYSTICK_ENABLE     0x00000001
 
 unsigned short int _psp_swap2byte(unsigned short int n);
 unsigned long int _psp_swap4byte(unsigned long int n);
@@ -171,12 +170,12 @@ void OS_CPU_SR_Restore(INT32U);
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-#define ChangeContext()		*(NVIC_INT_CTRL_P) = NVIC_PENDSVSET;	\
+#define ChangeContext()		*(NVIC_INT_CTRL) = NVIC_PENDSVSET;	\
 							UserExitCritical()
 
-#define CallPendSV()		*(NVIC_INT_CTRL_P) = NVIC_PENDSVSET
+#define CallPendSV()		*(NVIC_INT_CTRL) = NVIC_PENDSVSET
 
-#define Clear_PendSV(void)	*(NVIC_INT_CTRL_P) = NVIC_PENDSVCLR
+#define Clear_PendSV(void)	*(NVIC_INT_CTRL) = NVIC_PENDSVCLR
 
 
 #if (TASK_WITH_PARAMETERS == 1)
