@@ -400,17 +400,7 @@ static void arp_timer(void *arg)
   */
 void ETH_Handler(void)
 {
-  /* Frame received */
-  if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_R) == SET)
-  {
-	  /* A packet has been received.  Wake the handler task. */
-	  OSSemPost(xENETSemaphore);
-  }
 
-  /* Clear the interrupt flags. */
-  /* Clear the Eth DMA Rx IT pending bits */
-  ETH_DMAClearITPendingBit(ETH_DMA_IT_R);
-  ETH_DMAClearITPendingBit(ETH_DMA_IT_NIS);
 }
 
 void ENET_ISR(void)
@@ -420,11 +410,21 @@ void ENET_ISR(void)
 	   *******************************/
 
 	  /* Call original CPU handler*/
-	  ETH_Handler();
+	  /* Frame received */
+	  if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_R) == SET)
+	  {
+		  /* A packet has been received.  Wake the handler task. */
+		  OSSemPost(xENETSemaphore);
+	  }
+
+	  /* Clear the interrupt flags. */
+	  /* Clear the Eth DMA Rx IT pending bits */
+	  ETH_DMAClearITPendingBit(ETH_DMA_IT_R);
+	  ETH_DMAClearITPendingBit(ETH_DMA_IT_NIS);
 
 	  // ************************
 	  // Interrupt Exit
 	  // ************************
-	  CallPendSV();
+	  OS_INT_EXIT_EXT();
 	  // ************************
 }
