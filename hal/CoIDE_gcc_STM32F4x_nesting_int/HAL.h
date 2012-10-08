@@ -173,9 +173,9 @@ void OS_CPU_SR_Restore(INT32U);
 #define ChangeContext()		*(NVIC_INT_CTRL) = NVIC_PENDSVSET;	\
 							UserExitCritical()
 
-#define CallPendSV()		*(NVIC_INT_CTRL) = NVIC_PENDSVSET
-
 #define Clear_PendSV(void)	*(NVIC_INT_CTRL) = NVIC_PENDSVCLR
+
+#define OS_INT_EXIT_EXT()	*(NVIC_INT_CTRL) = NVIC_PENDSVSET
 
 
 #if (TASK_WITH_PARAMETERS == 1)
