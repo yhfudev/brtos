@@ -413,24 +413,18 @@ void ETH_Handler(void)
   ETH_DMAClearITPendingBit(ETH_DMA_IT_NIS);
 }
 
-__attribute__ ((naked)) void ENET_ISR(void)
+void ENET_ISR(void)
 {
 	  /*******************************
 	   * OS-specific Interrupt Enter.
 	   *******************************/
-	  OS_SAVE_ISR();
-	  OS_INT_ENTER();
-
-	  #if (NESTING_INT == 1)
-	  OS_ENABLE_NESTING();
-	  #endif
 
 	  /* Call original CPU handler*/
 	  ETH_Handler();
 
-	  /*******************************
-	   * Interrupt Exit.
-	   *******************************/
-	  OS_INT_EXIT();
-	  OS_RESTORE_ISR();
+	  // ************************
+	  // Interrupt Exit
+	  // ************************
+	  CallPendSV();
+	  // ************************
 }
