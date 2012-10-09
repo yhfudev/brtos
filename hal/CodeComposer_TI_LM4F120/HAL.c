@@ -90,11 +90,6 @@ void OSRTCSetup(void)
 ////////////////////////////////////////////////////////////
 void TickTimer(void)
 {
-  // ************************
-  // Entrada de interrupção
-  // ************************
-  OS_INT_ENTER();
-  
   // Interrupt handling
   TICKTIMER_INT_HANDLER;
 
@@ -124,8 +119,7 @@ void TickTimer(void)
   // ************************
   // Interrupt Exit
   // ************************
-  OS_INT_EXIT();
-  OS_RESTORE_ISR();
+  OS_INT_EXIT_EXT();
   // ************************  
 }
 ////////////////////////////////////////////////////////////
@@ -153,13 +147,15 @@ void SwitchContext(void)
   // ************************
   // Entrada de interrupção
   // ************************
-  OS_INT_ENTER();
+  OS_SAVE_ISR();
 
+  // Interrupt Handling
+  Clear_PendSV();
 
   // ************************
   // Interrupt Exit
   // ************************
-  OS_INT_EXIT();  
+  OS_EXIT_INT();
   OS_RESTORE_ISR();
   // ************************
 }
@@ -228,3 +224,11 @@ void          OS_TaskReturn             (void);
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
+
+
+
+  void SetOSIntPriority(void)
+  {
+	  *(NVIC_SYSPRI3) |= NVIC_PENDSV_PRI;
+	  *(NVIC_SYSPRI3) |= NVIC_SYSTICK_PRI;
+  }

@@ -88,19 +88,31 @@ extern volatile INT32U SPvalue;
 /* Constants required to set up the initial stack. */
 #define INITIAL_XPSR			0x01000000
 
+/* Cortex-M specific definitions. */
+#define PRIO_BITS       		        3        					// 15 priority levels
+#define LOWEST_INTERRUPT_PRIORITY		0x7
+#define KERNEL_INTERRUPT_PRIORITY 		(LOWEST_INTERRUPT_PRIORITY << (8 - PRIO_BITS) )
+
+/* Constants required to manipulate the NVIC PendSV */
+#define NVIC_PENDSVSET      			0x10000000         			// Value to trigger PendSV exception.
+#define NVIC_PENDSVCLR      			0x08000000         			// Value to clear PendSV exception.
+
 /* Constants required to manipulate the NVIC. */
-#define NVIC_PENDSVSET      	0x10000000         						// Value to trigger PendSV exception.
-#define NVIC_SYSTICK_CTRL       ( ( volatile unsigned long *) 0xe000e010 )
-#define NVIC_SYSTICK_LOAD       ( ( volatile unsigned long *) 0xe000e014 )
-#define NVIC_INT_CTRL_P         ( ( volatile unsigned long *) 0xe000ed04 )	// Interrupt control state register.
-#define FPU_FPCCR				((volatile unsigned long *)0xE000EF34)
+#define NVIC_SYSTICK_CTRL       		( ( volatile unsigned long *) 0xe000e010 )
+#define NVIC_SYSTICK_LOAD       		( ( volatile unsigned long *) 0xe000e014 )
+#define NVIC_INT_CTRL         			( ( volatile unsigned long *) 0xe000ed04 )	// Interrupt control state register.
+#define FPU_FPCCR						( ( volatile unsigned long *) 0xE000EF34 )
+#define NVIC_SYSPRI3					( ( volatile unsigned long *) 0xe000ed20 )
+
+// Kernel interrupt priorities
+#define NVIC_PENDSV_PRI					( ( ( unsigned long ) KERNEL_INTERRUPT_PRIORITY ) << 16 )
+#define NVIC_SYSTICK_PRI				( ( ( unsigned long ) KERNEL_INTERRUPT_PRIORITY ) << 24 )
 
 #define NVIC_SYSTICK_CLK        0x00000004
 #define NVIC_SYSTICK_INT        0x00000002
 #define NVIC_SYSTICK_ENABLE     0x00000001
 
 #define SCB_CPACR				((volatile unsigned long *)0xE000ED88)
-#define FPU_FPCCR				((volatile unsigned long *)0xE000EF34)
 
 
 
@@ -110,10 +122,12 @@ extern volatile INT32U SPvalue;
 /////      Port Defines                                /////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
-#define ChangeContext()		*(NVIC_INT_CTRL_P) = NVIC_PENDSVSET;	\
+#define ChangeContext()		*(NVIC_INT_CTRL) = NVIC_PENDSVSET;	\
 							UserExitCritical()
 
-#define Clear_PendSV(void)	*(NVIC_INT_CTRL_P) = NVIC_PENDSVCLR
+#define Clear_PendSV()		*(NVIC_INT_CTRL) = NVIC_PENDSVCLR
+
+#define OS_INT_EXIT_EXT()	*(NVIC_INT_CTRL) = NVIC_PENDSVSET
 								   
 
 INT32U OS_CPU_SR_Save(void);
@@ -149,7 +163,7 @@ void OS_CPU_SR_Restore(INT32U);
 /////      Functions Prototypes                        /////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
-
+void SetOSIntPriority(void);
 #if (TASK_WITH_PARAMETERS == 1)
   void CreateVirtualStack(void(*FctPtr)(void*), INT16U NUMBER_OF_STACKED_BYTES, void *parameters);
 #else
@@ -276,12 +290,17 @@ void OSRTCSetup(void);
 ////////////////////////////////////////////////////////////
 
 
-inline void CriticalIncNesting(void)
-{
-	UserEnterCritical();
-	iNesting++;
-	UserExitCritical();
-}
+#define OS_EXIT_INT()                                                   \
+    SelectedTask = OSSchedule();                                        \
+    if (currentTask != SelectedTask){                                   \
+        OS_SAVE_CONTEXT();                                              \
+        OS_SAVE_SP();                                                   \
+        ContextTask[currentTask].StackPoint = SPvalue;                  \
+	      currentTask = SelectedTask;                                   \
+        SPvalue = ContextTask[currentTask].StackPoint;                  \
+        OS_RESTORE_SP();                                                \
+        OS_RESTORE_CONTEXT();                                           \
+    }
 
 
 inline void CriticalDecNesting(void)
@@ -297,6 +316,8 @@ inline void CriticalDecNesting(void)
 									" svc #0				\n"					\
 								  )
 	   
+
+#define OS_SAVE_ISR()	 __asm(" CPSID I")
 
 #define OS_RESTORE_ISR() __asm(	  /* Ensure exception return uses process stack */		\
 								  " POP		{R3,LR}			\n"							\
@@ -315,7 +336,6 @@ inline void CriticalDecNesting(void)
 #define Optimezed_Scheduler()	__asm(	" CLZ     R0, R0		\n"		\
   										" RSB     R0, R0, #0x1F	\n"		\
 									 )
-
 #endif
 
 #endif
