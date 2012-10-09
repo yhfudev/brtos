@@ -245,19 +245,11 @@ void          OS_TaskReturn             (void);
 }
 
 
-  inline void CriticalIncNesting(void)
-  {
-  	UserEnterCritical();
-  	iNesting++;
-  	UserExitCritical();
-  }
-
-
-  inline void CriticalDecNesting(void)
-  {
-  	UserEnterCritical();
-  	iNesting--;
-  }
+inline void CriticalDecNesting(void)
+{
+	UserEnterCritical();
+	iNesting--;
+}
 
 
 

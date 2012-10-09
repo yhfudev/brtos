@@ -70,10 +70,7 @@
 #define NESTING_INT 1
 
 /// Define the Reset Watchdog macro
-#define RESET_WATCHDOG()		__asm(CPSID I);		\
-								WDOG_REFRESH = 0xA602;	\
-								WDOG_REFRESH = 0xB480;	\
-								__asm(CPSIE I)
+#define RESET_WATCHDOG()	WWDG_SetCounter(92)
 
 /// Define if its necessary to save status register / interrupt info
 #define OS_SR_SAVE_VAR INT32U CPU_SR = 0;
@@ -306,8 +303,6 @@ void OSRTCSetup(void);
 #define OS_ENABLE_NESTING()
 ////////////////////////////////////////////////////////////
 
-
-extern inline void CriticalIncNesting(void);
 
 
 extern inline void CriticalDecNesting(void);
