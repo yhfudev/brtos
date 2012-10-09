@@ -143,7 +143,7 @@ void OS_CPU_SR_Restore(INT32U);
 #define UserExitCritical()  __asm(" CPSIE I")
 
 /// Defines the low power command of the choosen microcontroller
-#define OS_Wait //__asm(" WFI ");
+#define OS_Wait __asm(" WFI ");
 /// Defines the tick timer interrupt handler code (clear flag) of the choosen microcontroller
 #define TICKTIMER_INT_HANDLER
 #define TIMER_MODULE  SYST_RVR
