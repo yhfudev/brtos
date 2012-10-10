@@ -312,8 +312,10 @@ inline void CriticalDecNesting(void)
 
 
 
-#define BTOSStartFirstTask() __asm(	" cpsie i				\n"					\
-									" svc #0				\n"					\
+#define BTOSStartFirstTask() 	  *(NVIC_SYSPRI3) |= NVIC_PENDSV_PRI;			\
+								  *(NVIC_SYSPRI3) |= NVIC_SYSTICK_PRI;			\
+								  __asm(" cpsie i			\n"					\
+										" svc 	#0			\n"					\
 								  )
 	   
 

@@ -226,9 +226,3 @@ void          OS_TaskReturn             (void);
 ////////////////////////////////////////////////////////////
 
 
-
-  void SetOSIntPriority(void)
-  {
-	  *(NVIC_SYSPRI3) |= NVIC_PENDSV_PRI;
-	  *(NVIC_SYSPRI3) |= NVIC_SYSTICK_PRI;
-  }
