@@ -62,6 +62,10 @@
 *   Revision: 1.75
 *   Date:     24/08/2012
 *
+*   Authors:  Gustavo Weber Denardin
+*   Revision: 1.76
+*   Date:     11/10/2012
+*
 *********************************************************************************************************/
 
 #include "BRTOS.h"
@@ -412,7 +416,7 @@ INT8U OSQueuePend (BRTOS_Queue *pont_event, INT8U* pdata, INT16U time_wait)
     // Set timeout overflow
     if (time_wait)
     {  
-      timeout = (INT32U)((INT32U)counter + (INT32U)time_wait);
+      timeout = (INT32U)((INT32U)OSGetCount() + (INT32U)time_wait);
       
       if (timeout >= TICK_COUNT_OVERFLOW)
       {
@@ -1444,7 +1448,7 @@ INT8U OSDQueuePend (BRTOS_Queue *pont_event, void *pdata, INT16U time_wait)
     // Set timeout overflow
     if (time_wait)
     {  
-      timeout = (INT32U)((INT32U)counter + (INT32U)time_wait);
+      timeout = (INT32U)((INT32U)OSGetCount() + (INT32U)time_wait);
       
       if (timeout >= TICK_COUNT_OVERFLOW)
       {

@@ -104,3 +104,6 @@
 - Added a function to get the current tick count
 - Added support for dinamic queue (now it is possible to allocate and deallocate queues with different sizes of data)
 - Added support for parameters in the install task function
+
+== BRTOS 1.76 Changelog ==
+- Tick counter variable protection. Now it is impossible to change the tick counter value inside a user task

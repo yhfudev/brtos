@@ -58,6 +58,10 @@
 *   Revision: 1.64
 *   Date:     22/02/2011
 *
+*   Authors:  Gustavo Weber Denardin
+*   Revision: 1.76
+*   Date:     11/10/2012
+*
 *********************************************************************************************************/
 
 #include "BRTOS.h"
@@ -260,7 +264,7 @@ INT8U OSSemPend (BRTOS_Sem *pont_event, INT16U time_wait)
   // Set timeout overflow
   if (time_wait)
   {  
-    timeout = (INT32U)((INT32U)counter + (INT32U)time_wait);
+    timeout = (INT32U)((INT32U)OSGetCount() + (INT32U)time_wait);
     
     if (timeout >= TICK_COUNT_OVERFLOW)
     {

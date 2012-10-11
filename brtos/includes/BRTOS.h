@@ -27,9 +27,9 @@
 *   Revision: 1.64                  ,   Revision: 1.70
 *   Date:     22/02/2011            ,   Date:     06/06/2012
 *
-*   Author:   Gustavo W. Denardin
-*   Revision: 1.75
-*   Date:     24/08/2012
+*   Author:   Gustavo W. Denardin	,	Authors:  Gustavo W. Denardin
+*   Revision: 1.75					,   Revision: 1.76
+*   Date:     24/08/2012			,	Date:     11/10/2012
 *
 *********************************************************************************************************/
 
@@ -573,6 +573,21 @@ INT8U DelayTaskHMSM(INT8U hours, INT8U minutes, INT8U seconds, INT16U milisecond
 * \return current tick count
 *********************************************************************************************/
 INT16U OSGetTickCount(void);
+
+/*****************************************************************************************//**
+* \fn INT16U OSGetCount(INT16U time)
+* \brief Return current tick count.
+*  Internal BRTOS function.
+* \return current tick count
+*********************************************************************************************/
+INT16U OSGetCount(void);
+
+/*****************************************************************************************//**
+* \fn void OSIncCounter(void)
+* \brief Update the tick counter.
+* \return NONE
+*********************************************************************************************/
+void OSIncCounter(void);
 
 /*****************************************************************************************//**
 * \fn void PreInstallTasks(void)
@@ -1134,7 +1149,6 @@ extern volatile INT8U       SelectedTask;
 extern ContextType          ContextTask[NUMBER_OF_TASKS + 2];
 extern INT16U               iStackAddress;
 extern INT8U                NumberOfInstalledTasks;
-extern INT16U               counter;
 extern volatile INT32U      OSDuty;
 extern INT8U                PriorityVector[configMAX_TASK_INSTALL];
 extern volatile INT32U      OSDutyTmp;
