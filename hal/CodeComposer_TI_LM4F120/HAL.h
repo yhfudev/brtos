@@ -67,6 +67,9 @@
 /// Define if nesting interrupt is active
 #define NESTING_INT			1
 
+/// Define the Reset Watchdog macro
+#define RESET_WATCHDOG()	   WatchdogReloadSet(WATCHDOG0_BASE, configCPU_CLOCK_HZ / 50)
+
 /// Define if its necessary to save status register / interrupt info
 #define OS_SR_SAVE_VAR INT32U CPU_SR = 0;
 
