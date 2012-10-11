@@ -119,8 +119,7 @@ interrupt void TickTimer(void)
   // Interrupt handling
   TICKTIMER_INT_HANDLER;
 
-  counter++;
-  if (counter == TICK_COUNT_OVERFLOW) counter = 0;
+  OSIncCounter();
   
   // BRTOS TRACE SUPPORT
   #if (OSTRACE == 1) 
