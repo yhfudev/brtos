@@ -127,7 +127,7 @@ volatile INT8U SelectedTask;
   #endif
 #endif
 
-static INT16U counter;                                   ///< Incremented each tick timer - Used in delay and timeout functions
+static   INT16U OSTickCounter;                    ///< Incremented each tick timer - Used in delay and timeout functions
 volatile INT32U OSDuty=0;                         ///< Used to compute the CPU load
 volatile INT32U OSDutyTmp=0;                      ///< Used to compute the CPU load
 
@@ -271,7 +271,7 @@ INT16U OSGetTickCount(void)
   INT16U cnt;
   
   OSEnterCritical();
-  cnt = counter;
+  cnt = OSTickCounter;
   OSExitCritical();
   return cnt;
 }
@@ -291,7 +291,7 @@ INT16U OSGetTickCount(void)
 ////////////////////////////////////////////////////////////
 INT16U OSGetCount(void)
 {
-  return counter;
+  return OSTickCounter;
 }
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
@@ -309,8 +309,8 @@ INT16U OSGetCount(void)
 ////////////////////////////////////////////////////////////
 void OSIncCounter(void)
 {
-	  counter++;
-	  if (counter == TickCountOverFlow) counter = 0;
+	  OSTickCounter++;
+	  if (OSTickCounter == TickCountOverFlow) OSTickCounter = 0;
 }
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
@@ -354,7 +354,7 @@ INT8U DelayTask(INT16U time_wait)
             #endif
         #endif    
 
-        timeout = (INT32U)((INT32U)counter + (INT32U)time_wait);
+        timeout = (INT32U)((INT32U)OSTickCounter + (INT32U)time_wait);
         
         if (timeout >= TICK_COUNT_OVERFLOW)
         {
@@ -474,7 +474,7 @@ void OS_TICK_HANDLER(void)
   ////////////////////////////////////////////////////  
   while(Task != NULL)
   {      
-      if (Task->TimeToWait == counter)
+      if (Task->TimeToWait == OSTickCounter)
       {
 
         iPrio = Task->Priority;
@@ -570,7 +570,7 @@ INT8U BRTOSStart(void)
 void PreInstallTasks(void)
 {
   INT8U i=0;
-  counter = 0;
+  OSTickCounter = 0;
   currentTask = 0;
   NumberOfInstalledTasks = 0;
   TaskAlloc = 0;
