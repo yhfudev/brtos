@@ -160,7 +160,18 @@ void SwitchContext(void)
   // ************************
   // Interrupt Exit
   // ************************
-  OS_EXIT_INT();
+  //OS_EXIT_INT();
+    SelectedTask = OSSchedule();
+    if (currentTask != SelectedTask)
+    {
+        OS_SAVE_CONTEXT();
+        OS_SAVE_SP();
+        ContextTask[currentTask].StackPoint = SPvalue;
+	      currentTask = SelectedTask;
+        SPvalue = ContextTask[currentTask].StackPoint;
+        OS_RESTORE_SP();
+        OS_RESTORE_CONTEXT();
+    }
   OS_RESTORE_ISR();
   // ************************
 }
@@ -234,22 +245,21 @@ void          OS_TaskReturn             (void);
 
 #if (NESTING_INT == 1)
 
-INT32U OS_CPU_SR_Save(void)
-{  
-	INT32U priority;
-	__asm
-	(
-		    "MRS     %0, PRIMASK         \n"
-		    "CPSID   I					 \n"
-			: "=r"   (priority)
-	);
-}
+  INT32U OS_CPU_SR_Save(void)
+  {  
+  	__asm
+  	( 
+  		    "MRS     R0, PRIMASK         \n"
+  		    "CPSID   I					 \n"
+  		    "BX      LR					 \n" 
+  	);
+  }
 
 
-void OS_CPU_SR_Restore(INT32U SR)
-{  
-	__asm volatile ("MSR PRIMASK, %0\n\t" : : "r" (SR) );
-}
+  void OS_CPU_SR_Restore(INT32U SR)
+  {  
+  	__asm volatile ("MSR PRIMASK, %0\n\t" : "=r" (SR) );
+  }
 
   
 
