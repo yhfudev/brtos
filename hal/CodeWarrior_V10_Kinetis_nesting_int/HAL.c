@@ -160,18 +160,7 @@ void SwitchContext(void)
   // ************************
   // Interrupt Exit
   // ************************
-  //OS_EXIT_INT();
-    SelectedTask = OSSchedule();
-    if (currentTask != SelectedTask)
-    {
-        OS_SAVE_CONTEXT();
-        OS_SAVE_SP();
-        ContextTask[currentTask].StackPoint = SPvalue;
-	      currentTask = SelectedTask;
-        SPvalue = ContextTask[currentTask].StackPoint;
-        OS_RESTORE_SP();
-        OS_RESTORE_CONTEXT();
-    }
+  OS_EXIT_INT();
   OS_RESTORE_ISR();
   // ************************
 }
