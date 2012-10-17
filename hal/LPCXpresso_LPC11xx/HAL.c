@@ -31,21 +31,10 @@
 #include <cr_section_macros.h>
 #include <NXP/crp.h>
 
-void TickTimer(void) __attribute__ ((naked));
-void SwitchContext(void) __attribute__ (( naked ));
-void SwitchContextToFirstTask(void) __attribute__ (( naked ));
-INT32U OS_CPU_SR_Save(void) __attribute__ (( naked ));
-void OS_CPU_SR_Restore(INT32U prio) __attribute__ (( naked ));
-
-
 
 
 #if (SP_SIZE == 32)
   INT32U SPvalue;                             ///< Used to save and restore a task stack pointer
-#endif
-
-#if (SP_SIZE == 16)
-  INT16U SPvalue;                             ///< Used to save and restore a task stack pointer
 #endif
 
 
@@ -60,23 +49,11 @@ void OS_CPU_SR_Restore(INT32U prio) __attribute__ (( naked ));
 
 void TickTimerSetup(void)
 {
-	if (SysTick_Config(configCPU_CLOCK_HZ / (INT32U)configTICK_RATE_HZ)) { /* Setup SysTick Timer for 1 msec interrupts  */
-		while (1);                                  /* Capture error */
-	}
-	
-	if ( !(SysTick->CTRL & SysTick_CTRL_CLKSOURCE_Msk) )
-	{
-		/* When external reference clock is used(CLKSOURCE in
-		Systick Control and register bit 2 is set to 0), the
-		SYSTICKCLKDIV must be a non-zero value and 2.5 times
-		faster than the reference clock.
-		When core clock, or system AHB clock, is used(CLKSOURCE
-		in Systick Control and register bit 2 is set to 1), the
-		SYSTICKCLKDIV has no effect to the SYSTICK frequency. See
-		more on Systick clock and status register in Cortex-M3
-		technical Reference Manual. */
-		LPC_SYSCON->SYSTICKCLKDIV = 0x08;
-	}
+	INT32U 		module  = configCPU_CLOCK_HZ / (INT32U)configTICK_RATE_HZ;
+
+	*(NVIC_SYSTICK_CTRL) = 0;			// Disable Sys Tick Timer
+    *(NVIC_SYSTICK_LOAD) = module - 1u;	// Set tick timer module
+    *(NVIC_SYSTICK_CTRL) = NVIC_SYSTICK_CLK | NVIC_SYSTICK_INT | NVIC_SYSTICK_ENABLE;
 }
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
@@ -114,15 +91,14 @@ void OSRTCSetup(void)
 void TickTimer(void)
 {
   // ************************
-  // Entrada de interrup��o
+  // Entrada de interrupcao
   // ************************
-  OS_SAVE_ISR();
-  OS_INT_ENTER();
   
   // Interrupt handling
   TICKTIMER_INT_HANDLER;
 
-  OSIncCounter();
+  counter++;
+  if (counter == TickCountOverFlow) counter = 0;
   
   // BRTOS TRACE SUPPORT
   #if (OSTRACE == 1) 
@@ -134,10 +110,6 @@ void TickTimer(void)
           #endif         
       #endif       
   #endif  
-
-  #if (NESTING_INT == 1)
-  OS_ENABLE_NESTING();
-  #endif   
     
   // ************************
   // Handler code for the tick
@@ -147,8 +119,7 @@ void TickTimer(void)
   // ************************
   // Interrupt Exit
   // ************************
-  OS_INT_EXIT();
-  OS_RESTORE_ISR();  
+  OS_INT_EXIT_EXT();
   // ************************  
 }
 ////////////////////////////////////////////////////////////
@@ -171,22 +142,22 @@ void TickTimer(void)
 * \brief Software interrupt handler routine (Internal kernel function).
 *  Used to switch the tasks context.
 ****************************************************************/
-void SwitchContext(void)
+__attribute__ (( naked )) void SwitchContext(void)
 {
-  // ************************
-  // Entrada de interrupcao
-  // ************************
-  OS_SAVE_ISR();
-  OS_INT_ENTER();
+	  // ************************
+	  // Entrada de interrupção
+	  // ************************
+	  OS_SAVE_ISR();
 
-  // Interrupt Handling
-  
-  // ************************
-  // Interrupt Exit
-  // ************************
-  OS_INT_EXIT();  
-  OS_RESTORE_ISR();
-  // ************************
+	  // Interrupt Handling
+	  Clear_PendSV();
+
+	  // ************************
+	  // Interrupt Exit
+	  // ************************
+	  OS_EXIT_INT();
+	  OS_RESTORE_ISR();
+	  // ************************
 }
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
@@ -194,8 +165,12 @@ void SwitchContext(void)
 ////////////////////////////////////////////////////////////
 
 
-void SwitchContextToFirstTask(void)
+__attribute__ (( naked )) void SwitchContextToFirstTask(void)
 {
+	OS_SAVE_ISR();
+	/* Make PendSV and SysTick the lowest priority interrupts. */
+	*(NVIC_SYSPRI3) |= NVIC_PENDSV_PRI;
+	*(NVIC_SYSPRI3) |= NVIC_SYSTICK_PRI;
 	OS_RESTORE_SP();
 	OS_RESTORE_CONTEXT();
 	OS_RESTORE_ISR();
@@ -247,37 +222,26 @@ void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
 #if (NESTING_INT == 1)
 
 INT32U OS_CPU_SR_Save(void)
-{  
+{
+	INT32U priority;
 	__asm
-	( 
-		    "MRS     R0, PRIMASK         \n"
+	(
+		    "MRS     %0, PRIMASK         \n"
 		    "CPSID   I					 \n"
-		    "BX      LR					 \n" 
+			: "=r"   (priority)
 	);
-	return 0;
+
+	return priority;
 }
 
 
-void OS_CPU_SR_Restore(INT32U prio)
-{  
-	__asm
-	( 
-		    "MSR     PRIMASK, R0         \n"
-		    "BX      LR					 \n" 
-	);
+void OS_CPU_SR_Restore(INT32U SR)
+{
+	__asm volatile ("MSR PRIMASK, %0\n\t" : : "r" (SR) );
 }
-
   
 
 #endif
-
-
-inline void CriticalIncNesting(void)
-{
-	UserEnterCritical();
-	iNesting++;
-	UserExitCritical();
-}
 
 
 inline void CriticalDecNesting(void)
