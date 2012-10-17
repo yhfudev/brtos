@@ -156,7 +156,11 @@ void OS_CPU_SR_Restore(INT32U);
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES);
+#if (TASK_WITH_PARAMETERS == 1)
+  void CreateVirtualStack(void(*FctPtr)(void*), INT16U NUMBER_OF_STACKED_BYTES, void *parameters);
+#else
+  void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES);
+#endif
 
 /*****************************************************************************************//**
 * \fn void TickTimerSetup(void)

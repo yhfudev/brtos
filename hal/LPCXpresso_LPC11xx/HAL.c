@@ -97,8 +97,7 @@ void TickTimer(void)
   // Interrupt handling
   TICKTIMER_INT_HANDLER;
 
-  counter++;
-  if (counter == TickCountOverFlow) counter = 0;
+  OSIncCounter();
   
   // BRTOS TRACE SUPPORT
   #if (OSTRACE == 1) 
@@ -190,7 +189,11 @@ __attribute__ (( naked )) void SwitchContextToFirstTask(void)
 void          OS_TaskReturn             (void);
 
 
-void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
+#if (TASK_WITH_PARAMETERS == 1)
+  void CreateVirtualStack(void(*FctPtr)(void*), INT16U NUMBER_OF_STACKED_BYTES, void *parameters)
+#else
+  void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
+#endif
 {  
 	INT32U *stk_pt = (INT32U*)&STACK[iStackAddress + (NUMBER_OF_STACKED_BYTES / sizeof(OS_CPU_TYPE))];
 	
@@ -203,7 +206,11 @@ void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES)
     *--stk_pt = (INT32U)0x03030303u;                        /* R3                                                     */
     *--stk_pt = (INT32U)0x02020202u;                        /* R2                                                     */
 	*--stk_pt = (INT32U)(NUMBER_OF_STACKED_BYTES / 10);		/* R1                                                     */
-    *--stk_pt = (INT32U)0;                              	/* R0 : argument                                          */
+#if (TASK_WITH_PARAMETERS == 1)
+	*--stk_pt = (INT32U)parameters;                         /* R0 : argument                                          */
+#else
+	*--stk_pt = (INT32U)0;                              	/* R0 : argument                                          */
+#endif
                                                             /* Remaining registers saved on process stack             */
     *--stk_pt = (INT32U)0x07070707u;                        /* R7                                                     */
     *--stk_pt = (INT32U)0x06060606u;                        /* R6                                                     */
