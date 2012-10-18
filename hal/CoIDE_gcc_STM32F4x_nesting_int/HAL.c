@@ -179,19 +179,6 @@ __attribute__ ((naked)) void SwitchContextToFirstTask(void)
 }
 
 
-#if (OPTIMIZED_SCHEDULER == 1)
-
-INT8U Optimezed_Scheduler2(INT32U READY_LIST_VAR)
-{
-	INT8U priority;
-
-	__asm volatile   ("CLZ %1,%1      \n\t"
-					  "RSB %0,%1,0x1F \n\t"
-					  : "=r" (priority)
-					  : "r" (READY_LIST_VAR));
-	return priority;
-}
-#endif
 
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////

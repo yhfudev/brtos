@@ -353,8 +353,13 @@ extern inline void CriticalDecNesting(void);
 		)
 #endif
 
-extern INT8U Optimezed_Scheduler2(INT32U READY_LIST_VAR);
 
-#define Optimezed_Scheduler()	return Optimezed_Scheduler2(READY_LIST_VAR)
+#define Optimezed_Scheduler()				\
+INT8U priority;								\
+__asm volatile   ("CLZ %1,%1      \n\t"		\
+				  "RSB %0,%1,0x1F \n\t"		\
+				  : "=r" (priority)			\
+				  : "r" (READY_LIST_VAR));	\
+return priority
 
 #endif
