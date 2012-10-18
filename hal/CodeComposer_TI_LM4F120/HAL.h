@@ -55,6 +55,9 @@
 /// Define MCU FPU hardware support
 #define FPU_SUPPORT			1
 
+/// Define compiler optimization level
+#define COMPILER_OPTIMIZATION	2
+
 /// Define if the optimized scheduler will be used
 #define OPTIMIZED_SCHEDULER 1
 
@@ -203,6 +206,7 @@ void OSRTCSetup(void);
 *********************************************************************************************/
 /// Save Context Define
 #if (FPU_SUPPORT == 1)
+#if (COMPILER_OPTIMIZATION == 0)
 #define OS_SAVE_CONTEXT() __asm(  " POP      {R3, LR}           \n"		\
 								  " MRS      R0, PSP			\n"		\
 								  " TST 	 R14,#0x10			\n"		\
@@ -210,6 +214,17 @@ void OSRTCSetup(void);
 								  " VSTMDBEQ R0!,{S16-S31}		\n"		\
 								  " STMDB 	 R0!, {r4-r11, R14}	\n"		\
 							)
+#endif
+#if (COMPILER_OPTIMIZATION == 2)
+#define OS_SAVE_CONTEXT() __asm(  " POP      {R3-R5, LR}        \n"		\
+								  " PUSH     {R0}   			\n"		\
+								  " MRS      R0, PSP			\n"		\
+								  " TST 	 R14,#0x10			\n"		\
+								  " IT		 EQ					\n"		\
+								  " VSTMDBEQ R0!,{S16-S31}		\n"		\
+								  " STMDB 	 R0!, {r4-r11, R14}	\n"		\
+							)
+#endif
 #else
 #define OS_SAVE_CONTEXT() __asm(	" POP     {R3, LR}      \n"		\
 									" MRS     R0, PSP		\n"		\
@@ -262,12 +277,17 @@ void OSRTCSetup(void);
 * \return NONE
 *********************************************************************************************/
 /// Save Stack Pointer Define
+#if (COMPILER_OPTIMIZATION == 0)
 #define OS_SAVE_SP() 	__asm(" PUSH {R0} ");			\
 						SPvalue = (INT32U)&SPvalue;		\
 						__asm(" POP {R0} ");			\
 						__asm(" STR   R0, [R1] ")
+#endif
 
-
+#if (COMPILER_OPTIMIZATION == 2)
+#define OS_SAVE_SP() 	SPvalue = (INT32U)&SPvalue;		\
+						__asm(" STR   R0, [R4] ")
+#endif
 ////////////////////////////////////////////////////////////
 
 /*****************************************************************************************//**
@@ -292,7 +312,7 @@ void OSRTCSetup(void);
 #define OS_ENABLE_NESTING()
 ////////////////////////////////////////////////////////////
 
-
+#if (COMPILER_OPTIMIZATION == 0)
 #define OS_EXIT_INT()                                                   \
     SelectedTask = OSSchedule();                                        \
     if (currentTask != SelectedTask){                                   \
@@ -304,7 +324,22 @@ void OSRTCSetup(void);
         OS_RESTORE_SP();                                                \
         OS_RESTORE_CONTEXT();                                           \
     }
+#endif
 
+#if (COMPILER_OPTIMIZATION == 2)
+#define OS_EXIT_INT()                                               \
+SelectedTask = OSSchedule();                                        \
+if (currentTask != SelectedTask){                                   \
+    OS_SAVE_CONTEXT();                                              \
+    OS_SAVE_SP();                                                   \
+    __asm(" POP    {R0}");											\
+    ContextTask[currentTask].StackPoint = SPvalue;                  \
+      currentTask = SelectedTask;                                   \
+    SPvalue = ContextTask[currentTask].StackPoint;                  \
+    OS_RESTORE_SP();                                                \
+    OS_RESTORE_CONTEXT();                                           \
+}
+#endif
 
 inline void CriticalDecNesting(void)
 {
@@ -324,6 +359,7 @@ inline void CriticalDecNesting(void)
 
 #define OS_SAVE_ISR()	 __asm(" CPSID I")
 
+#if (COMPILER_OPTIMIZATION == 0)
 #define OS_RESTORE_ISR() __asm(	  /* Ensure exception return uses process stack */		\
 								  " POP		{R3,LR}			\n"							\
 								  " ORR     LR, LR, #0x04	\n"							\
@@ -331,16 +367,35 @@ inline void CriticalDecNesting(void)
 								  /* Exception return will restore remaining context */ \
 								  " BX      LR               \n"						\
 								  )
-
+#endif
+#if (COMPILER_OPTIMIZATION == 2)
+#define OS_RESTORE_ISR() __asm(	  /* Ensure exception return uses process stack */		\
+								  " POP		{R3-R5,LR}		\n"							\
+								  " ORR     LR, LR, #0x04	\n"							\
+								  " CPSIE   I				\n"							\
+								  /* Exception return will restore remaining context */ \
+								  " BX      LR               \n"						\
+							 )
+#endif
 
 
 
 
 #if (OPTIMIZED_SCHEDULER == 1)
 
-#define Optimezed_Scheduler()	__asm(	" CLZ     R0, R0		\n"		\
-  										" RSB     R0, R0, #0x1F	\n"		\
-									 )
+	#if (COMPILER_OPTIMIZATION == 0)
+	#define Optimezed_Scheduler()	__asm(	" CLZ     R0, R0		\n"		\
+											" RSB     R0, R0, #0x1F	\n"		\
+										 )
+	#endif
+
+	#if (COMPILER_OPTIMIZATION == 2)
+	#define Optimezed_Scheduler()	__asm(	" CLZ     R0, R0		\n"		\
+											" RSB     R0, R0, #0x1F	\n"		\
+										 );									\
+										 return (INT8U)READY_LIST_VAR
+	#endif
+
 #endif
 
 #endif
