@@ -47,12 +47,24 @@
 
 
 /// Define the used processor
-#define PROCESSOR 		ARM_Cortex_M4
+#define PROCESSOR 		ARM_Cortex_M3
 
 #define OS_CPU_TYPE		INT32U
 
+/// Define MCU FPU hardware support
+#define FPU_SUPPORT			1
+
+/// Define if the optimized scheduler will be used
+#define OPTIMIZED_SCHEDULER 1
+
+/// Define if InstallTask function will support parameters
+#define TASK_WITH_PARAMETERS 0
+
+/// Define if 32 bits register for tick timer will be used
+#define TICK_TIMER_32BITS   1
+
 /// Define if nesting interrupt is active
-#define NESTING_INT 1
+#define NESTING_INT			1
 
 /// Define if its necessary to save status register / interrupt info
 #define OS_SR_SAVE_VAR INT32U CPU_SR = 0;
@@ -63,29 +75,39 @@
 /// Define CPU Stack Pointer Size
 #define SP_SIZE 32
 
+#define READY_LIST_VAR read_list
 
 extern INT8U iNesting;
 extern volatile INT32U SPvalue;
 
 
-
 /* Constants required to set up the initial stack. */
-#define INITIAL_XPSR		0x01000000
+#define INITIAL_XPSR			0x01000000
+
+/* Cortex-M specific definitions. */
+#define PRIO_BITS       		        3        					// 15 priority levels
+#define LOWEST_INTERRUPT_PRIORITY		0x7
+#define KERNEL_INTERRUPT_PRIORITY 		(LOWEST_INTERRUPT_PRIORITY << (8 - PRIO_BITS) )
+
+/* Constants required to manipulate the NVIC PendSV */
+#define NVIC_PENDSVSET      			0x10000000         			// Value to trigger PendSV exception.
+#define NVIC_PENDSVCLR      			0x08000000         			// Value to clear PendSV exception.
 
 /* Constants required to manipulate the NVIC. */
-//#define NVIC_INT_CTRL		0xE000ED04								// Interrupt control state register.
-#define NVIC_SYSPRI14       0xE000ED22         						// System priority register (priority 14).
-#define NVIC_PENDSV_PRI     0xFF        	 						// PendSV priority value (lowest).
-#define NVIC_PENDSVSET      0x10000000         						// Value to trigger PendSV exception.
-#define NVIC_PENDSVCLR		0x08000000								// Value to clear PendSV pending status
-#define NVIC_SYSTICK_CTRL       ( ( volatile unsigned long *) 0xe000e010 )
-#define NVIC_SYSTICK_LOAD       ( ( volatile unsigned long *) 0xe000e014 )
-#define NVIC_INT_CTRL           ( ( volatile unsigned long *) 0xe000ed04 )
-#define NVIC_CCR           		( ( volatile unsigned long *) 0xe000ed14 )
-#define NVIC_SYSPRI2            ( ( volatile unsigned long *) 0xe000ed20 )
+#define NVIC_SYSTICK_CTRL       		( ( volatile unsigned long *) 0xe000e010 )
+#define NVIC_SYSTICK_LOAD       		( ( volatile unsigned long *) 0xe000e014 )
+#define NVIC_INT_CTRL         			( ( volatile unsigned long *) 0xe000ed04 )	// Interrupt control state register.
+#define FPU_FPCCR						( ( volatile unsigned long *) 0xE000EF34 )
+#define NVIC_SYSPRI3					( ( volatile unsigned long *) 0xe000ed20 )
+
+// Kernel interrupt priorities
+#define NVIC_PENDSV_PRI					( ( ( unsigned long ) KERNEL_INTERRUPT_PRIORITY ) << 16 )
+#define NVIC_SYSTICK_PRI				( ( ( unsigned long ) KERNEL_INTERRUPT_PRIORITY ) << 24 )
+
 #define NVIC_SYSTICK_CLK        0x00000004
 #define NVIC_SYSTICK_INT        0x00000002
 #define NVIC_SYSTICK_ENABLE     0x00000001
+
 
 
 
@@ -95,20 +117,13 @@ extern volatile INT32U SPvalue;
 /////      Port Defines                                /////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
-/// Defines the change context command of the choosen processor
-/* Talvez tenha que desbloquear as interrupções (As vezes o BRTOS chama está função
-*  com as interrupções bloqueadas !!!!!
-*  Talvez chamar a função OSExitCritical antes para limpar o backup de condição crítica
-*  OS_CPU_SR  
-*/
-//#define ChangeContext() 	__asm(	" LDR     R0, =NVIC_INT_CTRL	\n"	\
-									" MOV.W	  R1, #0x10000000		\n" \
-									" STR     R1, [R0]				\n"	\
-									" BX      LR					\n"	\
-								   )
-								   
-void ChangeContext(void);
-//void BRTOSStartFirstTask(void);
+#define ChangeContext()		*(NVIC_INT_CTRL) = NVIC_PENDSVSET;	\
+							UserExitCritical()
+
+#define Clear_PendSV()		*(NVIC_INT_CTRL) = NVIC_PENDSVCLR
+
+#define OS_INT_EXIT_EXT()	*(NVIC_INT_CTRL) = NVIC_PENDSVSET
+
 
 INT32U OS_CPU_SR_Save(void);
 #define  OSEnterCritical()  (CPU_SR = OS_CPU_SR_Save())	 // Disable interrupts    
@@ -121,18 +136,16 @@ void OS_CPU_SR_Restore(INT32U);
 #define UserExitCritical()  __asm(" CPSIE I")
 
 /// Defines the low power command of the choosen microcontroller
-#define OS_Wait //asm(STOP #0x2000);
+#define OS_Wait __asm(" WFI ");
 /// Defines the tick timer interrupt handler code (clear flag) of the choosen microcontroller
 #define TICKTIMER_INT_HANDLER
-#define TIMER_MODULE
-#define TIMER_COUNTER
+#define TIMER_MODULE	SYST_RVR
+#define TIMER_COUNTER	SYST_CVR
 
 
 // stacked by the RTI interrupt process
 #define NUMBER_MIN_OF_STACKED_BYTES 64
 
-
-void ChangeSP(void);
 
 
 
@@ -142,7 +155,12 @@ void ChangeSP(void);
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES);
+void SetOSIntPriority(void);
+#if (TASK_WITH_PARAMETERS == 1)
+  void CreateVirtualStack(void(*FctPtr)(void*), INT16U NUMBER_OF_STACKED_BYTES, void *parameters);
+#else
+  void CreateVirtualStack(void(*FctPtr)(void), INT16U NUMBER_OF_STACKED_BYTES);
+#endif
 
 
 /*****************************************************************************************//**
@@ -173,9 +191,9 @@ void OSRTCSetup(void);
 * \return NONE
 *********************************************************************************************/
 /// Save Context Define
-#define OS_SAVE_CONTEXT() __asm(	" MRS     R0, PSP		\n"		\
-							  		" SUBS    R0, R0, #0x20	\n"		\
-							  		" STM     R0, {R4-R11}	\n"		\
+#define OS_SAVE_CONTEXT() __asm(	" POP     {R3, LR}   	\n"		\
+									" MRS     R0, PSP		\n"		\
+							  		" STMDB   R0!, {R4-R11}	\n"		\
 						  )
 ////////////////////////////////////////////////////////////
 
@@ -186,13 +204,16 @@ void OSRTCSetup(void);
 * \return NONE
 *********************************************************************************************/
 /// Restore Context Define
-#define OS_RESTORE_CONTEXT() __asm(											\
-								  /* Restore r4-11 from new process stack */\
-								  " LDM     R0, {R4-R11}		\n"				\
-								  " ADDS    R0, R0, #0x20	\n"				\
-								  /* Load PSP with new process SP */		\
-								  " MSR     PSP, R0			\n"				\
-								  )
+#define OS_RESTORE_CONTEXT() __asm(														  \
+									/* Restore r4-11 from new process stack */			  \
+									" LDMIA    R0!, {R4-R11}		\n"					  \
+									/* Load PSP with new process SP */					  \
+									" MSR      PSP, R0				\n"					  \
+									" ORR      LR,LR,#0x04     		\n"					  \
+								    /* Exception return will restore remaining context */ \
+	    							" CPSIE    I					\n"					  \
+								    " BX       LR               	\n"					  \
+								 )
 ////////////////////////////////////////////////////////////
 
 
@@ -202,31 +223,22 @@ void OSRTCSetup(void);
 * \return NONE
 *********************************************************************************************/
 /// Save Stack Pointer Define
-//#define OS_SAVE_SP() __asm(	" LDR	R1,	=SPvalue	\n"		\
-								" STR   R0, [R1]		\n"		\
-						  )
+#define OS_SAVE_SP() 	__asm(" PUSH {R0} ");			\
+						SPvalue = (INT32U)&SPvalue;		\
+						__asm(" POP {R0} ");			\
+						__asm(" STR   R0, [R1] ")
 
-#define OS_SAVE_SP() 	SPvalue = (INT32U)&SPvalue;					\
-						/*(void)SPvalue;							*/	\
-						__asm(	" STR   R0, [R4]		\n"		)
 
 ////////////////////////////////////////////////////////////
-
-						//__asm(  " PUSH   {R0}		\n"				\
-								" POP	 {R1}		\n");			\
 
 /*****************************************************************************************//**
 * \fn inline asm void RestoreContext(void)
 * \brief Restore context function
 * \return NONE
 *********************************************************************************************/
-/// Restore Stack Pointer Define
-//#define OS_RESTORE_SP()	__asm(	" LDR	 R1, =SPvalue	\n"		\
-								" LDR     R0, [R1]		\n"		\
-							 )
-							 
+
 #define OS_RESTORE_SP()	(void)SPvalue							 
-//void OS_RESTORE_SP(void);							 
+
 ////////////////////////////////////////////////////////////
 
 
@@ -242,12 +254,17 @@ void OSRTCSetup(void);
 ////////////////////////////////////////////////////////////
 
 
-inline void CriticalIncNesting(void)
-{
-	UserEnterCritical();
-	iNesting++;
-	UserExitCritical();
-}
+#define OS_EXIT_INT()                                                   \
+    SelectedTask = OSSchedule();                                        \
+    if (currentTask != SelectedTask){                                   \
+        OS_SAVE_CONTEXT();                                              \
+        OS_SAVE_SP();                                                   \
+        ContextTask[currentTask].StackPoint = SPvalue;                  \
+	      currentTask = SelectedTask;                                   \
+        SPvalue = ContextTask[currentTask].StackPoint;                  \
+        OS_RESTORE_SP();                                                \
+        OS_RESTORE_CONTEXT();                                           \
+    }
 
 
 inline void CriticalDecNesting(void)
@@ -257,38 +274,32 @@ inline void CriticalDecNesting(void)
 }
 
 
-/*
- * Este é o normal do BRTOS, mas não serve para o ARM
- * Acredito que este código vá para a interrupção SVC (usada para iniciar o sistema)
-#define BTOSStartFirstTask()	OS_RESTORE_SP();	  \
-								OS_RESTORE_CONTEXT(); \
-								OS_RESTORE_ISR();
- */
-#define BTOSStartFirstTask() __asm( /* Call SVC to start the first task. */		\
-									" cpsie i				\n"					\
-									" svc #0				\n"					\
+#define BTOSStartFirstTask() 	  *(NVIC_SYSPRI3) |= NVIC_PENDSV_PRI;			\
+								  *(NVIC_SYSPRI3) |= NVIC_SYSTICK_PRI;			\
+								  __asm(" cpsie i			\n"					\
+										" svc 	#0			\n"					\
 								  )
 	   
 
+#define OS_SAVE_ISR()	 __asm(" CPSID I")
+
 #define OS_RESTORE_ISR() __asm(	  /* Ensure exception return uses process stack */		\
+								  " POP		{R3,LR}			\n"							\
 								  " ORR     LR, LR, #0x04	\n"							\
 								  " CPSIE   I				\n"							\
 								  /* Exception return will restore remaining context */ \
-								  " BX      LR               \n"							\
+								  " BX      LR               \n"						\
 								  )
 								  
-#define CHANGE_SP() 	__asm( " PUSH {LR}");											\
-						ChangeSP();														\
-						__asm( " POP {LR}")								  
 
-// Pelo que vi a troca de contexto deve ser realizada dentro de uma exceção
-// No FreeRTOS utilizaram a exceção SVC para iniciar a primeira task (parece ser a melhor opção)
-/*
- No uCOS-II utilizaram a mesma interrupção PendSV e fazem um teste no inicio para ver
- se é a primeira vez (para não salvar o contexto).
- Isto é mais pesado já que sempre vai haver o teste.
- 
-*/
+
+#if (OPTIMIZED_SCHEDULER == 1)
+
+#define Optimezed_Scheduler()	__asm(	" CLZ     R0, R0		\n"		\
+  										" RSB     R0, R0, #0x1F	\n"		\
+									 )
+#endif
+
 
 
 
