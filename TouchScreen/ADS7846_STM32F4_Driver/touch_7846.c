@@ -7,8 +7,6 @@
 Pen_Holder Pen_Point;
 extern BRTOS_Sem   *SemTouch;
 
-static NVIC_InitTypeDef NVIC_InitStructure;
-
 unsigned char flag=0;
 
 														
@@ -211,7 +209,7 @@ void TP_Init(void)
 {	
   SPI_InitTypeDef  SPI_InitStructure;
   GPIO_InitTypeDef GPIO_InitStruct;  
-  //NVIC_InitTypeDef NVIC_InitStructure;
+  NVIC_InitTypeDef NVIC_InitStructure;
   EXTI_InitTypeDef EXTI_InitStructure;
  
   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
