@@ -5,7 +5,9 @@
 #include <math.h>
 
 Pen_Holder Pen_Point;
+extern BRTOS_Sem   *SemTouch;
 
+static NVIC_InitTypeDef NVIC_InitStructure;
 
 unsigned char flag=0;
 
@@ -59,7 +61,7 @@ static u16 tp_filter(u16 *sampleBuf)
 	return sampleBuf[3];
 }
 
-static u16 Read_TP_Axis(u8 axis)
+static u16 tp_read_axis(u8 axis)
 {
 	int i = 0;
 	u16 buffer[7];
@@ -93,16 +95,16 @@ static u16 Read_TP_Axis(u8 axis)
 
 void TP_Read(void)
 {
-#if (TOUCH_GLCD_DRIVER == SSD1289)
+
    u16 pen_tmp;
-#endif
-   Pen_Point.X=Read_TP_Axis(AXIS_X);
-   Pen_Point.Y=Read_TP_Axis(AXIS_Y);
+
+   Pen_Point.X=tp_read_axis(AXIS_X);
+   Pen_Point.Y=tp_read_axis(AXIS_Y);
 
    Pen_Point.X0=(int)((Pen_Point.X-Pen_Point.xoff)/Pen_Point.xfac);
    Pen_Point.Y0=(int)((Pen_Point.Y-Pen_Point.yoff)/Pen_Point.yfac);
 
-#if (TOUCH_GLCD_DRIVER == SSD1289)
+
    if(Pen_Point.X0>=SCREEN_HEIGHT)
    {
 	 Pen_Point.X0=(SCREEN_HEIGHT-1);
@@ -135,37 +137,18 @@ void TP_Read(void)
 		   Pen_Point.Y0 = (SCREEN_WIDTH - 1) - pen_tmp;
 		}
    }
-#else
-   if(Pen_Point.X0>=240)
-   {
-     Pen_Point.X0=239;
-   }
-   if(Pen_Point.Y0>=320)
-   {
-     Pen_Point.Y0=319;
-   }
-#endif
+
 }
 
-void calib_touch(void)
+void TP_Calibration(void)
 {
 	u16 x1,x2,y1,y2;
 
-	#if (TOUCH_GLCD_DRIVER == SSD1289)
 	Pen_Point.CalibOrientation = gdispGetOrientation();
-	gdispClear(Black);
 	gdispDrawString(40,35, "Toque na marca para calibrar !", &fontUI1, White);
-	#endif
 
-	#if (TOUCH_GLCD_DRIVER == OLD_SSD1289)
-	LCD_DrawLine(5, 5, 10, LCD_DIR_HORIZONTAL);
-	LCD_DrawLine(10, 0, 10, LCD_DIR_VERTICAL);
-	#endif
-
-	#if (TOUCH_GLCD_DRIVER == SSD1289)
 	gdispDrawLine(5, 5, 15, 5, White);
 	gdispDrawLine(10, 0, 10, 10, White);
-	#endif
 
 	while(1)
 	{
@@ -173,8 +156,8 @@ void calib_touch(void)
 	  if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_8)==0)
 	  {
 		  // Read position
-		  x1=Read_TP_Axis(AXIS_X);
-		  y1=Read_TP_Axis(AXIS_Y);
+		  x1=tp_read_axis(AXIS_X);
+		  y1=tp_read_axis(AXIS_Y);
 		  break;
 	  }
 	  DelayTask(2);
@@ -183,27 +166,19 @@ void calib_touch(void)
 	while(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_8)==0);
 	DelayTask(100);
 
-	#if (TOUCH_GLCD_DRIVER == OLD_SSD1289)
-	LCD_Clear(BLACK);
-	LCD_DrawLine(115, 160, 10, LCD_DIR_HORIZONTAL);
-	LCD_DrawLine(120, 155, 10, LCD_DIR_VERTICAL);
-	#endif
-
-	#if (TOUCH_GLCD_DRIVER == SSD1289)
 	gdispClear(Black);
 	if (gdispGetOrientation() == portrait)
 	{
-		gdispDrawString(40,((SCREEN_WIDTH / 2) + 25), "Toque na marca para calibrar !", &fontUI1, White);
+		gdispDrawString(40,((SCREEN_WIDTH / 2) + 25), "Toque na marca para calibrar !", &fontUI2, White);
 		gdispDrawLine(((SCREEN_HEIGHT / 2) - 5) , (SCREEN_WIDTH / 2), ((SCREEN_HEIGHT / 2) + 5), (SCREEN_WIDTH / 2), White);
 		gdispDrawLine((SCREEN_HEIGHT / 2) , ((SCREEN_WIDTH / 2) - 5), (SCREEN_HEIGHT / 2), ((SCREEN_WIDTH / 2) + 5), White);
 	}
 	if (gdispGetOrientation() == landscape)
 	{
-		gdispDrawString(40,((SCREEN_HEIGHT / 2) + 25), "Toque na marca para calibrar !", &fontUI1, White);
+		gdispDrawString(40,((SCREEN_HEIGHT / 2) + 25), "Toque na marca para calibrar !", &fontUI2, White);
 		gdispDrawLine(((SCREEN_WIDTH / 2) - 5) , (SCREEN_HEIGHT / 2), ((SCREEN_WIDTH / 2) + 5), (SCREEN_HEIGHT / 2), White);
 		gdispDrawLine((SCREEN_WIDTH / 2) , ((SCREEN_HEIGHT / 2) - 5), (SCREEN_WIDTH / 2), ((SCREEN_HEIGHT / 2) + 5), White);
 	}
-	#endif
 
 	while(1)
 	{
@@ -211,8 +186,8 @@ void calib_touch(void)
 	  if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_8)==0)
 	  {
 		  // Read position
-		  x2=Read_TP_Axis(AXIS_X);
-		  y2=Read_TP_Axis(AXIS_Y);
+		  x2=tp_read_axis(AXIS_X);
+		  y2=tp_read_axis(AXIS_Y);
 		  if ((x2 > 1000) || (y2 > 1000))
 			  break;
 	  }
@@ -222,17 +197,6 @@ void calib_touch(void)
 	while(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_8)==0);
 	DelayTask(300);
 
-	#if (TOUCH_GLCD_DRIVER == OLD_SSD1289)
-	Pen_Point.xfac = (float)((float)(x2 - x1) / (float)(120 - 10));
-	Pen_Point.yfac = (float)((float)(y2 - y1) / (float)(160 - 5));
-
-	Pen_Point.xoff = x1 - (short)(10 * Pen_Point.xfac);
-	Pen_Point.yoff = y1 - (short)(5 * Pen_Point.yfac);
-
-	LCD_Clear(BLACK);
-	#endif
-
-	#if (TOUCH_GLCD_DRIVER == SSD1289)
 	Pen_Point.xfac = (float)((float)(x2 - x1) / (float)((SCREEN_HEIGHT / 2) - 10));
 	Pen_Point.yfac = (float)((float)(y2 - y1) / (float)((SCREEN_WIDTH / 2) - 5));
 
@@ -240,19 +204,21 @@ void calib_touch(void)
 	Pen_Point.yoff = y1 - (short)(5 * Pen_Point.yfac);
 
 	gdispClear(Black);
-	#endif
 }
 
 
-void touch_init(void)
+void TP_Init(void)
 {	
   SPI_InitTypeDef  SPI_InitStructure;
   GPIO_InitTypeDef GPIO_InitStruct;  
   //NVIC_InitTypeDef NVIC_InitStructure;
-  //EXTI_InitTypeDef EXTI_InitStructure;
+  EXTI_InitTypeDef EXTI_InitStructure;
  
-  RCC_AHB1PeriphClockCmd( RCC_AHB1Periph_GPIOC, ENABLE);
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+  /* Enable SYSCFG clock */
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
   
+  /* SPI3 pin config */
   GPIO_InitStruct.GPIO_Mode=GPIO_Mode_AF;
   GPIO_InitStruct.GPIO_Speed=GPIO_Speed_100MHz;
   GPIO_InitStruct.GPIO_OType=GPIO_OType_PP;
@@ -261,9 +227,9 @@ void touch_init(void)
   GPIO_InitStruct.GPIO_Pin=GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12;
   GPIO_Init(GPIOC,&GPIO_InitStruct);
    	  
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource10, GPIO_AF_SPI3);      //sclk	10	 13
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource11, GPIO_AF_SPI3);		//mıso	11	 14
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource12, GPIO_AF_SPI3);		//mosı	12	 15
+  GPIO_PinAFConfig(GPIOC, GPIO_PinSource10, GPIO_AF_SPI3);      //sclk	PC10
+  GPIO_PinAFConfig(GPIOC, GPIO_PinSource11, GPIO_AF_SPI3);		//miso	PC11
+  GPIO_PinAFConfig(GPIOC, GPIO_PinSource12, GPIO_AF_SPI3);		//mosi	PC12
   
   RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, ENABLE);
 												   
@@ -279,79 +245,71 @@ void touch_init(void)
   SPI_InitStructure.SPI_CRCPolynomial = 7; 
   SPI_Init(SPI3,&SPI_InitStructure);
   SPI_Cmd(SPI3,ENABLE);
-  //CS
+
+  /* ChipSelect pin setup */
   GPIO_InitStruct.GPIO_Mode=GPIO_Mode_OUT;
   GPIO_InitStruct.GPIO_Speed=GPIO_Speed_50MHz;
   GPIO_InitStruct.GPIO_OType=GPIO_OType_PP;
   GPIO_InitStruct.GPIO_PuPd=GPIO_PuPd_UP;  
-  GPIO_InitStruct.GPIO_Pin=GPIO_Pin_9;  // 3
-  GPIO_Init(GPIOC,&GPIO_InitStruct);    // d
+  GPIO_InitStruct.GPIO_Pin=TOUCH_CS_PIN;
+  GPIO_Init(TOUCH_CS_PORT,&GPIO_InitStruct);
   T_DCS(); 				 
-  //T_PEN
 
-  //T_PEN
+  /* Touch interrupt pin setup */
   GPIO_InitStruct.GPIO_Mode=GPIO_Mode_IN;
   GPIO_InitStruct.GPIO_Speed=GPIO_Speed_50MHz;
-  GPIO_InitStruct.GPIO_OType=GPIO_OType_PP;
-  GPIO_InitStruct.GPIO_PuPd=GPIO_PuPd_UP;
-  GPIO_InitStruct.GPIO_Pin=GPIO_Pin_8;
-  GPIO_Init(GPIOC,&GPIO_InitStruct);
+  GPIO_InitStruct.GPIO_PuPd=GPIO_PuPd_NOPULL;
+  GPIO_InitStruct.GPIO_Pin=TOUCH_INT_PIN;
+  GPIO_Init(TOUCH_INT_PORT,&GPIO_InitStruct);
 
-  /*
-  GPIO_InitStruct.GPIO_Mode=GPIO_Mode_IN;
-  GPIO_InitStruct.GPIO_Speed=GPIO_Speed_50MHz;
-  GPIO_InitStruct.GPIO_OType=GPIO_OType_PP;
-  GPIO_InitStruct.GPIO_PuPd=GPIO_PuPd_UP;  
-  GPIO_InitStruct.GPIO_Pin=GPIO_Pin_6;
-  GPIO_Init(GPIOD,&GPIO_InitStruct);     
- 
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+  /* Connect EXTI Line to pin */
+  SYSCFG_EXTILineConfig(TOUCH_EXTI_PortSource, TOUCH_EXTI_Source);
 
-  SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOD, EXTI_PinSource6);  	 
-  EXTI_InitStructure.EXTI_Line = EXTI_Line6;
+  /* Configure EXTI Line */
+  EXTI_InitStructure.EXTI_Line = TOUCH_EXTI_Line;
   EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;  
+  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
   EXTI_InitStructure.EXTI_LineCmd = ENABLE;
   EXTI_Init(&EXTI_InitStructure);
-  
-  NVIC_InitStructure.NVIC_IRQChannel = EXTI9_5_IRQn;
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0F;
-  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0F;
+
+  /* Enable and set EXTI Line Interrupt to the lowest priority */
+  NVIC_InitStructure.NVIC_IRQChannel = TOUCH_IRQ_Channel;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x01;
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x01;
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
   NVIC_Init(&NVIC_InitStructure);
-  */
+
 }
-
-
 
 /*
-void EXTI9_5_IRQHandler(void)		
+ * Enable or disable touchpad interrupt
+ * */
+void TP_InterruptEnable(FunctionalState state)
 {
-  if(EXTI_GetITStatus(EXTI_Line6) != RESET)
-  { 
-   	  
-   EXTI_ClearITPendingBit(EXTI_Line6);
-   // Read_Ads7846(); 
-  }  
+	if (state == ENABLE)
+	{
+	    NVIC->ISER[TOUCH_IRQ_Channel >> 0x05] =
+	      (uint32_t)0x01 << (TOUCH_IRQ_Channel & (uint8_t)0x1F);	/* Enable NVIC Channel associated with EXTI */
+	}
+	else
+	{
+	    NVIC->ICER[TOUCH_IRQ_Channel >> 0x05] =
+	      (uint32_t)0x01 << (TOUCH_IRQ_Channel & (uint8_t)0x1F);	/* Disable NVIC Channel associated with EXTI */
+	}
 }
-*/
 
-#if (TOUCH_GLCD_DRIVER == OLD_SSD1289)
-void Drow_Touch_Point(uint16_t x,uint16_t y)
+/* Touch external interrupt pin handler */
+void EXTI9_5_IRQHandler(void)
 {
-	LCD_DrawUniLine(x-12,y,x+13,y);
-	LCD_DrawUniLine(x,y-12,x,y+13);
-	Pixel(x+1,y+1,BLUE);
-	Pixel(x-1,y+1,BLUE);
-	Pixel(x+1,y-1,BLUE);
-	Pixel(x-1,y-1,BLUE);
-	LCD_DrawCircle(x,y,6);
-}	  
-void Draw_Big_Point(uint16_t x,uint16_t y)
-{	    
-	Pixel(x,y,BLUE);
-	Pixel(x+1,y,BLUE);
-	Pixel(x,y+1,BLUE);
-	Pixel(x+1,y+1,BLUE);
+  if(EXTI_GetITStatus(TOUCH_EXTI_Line) != RESET)
+  { 
+   //GPIO_ToggleBits(GPIOC,GPIO_Pin_7);
+   (void)OSSemPost(SemTouch);
+
+   // Disable interrupt:
+   TP_InterruptEnable(DISABLE);
+
+   EXTI_ClearITPendingBit(TOUCH_EXTI_Line);
+  }
+  OS_INT_EXIT_EXT();
 }
-#endif

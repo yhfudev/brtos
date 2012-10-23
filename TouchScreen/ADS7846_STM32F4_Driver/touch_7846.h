@@ -6,18 +6,8 @@
  extern "C" {
 #endif
  
-
-#define OLD_SSD1289 		0
-#define SSD1289 			1
-
-#define TOUCH_GLCD_DRIVER	SSD1289
-
-
-#if (TOUCH_GLCD_DRIVER == OLD_SSD1289)
-#include "SSD1289.h"
-#elif (TOUCH_GLCD_DRIVER == SSD1289)
 #include "gdisp.h"
-#endif
+
 
 
 #include "stm32f4xx.h"	
@@ -34,16 +24,24 @@ typedef struct
 	float yfac;
 	short xoff;
 	short yoff;
-	#if (TOUCH_GLCD_DRIVER == SSD1289)
 	gdisp_orientation_t CalibOrientation;
-	#endif
 }Pen_Holder;
+
 extern Pen_Holder Pen_Point;
+
 #define TOUCH_CS_PORT	 GPIOC
 #define TOUCH_CS_PIN	 GPIO_Pin_9
 
 #define T_CS()   GPIO_ResetBits(TOUCH_CS_PORT, TOUCH_CS_PIN);
 #define T_DCS()  GPIO_SetBits(TOUCH_CS_PORT, TOUCH_CS_PIN);
+
+/* Touch external interrup pin and line definitions */
+#define TOUCH_INT_PIN		GPIO_Pin_8
+#define TOUCH_INT_PORT		GPIOC
+#define TOUCH_EXTI_Line 	EXTI_Line8
+#define TOUCH_EXTI_Source	EXTI_PinSource8
+#define TOUCH_EXTI_PortSource EXTI_PortSourceGPIOC
+#define TOUCH_IRQ_Channel	EXTI9_5_IRQn
 
 #define CMD_RDY 0X90  //0B10010000
 #define CMD_RDX	0XD0  //0B11010000
@@ -51,20 +49,17 @@ extern Pen_Holder Pen_Point;
 #define AXIS_X	0
 #define AXIS_Y	1
  
-#define PEN  GPIOD->IDR&(1<<6) //
-#define NPEN !(0x0080&PEN)      //!PEN
+//#define PEN  GPIOD->IDR&(1<<6) //
+//#define NPEN !(0x0080&PEN)      //!PEN
 
 unsigned char SPI_WriteByte(u8 num);
-void SpiDelay(unsigned int DelayCnt);
+//void SpiDelay(unsigned int DelayCnt);
 void TP_Read(void);
-
+void TP_Init(void);
+void TP_Calibration(void);
 void EXTI9_5_IRQHandler(void);
-void NVIC_TOUCHConfiguration(void);
-void touch_init(void);
-void calib_touch(void);
-void LCD_ShowNum(uint8_t x,uint16_t y,uint16_t data);
+void TP_InterruptEnable(FunctionalState state);
 
-void Touch_Adjust(void);
 #ifdef __cplusplus
 }
 #endif
