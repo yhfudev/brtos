@@ -144,15 +144,15 @@ typedef struct _OSRTC OS_RTC;
 * \return None
 *****************************************************************************************/ 
   
-void OSUpdateTime(OSTime *Ptr_Hora);
+void OSUpdateTime(void);
 
-void OSUpdateDate(OSDate *Ptr_Dia); 
+void OSUpdateDate(void);
 
-void OSResetTime(OSTime *Ptr_Hora);
+void OSResetTime(void);
  
-void OSResetDate(OSDate *Ptr_Dia);
+void OSResetDate(void);
 
-void OSUpdateUptime(OSTime *Ptr_Hora,OSDate *Ptr_Dia);
+void OSUpdateUptime(void);
 
 OSTime OSUptime(void);
 
@@ -173,14 +173,7 @@ void Init_Calendar(void);
 
 
 
-////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////
-/////   Time and Date Variables Extern Declarations    /////
-////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////
 
-extern OSTime Hora;
-extern OSDate Data;
 
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////

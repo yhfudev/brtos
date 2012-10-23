@@ -43,8 +43,8 @@
 #include "BRTOS.h"
 
 // estrutura - Hora
-  OSTime Hora;
-  OSDate Data;
+  static volatile OSTime Hora;
+  static volatile OSDate Data;
   static volatile OS_RTC OSRtc;
   
   // Lookup table holding the length of each mont. The first element is a dummy.
@@ -61,7 +61,7 @@
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-void OSUpdateTime(OSTime *Ptr_Hora)
+void OSUpdateTime(void)
 {
   OS_SR_SAVE_VAR
   
@@ -70,21 +70,21 @@ void OSUpdateTime(OSTime *Ptr_Hora)
   #endif
      OSEnterCritical();
      
-  Ptr_Hora -> RTC_Second++;
+    Hora.RTC_Second++;
 
- 	if (Ptr_Hora -> RTC_Second == 60){
+ 	if (Hora.RTC_Second == 60){
 
- 		Ptr_Hora -> RTC_Second = 0;
- 		Ptr_Hora -> RTC_Minute++;
+ 		Hora.RTC_Second = 0;
+ 		Hora.RTC_Minute++;
 
- 	if (Ptr_Hora -> RTC_Minute == 60){
+ 	if (Hora.RTC_Minute == 60){
 
- 		Ptr_Hora -> RTC_Minute = 0;
- 		Ptr_Hora -> RTC_Hour++;
+ 		Hora.RTC_Minute = 0;
+ 		Hora.RTC_Hour++;
 
- 	if (Ptr_Hora -> RTC_Hour == 24){
+ 	if (Hora.RTC_Hour == 24){
 
- 		Ptr_Hora -> RTC_Hour = 0;
+ 		Hora.RTC_Hour = 0;
   		
  	}}}
   	
@@ -110,7 +110,7 @@ void OSUpdateTime(OSTime *Ptr_Hora)
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-void OSUpdateUptime(OSTime *Ptr_Hora,OSDate *Ptr_Dia)
+void OSUpdateUptime(void)
 {
   OS_SR_SAVE_VAR
 
@@ -119,22 +119,22 @@ void OSUpdateUptime(OSTime *Ptr_Hora,OSDate *Ptr_Dia)
   #endif
      OSEnterCritical();
      
-  Ptr_Hora -> RTC_Second++;
+  Hora.RTC_Second++;
 
-  if (Ptr_Hora -> RTC_Second == 60){
+  if (Hora.RTC_Second == 60){
 
-  	Ptr_Hora -> RTC_Second = 0;
-  	Ptr_Hora -> RTC_Minute++;
+	  Hora.RTC_Second = 0;
+	  Hora.RTC_Minute++;
 
-  if (Ptr_Hora -> RTC_Minute == 60){
+  if (Hora.RTC_Minute == 60){
 
-  	Ptr_Hora -> RTC_Minute = 0;
-  	Ptr_Hora -> RTC_Hour++;
+	  Hora.RTC_Minute = 0;
+	  Hora.RTC_Hour++;
 
-  if (Ptr_Hora -> RTC_Hour == 24){
+  if (Hora.RTC_Hour == 24){
 
-  	Ptr_Hora -> RTC_Hour = 0;
-  	Ptr_Dia -> RTC_Day++;
+	  Hora.RTC_Hour = 0;
+	  Data.RTC_Day++;
   		
   }}}
   
@@ -159,7 +159,7 @@ void OSUpdateUptime(OSTime *Ptr_Hora,OSDate *Ptr_Dia)
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-void OSUpdateDate(OSDate *Ptr_Dia)
+void OSUpdateDate(void)
 {   
   OS_SR_SAVE_VAR
   
@@ -168,22 +168,22 @@ void OSUpdateDate(OSDate *Ptr_Dia)
   #endif
      OSEnterCritical();
      
-	Ptr_Dia -> RTC_Day++;	
+    Data.RTC_Day++;
 		
-	if (Ptr_Dia -> RTC_Day == 30){ 
+	if (Data.RTC_Day == 30){
 	// deve-se adaptar para os dias exatos de cada mês
 
-		Ptr_Dia -> RTC_Day = 0;
-		Ptr_Dia -> RTC_Month++;
+		Data.RTC_Day = 0;
+		Data.RTC_Month++;
 
-	if (Ptr_Dia -> RTC_Month == 12){
+	if (Data.RTC_Month == 12){
 
-		Ptr_Dia -> RTC_Month = 0;
-		Ptr_Dia -> RTC_Year++;
+		Data.RTC_Month = 0;
+		Data.RTC_Year++;
 
-	if (Ptr_Dia -> RTC_Year == 9999){    // ano máximo 9999	
+	if (Data.RTC_Year == 9999){    // ano máximo 9999
 
-		Ptr_Dia -> RTC_Year = 0;
+		Data.RTC_Year = 0;
 	}}}
 	
   #if (NESTING_INT == 0)
@@ -208,7 +208,7 @@ void OSUpdateDate(OSDate *Ptr_Dia)
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-void OSResetTime(OSTime *Ptr_Hora)
+void OSResetTime(void)
 {
   OS_SR_SAVE_VAR
         
@@ -217,9 +217,9 @@ void OSResetTime(OSTime *Ptr_Hora)
   #endif
      OSEnterCritical();
      
-   (Ptr_Hora->RTC_Second) = 0;
-   (Ptr_Hora->RTC_Minute) = 0;
-   (Ptr_Hora->RTC_Hour) = 0;
+   Hora.RTC_Second = 0;
+   Hora.RTC_Minute = 0;
+   Hora.RTC_Hour = 0;
    
   #if (NESTING_INT == 0)
   if (!iNesting)
@@ -243,7 +243,7 @@ void OSResetTime(OSTime *Ptr_Hora)
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
  
-void OSResetDate(OSDate *Ptr_Dia)
+void OSResetDate(void)
 {
   OS_SR_SAVE_VAR
      
@@ -252,9 +252,9 @@ void OSResetDate(OSDate *Ptr_Dia)
   #endif
      OSEnterCritical();
      
-   Ptr_Dia->RTC_Day = 0;
-   Ptr_Dia->RTC_Month = 0;
-   Ptr_Dia->RTC_Year = 0;
+   Data.RTC_Day = 0;
+   Data.RTC_Month = 0;
+   Data.RTC_Year = 0;
    
   #if (NESTING_INT == 0)
   if (!iNesting)
