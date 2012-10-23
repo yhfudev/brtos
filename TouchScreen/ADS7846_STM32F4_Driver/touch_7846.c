@@ -5,7 +5,8 @@
 #include <math.h>
 
 Pen_Holder Pen_Point;
-extern BRTOS_Sem   *SemTouch;
+
+extern BRTOS_Mbox	*MboxTouch;
 
 unsigned char flag=0;
 
@@ -206,76 +207,79 @@ void TP_Calibration(void)
 
 
 void TP_Init(void)
-{	
-  SPI_InitTypeDef  SPI_InitStructure;
-  GPIO_InitTypeDef GPIO_InitStruct;  
-  NVIC_InitTypeDef NVIC_InitStructure;
-  EXTI_InitTypeDef EXTI_InitStructure;
- 
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
-  /* Enable SYSCFG clock */
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-  
-  /* SPI3 pin config */
-  GPIO_InitStruct.GPIO_Mode=GPIO_Mode_AF;
-  GPIO_InitStruct.GPIO_Speed=GPIO_Speed_100MHz;
-  GPIO_InitStruct.GPIO_OType=GPIO_OType_PP;
-  GPIO_InitStruct.GPIO_PuPd=GPIO_PuPd_UP;  
+{
+	/* BRTOS Touchpad mailbox initialization */
+	(void)OSMboxCreate(&MboxTouch,NULL);
 
-  GPIO_InitStruct.GPIO_Pin=GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12;
-  GPIO_Init(GPIOC,&GPIO_InitStruct);
-   	  
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource10, GPIO_AF_SPI3);      //sclk	PC10
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource11, GPIO_AF_SPI3);		//miso	PC11
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource12, GPIO_AF_SPI3);		//mosi	PC12
-  
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, ENABLE);
+	SPI_InitTypeDef  SPI_InitStructure;
+	GPIO_InitTypeDef GPIO_InitStruct;
+	NVIC_InitTypeDef NVIC_InitStructure;
+	EXTI_InitTypeDef EXTI_InitStructure;
+
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+	/* Enable SYSCFG clock */
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+
+	/* SPI3 pin config */
+	GPIO_InitStruct.GPIO_Mode=GPIO_Mode_AF;
+	GPIO_InitStruct.GPIO_Speed=GPIO_Speed_100MHz;
+	GPIO_InitStruct.GPIO_OType=GPIO_OType_PP;
+	GPIO_InitStruct.GPIO_PuPd=GPIO_PuPd_UP;
+
+	GPIO_InitStruct.GPIO_Pin=GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12;
+	GPIO_Init(GPIOC,&GPIO_InitStruct);
+
+	GPIO_PinAFConfig(GPIOC, GPIO_PinSource10, GPIO_AF_SPI3);      //sclk	PC10
+	GPIO_PinAFConfig(GPIOC, GPIO_PinSource11, GPIO_AF_SPI3);		//miso	PC11
+	GPIO_PinAFConfig(GPIOC, GPIO_PinSource12, GPIO_AF_SPI3);		//mosi	PC12
+
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, ENABLE);
 												   
-  SPI_I2S_DeInit(SPI3);
-  SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex; 
-  SPI_InitStructure.SPI_Mode = SPI_Mode_Master; 
-  SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b; 
-  SPI_InitStructure.SPI_CPOL = SPI_CPOL_High;//SPI_CPOL_Low 	 SPI_CPOL_High
-  SPI_InitStructure.SPI_CPHA = SPI_CPHA_2Edge; 
-  SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;   //SPI_NSS_Hard	 //SPI_NSS_Soft
-  SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_16; 	//16
-  SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB; 
-  SPI_InitStructure.SPI_CRCPolynomial = 7; 
-  SPI_Init(SPI3,&SPI_InitStructure);
-  SPI_Cmd(SPI3,ENABLE);
+	SPI_I2S_DeInit(SPI3);
+	SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
+	SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
+	SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
+	SPI_InitStructure.SPI_CPOL = SPI_CPOL_High;//SPI_CPOL_Low 	 SPI_CPOL_High
+	SPI_InitStructure.SPI_CPHA = SPI_CPHA_2Edge;
+	SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;   //SPI_NSS_Hard	 //SPI_NSS_Soft
+	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_16; 	//16
+	SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
+	SPI_InitStructure.SPI_CRCPolynomial = 7;
+	SPI_Init(SPI3,&SPI_InitStructure);
+	SPI_Cmd(SPI3,ENABLE);
 
-  /* ChipSelect pin setup */
-  GPIO_InitStruct.GPIO_Mode=GPIO_Mode_OUT;
-  GPIO_InitStruct.GPIO_Speed=GPIO_Speed_50MHz;
-  GPIO_InitStruct.GPIO_OType=GPIO_OType_PP;
-  GPIO_InitStruct.GPIO_PuPd=GPIO_PuPd_UP;  
-  GPIO_InitStruct.GPIO_Pin=TOUCH_CS_PIN;
-  GPIO_Init(TOUCH_CS_PORT,&GPIO_InitStruct);
-  T_DCS(); 				 
+	/* ChipSelect pin setup */
+	GPIO_InitStruct.GPIO_Mode=GPIO_Mode_OUT;
+	GPIO_InitStruct.GPIO_Speed=GPIO_Speed_50MHz;
+	GPIO_InitStruct.GPIO_OType=GPIO_OType_PP;
+	GPIO_InitStruct.GPIO_PuPd=GPIO_PuPd_UP;
+	GPIO_InitStruct.GPIO_Pin=TOUCH_CS_PIN;
+	GPIO_Init(TOUCH_CS_PORT,&GPIO_InitStruct);
+	T_DCS();
 
-  /* Touch interrupt pin setup */
-  GPIO_InitStruct.GPIO_Mode=GPIO_Mode_IN;
-  GPIO_InitStruct.GPIO_Speed=GPIO_Speed_50MHz;
-  GPIO_InitStruct.GPIO_PuPd=GPIO_PuPd_NOPULL;
-  GPIO_InitStruct.GPIO_Pin=TOUCH_INT_PIN;
-  GPIO_Init(TOUCH_INT_PORT,&GPIO_InitStruct);
+	/* Touch interrupt pin setup */
+	GPIO_InitStruct.GPIO_Mode=GPIO_Mode_IN;
+	GPIO_InitStruct.GPIO_Speed=GPIO_Speed_50MHz;
+	GPIO_InitStruct.GPIO_PuPd=GPIO_PuPd_NOPULL;
+	GPIO_InitStruct.GPIO_Pin=TOUCH_INT_PIN;
+	GPIO_Init(TOUCH_INT_PORT,&GPIO_InitStruct);
 
-  /* Connect EXTI Line to pin */
-  SYSCFG_EXTILineConfig(TOUCH_EXTI_PortSource, TOUCH_EXTI_Source);
+	/* Connect EXTI Line to pin */
+	SYSCFG_EXTILineConfig(TOUCH_EXTI_PortSource, TOUCH_EXTI_Source);
 
-  /* Configure EXTI Line */
-  EXTI_InitStructure.EXTI_Line = TOUCH_EXTI_Line;
-  EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
-  EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-  EXTI_Init(&EXTI_InitStructure);
+	/* Configure EXTI Line */
+	EXTI_InitStructure.EXTI_Line = TOUCH_EXTI_Line;
+	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+	EXTI_Init(&EXTI_InitStructure);
 
-  /* Enable and set EXTI Line Interrupt to the lowest priority */
-  NVIC_InitStructure.NVIC_IRQChannel = TOUCH_IRQ_Channel;
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x01;
-  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x01;
-  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-  NVIC_Init(&NVIC_InitStructure);
+	/* Enable and set EXTI Line Interrupt to the lowest priority */
+	NVIC_InitStructure.NVIC_IRQChannel = TOUCH_IRQ_Channel;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x01;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x01;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
 
 }
 
@@ -299,15 +303,17 @@ void TP_InterruptEnable(FunctionalState state)
 /* Touch external interrupt pin handler */
 void EXTI9_5_IRQHandler(void)
 {
-  if(EXTI_GetITStatus(TOUCH_EXTI_Line) != RESET)
-  { 
-   //GPIO_ToggleBits(GPIOC,GPIO_Pin_7);
-   (void)OSSemPost(SemTouch);
+	InterruptCodeTypedef *envia;
+	InterruptCodeTypedef inc = INT_TOUCH;
 
-   // Disable interrupt:
-   TP_InterruptEnable(DISABLE);
+	if(EXTI_GetITStatus(TOUCH_EXTI_Line) != RESET)
+	{
+		envia = (InterruptCodeTypedef*)inc;
+		(void)OSMboxPost(MboxTouch,(void *)envia);
+		// Disable interrupt:
+		TP_InterruptEnable(DISABLE);
 
-   EXTI_ClearITPendingBit(TOUCH_EXTI_Line);
-  }
-  OS_INT_EXIT_EXT();
+		EXTI_ClearITPendingBit(TOUCH_EXTI_Line);
+	}
+	OS_INT_EXIT_EXT();
 }

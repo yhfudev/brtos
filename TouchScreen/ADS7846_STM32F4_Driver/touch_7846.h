@@ -27,6 +27,10 @@ typedef struct
 	gdisp_orientation_t CalibOrientation;
 }Pen_Holder;
 
+/* Interrupt codes used with mailbox to pass values from interrupt to main task */
+typedef enum {INT_EXTI_0, INT_TOUCH} InterruptCodeTypedef;
+
+
 extern Pen_Holder Pen_Point;
 
 #define TOUCH_CS_PORT	 GPIOC
