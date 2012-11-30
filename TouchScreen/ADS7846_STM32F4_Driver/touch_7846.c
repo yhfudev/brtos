@@ -304,11 +304,10 @@ void TP_InterruptEnable(FunctionalState state)
 void EXTI9_5_IRQHandler(void)
 {
 	InterruptCodeTypedef *envia;
-	InterruptCodeTypedef inc = INT_TOUCH;
 
 	if(EXTI_GetITStatus(TOUCH_EXTI_Line) != RESET)
 	{
-		envia = (InterruptCodeTypedef*)inc;
+		envia = (InterruptCodeTypedef*)INT_TOUCH;
 		(void)OSMboxPost(MboxTouch,(void *)envia);
 		// Disable interrupt:
 		TP_InterruptEnable(DISABLE);
