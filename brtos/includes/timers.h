@@ -46,9 +46,10 @@
 #endif
 
 /* config defines */ 
-#define TIMER_CNT             INT16U                  // do not change!
-#define TIMER_MAX_COUNTER     (TIMER_CNT)(TICK_COUNT_OVERFLOW-1)     // do not change! 
-#define TIMER_TASK_PRIORITY   configMAX_TASK_PRIORITY    // do not change!
+// do not change, unless we know what are you doing
+#define TIMER_CNT             INT16U                  
+#define TIMER_MAX_COUNTER     (TIMER_CNT)(TICK_COUNT_OVERFLOW-1)    
+#define TIMER_TASK_PRIORITY   configMAX_TASK_PRIORITY    
 
 
 /* typedefs for callback struct */  
@@ -95,6 +96,7 @@ INT8U OSTimerStart (BRTOS_TIMER p, TIMER_CNT timeout);
 INT8U OSTimerStop (BRTOS_TIMER p, INT8U del); 
 
 /***************************************/
+
 
 #endif
 #endif
