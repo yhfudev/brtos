@@ -227,7 +227,7 @@ timer_loop:
 /* Public functions */
 
 /**
-  \fn void BRTOS_TimerInit(INT16U timertask_stacksize) 
+  \fn void OSTimerInit(INT16U timertask_stacksize, INT8U prio) 
   \brief public function to start Timer Service 
   must be called before any call to the other public functions.
   It only installs "BRTOS_TimerTask".
@@ -246,7 +246,7 @@ void OSTimerInit(INT16U timertask_stacksize, INT8U prio){
   
 }
 /**
-  \fn INT8U BRTOS_TimerSet (BRTOS_TIMER *cbp, FCN_CALLBACK cb, TIMER_CNT time_wait) 
+  \fn INT8U OSTimerSet (BRTOS_TIMER *cbp, FCN_CALLBACK cb, TIMER_CNT time_wait) 
   \brief public function to create and start a soft timer
    must be called before any call to the other public timer functions.
   \param *cbp  soft timer pointer
@@ -346,7 +346,7 @@ INT8U OSTimerSet (BRTOS_TIMER *cbp, FCN_CALLBACK cb, TIMER_CNT time_wait){
 }
 
 /**
-  \fn TIMER_CNT BRTOS_TimerGet (BRTOS_TIMER p)
+  \fn TIMER_CNT OSTimerGet (BRTOS_TIMER p)
   \brief public function to get remaining time of a soft timer
   \param p  soft timer
   \return timeout value or "0" as error code
@@ -381,7 +381,7 @@ TIMER_CNT OSTimerGet (BRTOS_TIMER p){
 
 
 /**
-  \fn INT8U BRTOS_TimerStart (BRTOS_TIMER p, TIMER_CNT time_wait)
+  \fn INT8U OSTimerStart (BRTOS_TIMER p, TIMER_CNT time_wait)
   \brief public function to start or restart a soft timer
   \param p  soft timer
   \param time_wait soft timer expiration time
@@ -442,7 +442,7 @@ INT8U OSTimerStart (BRTOS_TIMER p, TIMER_CNT time_wait){
 
 
 /**
-  \fn INT8U BRTOS_TimerStop (BRTOS_TIMER p, INT8U del)
+  \fn INT8U OSTimerStop (BRTOS_TIMER p, INT8U del)
   \brief public function to stop or (stop and delete) a soft timer
   \param p  soft timer
   \param del if "> 0", timer is also deleted
