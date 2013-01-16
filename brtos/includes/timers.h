@@ -88,11 +88,11 @@ typedef struct{
 void BRTOS_TimerTask(void);
  
 /************* public API *********************/ 
-void BRTOS_TimerInit(INT16U timertask_stacksize);
-INT8U BRTOS_TimerSet (BRTOS_TIMER *cbp, FCN_CALLBACK cb, TIMER_CNT timeout);
-TIMER_CNT BRTOS_TimerGet (BRTOS_TIMER p);
-INT8U BRTOS_TimerStart (BRTOS_TIMER p, TIMER_CNT timeout);  
-INT8U BRTOS_TimerStop (BRTOS_TIMER p, INT8U del); 
+void OSTimerInit(INT16U timertask_stacksize);
+INT8U OSTimerSet (BRTOS_TIMER *cbp, FCN_CALLBACK cb, TIMER_CNT timeout);
+TIMER_CNT OSTimerGet (BRTOS_TIMER p);
+INT8U OSTimerStart (BRTOS_TIMER p, TIMER_CNT timeout);  
+INT8U OSTimerStop (BRTOS_TIMER p, INT8U del); 
 
 /***************************************/
 

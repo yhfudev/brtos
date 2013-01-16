@@ -234,7 +234,7 @@ timer_loop:
   \param timertask_stacksize size of stack allocated to the task
   \return nothing if sucess or never if any error  
 */
-void BRTOS_TimerInit(INT16U timertask_stacksize){
+void OSTimerInit(INT16U timertask_stacksize){
 
   BRTOS_TimerTaskInit();
    
@@ -259,7 +259,7 @@ void BRTOS_TimerInit(INT16U timertask_stacksize){
   \return ERR_EVENT_NO_CREATED
 */
 
-INT8U BRTOS_TimerSet (BRTOS_TIMER *cbp, FCN_CALLBACK cb, TIMER_CNT time_wait){
+INT8U OSTimerSet (BRTOS_TIMER *cbp, FCN_CALLBACK cb, TIMER_CNT time_wait){
     
     OS_SR_SAVE_VAR
     
@@ -351,7 +351,7 @@ INT8U BRTOS_TimerSet (BRTOS_TIMER *cbp, FCN_CALLBACK cb, TIMER_CNT time_wait){
   \param p  soft timer
   \return timeout value or "0" as error code
 */
-TIMER_CNT BRTOS_TimerGet (BRTOS_TIMER p){
+TIMER_CNT OSTimerGet (BRTOS_TIMER p){
      
      OS_SR_SAVE_VAR
      TIMER_CNT timeout;
@@ -388,7 +388,7 @@ TIMER_CNT BRTOS_TimerGet (BRTOS_TIMER p){
   \return OK success
   \return NULL_EVENT_POINTER error code
 */
-INT8U BRTOS_TimerStart (BRTOS_TIMER p, TIMER_CNT time_wait){
+INT8U OSTimerStart (BRTOS_TIMER p, TIMER_CNT time_wait){
  
   OS_SR_SAVE_VAR
   INT32U timeout;
@@ -450,7 +450,7 @@ INT8U BRTOS_TimerStart (BRTOS_TIMER p, TIMER_CNT time_wait){
   \return NULL_EVENT_POINTER error code
 */
 
-INT8U BRTOS_TimerStop (BRTOS_TIMER p, INT8U del){
+INT8U OSTimerStop (BRTOS_TIMER p, INT8U del){
   
   OS_SR_SAVE_VAR
   
