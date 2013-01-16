@@ -48,9 +48,7 @@
 /* config defines */ 
 // do not change, unless we know what are you doing
 #define TIMER_CNT             INT16U                  
-#define TIMER_MAX_COUNTER     (TIMER_CNT)(TICK_COUNT_OVERFLOW-1)    
-#define TIMER_TASK_PRIORITY   configMAX_TASK_PRIORITY    
-
+#define TIMER_MAX_COUNTER     (TIMER_CNT)(TICK_COUNT_OVERFLOW-1)   
 
 /* typedefs for callback struct */  
 typedef TIMER_CNT (*FCN_CALLBACK) (void);  
@@ -89,7 +87,7 @@ typedef struct{
 void BRTOS_TimerTask(void);
  
 /************* public API *********************/ 
-void OSTimerInit(INT16U timertask_stacksize);
+void OSTimerInit(INT16U timertask_stacksize, INT8U prio);
 INT8U OSTimerSet (BRTOS_TIMER *cbp, FCN_CALLBACK cb, TIMER_CNT timeout);
 TIMER_CNT OSTimerGet (BRTOS_TIMER p);
 INT8U OSTimerStart (BRTOS_TIMER p, TIMER_CNT timeout);  

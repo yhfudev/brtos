@@ -234,12 +234,12 @@ timer_loop:
   \param timertask_stacksize size of stack allocated to the task
   \return nothing if sucess or never if any error  
 */
-void OSTimerInit(INT16U timertask_stacksize){
+void OSTimerInit(INT16U timertask_stacksize, INT8U prio){
 
   BRTOS_TimerTaskInit();
    
    
-  if(InstallTask(&BRTOS_TimerTask,"BRTOS Timers Task",timertask_stacksize,configMAX_TASK_PRIORITY) != OK)
+  if(InstallTask(&BRTOS_TimerTask,"BRTOS Timers Task",timertask_stacksize, prio) != OK)
   {
     while(1){};
   }  
