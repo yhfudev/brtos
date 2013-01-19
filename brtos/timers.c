@@ -42,7 +42,7 @@ static struct {
     BRTOS_TIMER_T   mem[BRTOS_MAX_TIMER]; /* array of callback structs */            
     BRTOS_TMR_T*    current;              /* keep current timer list */ 
     BRTOS_TMR_T*    future;               /* keep future timer list   */
-    INT8U           handling_task;        /* caller Task ID */          
+    INT8U           task;        		  /* caller Task ID */          
 } BRTOS_TIMER_VECTOR;
 
 
@@ -142,7 +142,7 @@ void BRTOS_TimerTask(void){
      TIMER_CNT   next_time_to_wake;      /* tick count of next timer */
      BRTOS_TMR_T *list, *list_tmp;          
      
-     BRTOS_TIMER_VECTOR.handling_task = currentTask;
+     BRTOS_TIMER_VECTOR.task = currentTask;
      
      list = BRTOS_TIMER_VECTOR.current;
 
@@ -167,8 +167,11 @@ timer_loop:
             // some timer has expired
             if((p)->func_cb != NULL) {                            
               repeat = (TIMER_CNT)((p)->func_cb()); /* callback */
+			}else{
+			  repeat = 0;
+			}
               
-              OSEnterCritical(); 
+            OSEnterCritical(); 
                            
               if (repeat > 0){ /* needs to repeat after "repeat" time ? */
                   timeout = (INT32U)((INT32U)tickcount + (INT32U)repeat);                  
@@ -192,8 +195,7 @@ timer_loop:
                   list->timers[list->count] = NULL;
                   list->count--;                
                }             
-             }
-             
+                          
              Descer (list->timers, 1, list->count); // order it                         
              p=list->timers[1];                           
              OSExitCritical();                           
@@ -328,7 +330,7 @@ INT8U OSTimerSet (BRTOS_TIMER *cbp, FCN_CALLBACK cb, TIMER_CNT time_wait){
         // may need to change wake time of timer task
         if(currentTask){          
           if(p->timeout == (list->timers[1])->timeout)            
-            ContextTask[BRTOS_TIMER_VECTOR.handling_task].TimeToWait = p->timeout;
+            ContextTask[BRTOS_TIMER_VECTOR.task].TimeToWait = p->timeout;
         }
                          
       }      
@@ -423,7 +425,7 @@ INT8U OSTimerStart (BRTOS_TIMER p, TIMER_CNT time_wait){
           // may need to change wake time of timer task
           if(currentTask){          
             if(p->timeout == (list->timers[1])->timeout)            
-              ContextTask[BRTOS_TIMER_VECTOR.handling_task].TimeToWait = p->timeout;
+              ContextTask[BRTOS_TIMER_VECTOR.task].TimeToWait = p->timeout;
           }
                            
         }      
