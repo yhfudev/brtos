@@ -33,18 +33,18 @@ typedef enum {INT_EXTI_0, INT_TOUCH} InterruptCodeTypedef;
 
 extern Pen_Holder Pen_Point;
 
-#define TOUCH_CS_PORT	 GPIOC
-#define TOUCH_CS_PIN	 GPIO_Pin_9
+#define TOUCH_CS_PORT	 GPIOD
+#define TOUCH_CS_PIN	 GPIO_Pin_3
 
 #define T_CS()   GPIO_ResetBits(TOUCH_CS_PORT, TOUCH_CS_PIN);
 #define T_DCS()  GPIO_SetBits(TOUCH_CS_PORT, TOUCH_CS_PIN);
 
 /* Touch external interrup pin and line definitions */
-#define TOUCH_INT_PIN		GPIO_Pin_8
-#define TOUCH_INT_PORT		GPIOC
-#define TOUCH_EXTI_Line 	EXTI_Line8
-#define TOUCH_EXTI_Source	EXTI_PinSource8
-#define TOUCH_EXTI_PortSource EXTI_PortSourceGPIOC
+#define TOUCH_INT_PIN		GPIO_Pin_6
+#define TOUCH_INT_PORT		GPIOD
+#define TOUCH_EXTI_Line 	EXTI_Line6
+#define TOUCH_EXTI_Source	EXTI_PinSource6
+#define TOUCH_EXTI_PortSource EXTI_PortSourceGPIOD
 #define TOUCH_IRQ_Channel	EXTI9_5_IRQn
 
 #define CMD_RDY 0X90  //0B10010000

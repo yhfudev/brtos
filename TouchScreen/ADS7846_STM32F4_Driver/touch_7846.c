@@ -14,10 +14,10 @@ unsigned char flag=0;
 unsigned char SPI_WriteByte(u8 num)    
 {  
   unsigned char Data = 0;
-  while(SPI_I2S_GetFlagStatus(SPI3,SPI_I2S_FLAG_TXE)==RESET);
-  SPI_I2S_SendData(SPI3,num);
-  while(SPI_I2S_GetFlagStatus(SPI3,SPI_I2S_FLAG_RXNE)==RESET);
-  Data = SPI_I2S_ReceiveData(SPI3);
+  while(SPI_I2S_GetFlagStatus(SPI1,SPI_I2S_FLAG_TXE)==RESET);
+  SPI_I2S_SendData(SPI1,num);
+  while(SPI_I2S_GetFlagStatus(SPI1,SPI_I2S_FLAG_RXNE)==RESET);
+  Data = SPI_I2S_ReceiveData(SPI1);
 
   return Data; 	 				   
 } 	
@@ -152,7 +152,7 @@ void TP_Calibration(void)
 	while(1)
 	{
 	  // If the touch panel is pressed
-	  if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_8)==0)
+	  if(GPIO_ReadInputDataBit(TOUCH_INT_PORT,TOUCH_INT_PIN)==0)
 	  {
 		  // Read position
 		  x1=tp_read_axis(AXIS_X);
@@ -162,7 +162,7 @@ void TP_Calibration(void)
 	  DelayTask(2);
 	}
 
-	while(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_8)==0);
+	while(GPIO_ReadInputDataBit(TOUCH_INT_PORT,TOUCH_INT_PIN)==0);
 	DelayTask(100);
 
 	gdispClear(Black);
@@ -182,7 +182,7 @@ void TP_Calibration(void)
 	while(1)
 	{
 	  // If the touch panel is pressed
-	  if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_8)==0)
+	  if(GPIO_ReadInputDataBit(TOUCH_INT_PORT,TOUCH_INT_PIN)==0)
 	  {
 		  // Read position
 		  x2=tp_read_axis(AXIS_X);
@@ -193,7 +193,7 @@ void TP_Calibration(void)
 	  DelayTask(2);
 	}
 
-	while(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_8)==0);
+	while(GPIO_ReadInputDataBit(TOUCH_INT_PORT,TOUCH_INT_PIN)==0);
 	DelayTask(300);
 
 	Pen_Point.xfac = (float)((float)(x2 - x1) / (float)((SCREEN_HEIGHT / 2) - 10));
@@ -220,22 +220,22 @@ void TP_Init(void)
 	/* Enable SYSCFG clock */
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 
-	/* SPI3 pin config */
+	/* SPI1 pin config */
 	GPIO_InitStruct.GPIO_Mode=GPIO_Mode_AF;
 	GPIO_InitStruct.GPIO_Speed=GPIO_Speed_100MHz;
 	GPIO_InitStruct.GPIO_OType=GPIO_OType_PP;
 	GPIO_InitStruct.GPIO_PuPd=GPIO_PuPd_UP;
 
-	GPIO_InitStruct.GPIO_Pin=GPIO_Pin_10|GPIO_Pin_11|GPIO_Pin_12;
-	GPIO_Init(GPIOC,&GPIO_InitStruct);
+	GPIO_InitStruct.GPIO_Pin=GPIO_Pin_3|GPIO_Pin_4|GPIO_Pin_5;
+	GPIO_Init(GPIOB,&GPIO_InitStruct);
 
-	GPIO_PinAFConfig(GPIOC, GPIO_PinSource10, GPIO_AF_SPI3);      //sclk	PC10
-	GPIO_PinAFConfig(GPIOC, GPIO_PinSource11, GPIO_AF_SPI3);		//miso	PC11
-	GPIO_PinAFConfig(GPIOC, GPIO_PinSource12, GPIO_AF_SPI3);		//mosi	PC12
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource3, GPIO_AF_SPI1);      //sclk	PB3
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource4, GPIO_AF_SPI1);		//miso	PB4
+	GPIO_PinAFConfig(GPIOB, GPIO_PinSource5, GPIO_AF_SPI1);		//mosi	PB5
 
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
 												   
-	SPI_I2S_DeInit(SPI3);
+	SPI_I2S_DeInit(SPI1);
 	SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
 	SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
 	SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
@@ -245,8 +245,8 @@ void TP_Init(void)
 	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_16; 	//16
 	SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
 	SPI_InitStructure.SPI_CRCPolynomial = 7;
-	SPI_Init(SPI3,&SPI_InitStructure);
-	SPI_Cmd(SPI3,ENABLE);
+	SPI_Init(SPI1,&SPI_InitStructure);
+	SPI_Cmd(SPI1,ENABLE);
 
 	/* ChipSelect pin setup */
 	GPIO_InitStruct.GPIO_Mode=GPIO_Mode_OUT;
