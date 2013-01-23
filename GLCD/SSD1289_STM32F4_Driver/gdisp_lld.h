@@ -75,7 +75,7 @@ typedef int32_t         bool_t;
 	 * @details	Defaults to FALSE
 	 */
 	#ifndef GDISP_NEED_ARC
-		#define GDISP_NEED_ARC			FALSE
+		#define GDISP_NEED_ARC			TRUE
 	#endif
 
 	/**

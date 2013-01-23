@@ -49,7 +49,7 @@
 #define GDISP_PIXELFORMAT				GDISP_PIXELFORMAT_RGB565
 
 #define LCD_USE_FSMC
-#define STM32F4XX
+
 #define SCREEN_WIDTH	320
 #define SCREEN_HEIGHT	240
 
@@ -165,7 +165,7 @@
 	#define R229           0xE5
 
 	#define LCD_REG              (*((volatile uint16_t *) 0x60000000)) /* RS = 0 */
-	#define LCD_RAM              (*((volatile uint16_t *) 0x60200000)) /* RS = 1 */
+	#define LCD_RAM              (*((volatile uint16_t *) 0x60020000)) /* RS = 1 (A16) */
 #endif   /* LCD_USE_FSMC */
 
 //#endif	/* HAL_USE_GDISP */

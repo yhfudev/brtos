@@ -195,59 +195,59 @@ bool_t GDISP_LLD(init)(void) {
 
 	  /* FSMC GPIOD pin setting as Alternate Function, 100MHz */
 	  /* Pin:     15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
-	   * Mask32b: 00 00 11 11 11 00 00 00 00 11 00 00 11 11 00 00 = 00001111110000000011000011110000 = 0x0FC030F0
-	   * Mask16b:  0  0  1  1  1  0  0  0  0  1  0  0  1  1  0  0 = 0011100001001100 = 0x384C
-	   * MODER:   10 10 00 00 00 10 10 10 10 00 10 10 00 00 10 10 = 10100000001010101000101000001010 = 0xA02A8A0A
-	   * OSPEEDR: 11 11 00 00 00 11 11 11 11 00 11 11 00 00 11 11 = 11110000001111111100111100001111 = 0xF03FCF0F
+	   * Mask32b: 00 00 11 11 00 00 00 00 00 11 00 00 11 11 00 00 = 00001111000000000011000011110000 = 0x0F0030F0
+	   * Mask16b:  0  0  1  1  0  0  0  0  0  1  0  0  1  1  0  0 = 0011000001001100 = 0x304C
+	   * MODER:   10 10 00 00 10 10 10 10 10 00 10 10 00 00 10 10 = 10100000101010101000101000001010 = 0xA0AA8A0A
+	   * OSPEEDR: 11 11 00 00 11 11 11 11 11 00 11 11 00 00 11 11 = 11110000111111111100111100001111 = 0xF0FFCF0F
 	   * OTYPER:  all zero (using mask16b)
 	   * PUPDR:   all zero (using mask32b)
 	   * */
-	  GPIOD->MODER &= 0x0FC030F0; /* Reseting bits to be configured */
-	  GPIOD->MODER |= 0xA02A8A0A; /* Configuring bits for AF */
-	  GPIOD->OSPEEDR &= 0x0FC030F0;
-	  GPIOD->OSPEEDR |= 0xF03FCF0F; /* Configuring bits for speed 100MHz */
-	  GPIOD->OTYPER &= 0x384C;  /* Output type push-pull */
-	  GPIOD->PUPDR &= 0x0FC030F0;  /* No pull-up or pull-down */
+	  GPIOD->MODER &= 0x0F0030F0; /* Reseting bits to be configured */
+	  GPIOD->MODER |= 0xA0AA8A0A; /* Configuring bits for AF */
+	  GPIOD->OSPEEDR &= 0x0F0030F0;
+	  GPIOD->OSPEEDR |= 0xF0FFCF0F; /* Configuring bits for speed 100MHz */
+	  GPIOD->OTYPER &= 0x304C;  /* Output type push-pull */
+	  GPIOD->PUPDR &= 0x0F0030F0;  /* No pull-up or pull-down */
 
 	  /* FSMC GPIOE pin setting as Alternate Function, 100MHz */
 	  /* Pin:     15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
-	   * Mask32b: 00 00 00 00 00 00 00 00 00 11 11 00 11 11 11 11 = 00000000000000000011110011111111 = 0x00003CFF
-	   * Mask16b:  0  0  0  0  0  0  0  0  0  1  1  0  1  1  1  1 = 0000000001101111 = 0x006F
-	   * MODER:   10 10 10 10 10 10 10 10 10 00 00 10 00 00 00 00 = 10101010101010101000001000000000 = 0xAAAA8200
-	   * OSPEEDR: 11 11 11 11 11 11 11 11 11 00 00 11 00 00 00 00 = 11111111111111111100001100000000 = 0xFFFFC300
+	   * Mask32b: 00 00 00 00 00 00 00 00 00 11 11 11 11 11 11 11 = 00000000000000000011111111111111 = 0x00003FFF
+	   * Mask16b:  0  0  0  0  0  0  0  0  0  1  1  1  1  1  1  1 = 0000000001111111 = 0x007F
+	   * MODER:   10 10 10 10 10 10 10 10 10 00 00 00 00 00 00 00 = 10101010101010101000000000000000 = 0xAAAA8000
+	   * OSPEEDR: 11 11 11 11 11 11 11 11 11 00 00 00 00 00 00 00 = 11111111111111111100000000000000 = 0xFFFFC000
 	   * OTYPER:  all zero (using mask16b)
 	   * PUPDR:   all zero (using mask32b)
 	   * */
-	  GPIOE->MODER &= 0x00003CFF; /* Reseting bits to be configured */
-	  GPIOE->MODER |= 0xAAAA8200; /* Configuring bits for AF */
-	  GPIOE->OSPEEDR &= 0x00003CFF; /* Reseting bits to be configured */
-	  GPIOE->OSPEEDR |= 0xFFFFC300; /* Configuring bits for speed 100MHz */
-	  GPIOE->OTYPER &= 0x006F;  /* Output type push-pull */
-	  GPIOE->PUPDR &= 0x00003CFF;  /* No pull-up or pull-down */
+	  GPIOE->MODER &= 0x00003FFF; /* Reseting bits to be configured */
+	  GPIOE->MODER |= 0xAAAA8000; /* Configuring bits for AF */
+	  GPIOE->OSPEEDR &= 0x00003FFF; /* Reseting bits to be configured */
+	  GPIOE->OSPEEDR |= 0xFFFFC000; /* Configuring bits for speed 100MHz */
+	  GPIOE->OTYPER &= 0x007F;  /* Output type push-pull */
+	  GPIOE->PUPDR &= 0x00003FFF;  /* No pull-up or pull-down */
 
 	  /* FSMC GPIOD pin alternate function setup (0xC) */
 	  /* Pin AFRL:  07   06   05   04   03   02   01   00
 	   * MaskAFRL: 0000 1111 0000 0000 1111 1111 0000 0000 = 0x0F00FF00
 	   * AFRL:     1100 0000 1100 1100 0000 0000 1100 1100 = 0xC0CC00CC
 	   * Pin AFRH:  15   14   13   12   11   10   09   08
-	   * MaskAFRH: 0000 0000 1111 1111 1111 0000 0000 0000 = 0x00FFF000
-	   * AFRH:     1100 1100 0000 0000 0000 1100 1100 1100 = 0xCC000CCC
+	   * MaskAFRH: 0000 0000 1111 1111 0000 0000 0000 0000 = 0x00FF0000
+	   * AFRH:     1100 1100 0000 0000 1100 1100 1100 1100 = 0xCC00CCCC
 	   * */
 	  GPIOD->AFR[0] &= 0x0F00FF00;
 	  GPIOD->AFR[0] |= 0xC0CC00CC;
-	  GPIOD->AFR[1] &= 0x00FFF000;
-	  GPIOD->AFR[1] |= 0xCC000CCC;
+	  GPIOD->AFR[1] &= 0x00FF0000;
+	  GPIOD->AFR[1] |= 0xCC00CCCC;
 
 	  /* FSMC GPIOE pin alternate function setup (0xC) */
 	  /* Pin AFRL:  07   06   05   04   03   02   01   00
-	   * MaskAFRL: 0000 1111 1111 0000 1111 1111 1111 1111 = 0x0FF0FFFF
-	   * AFRL:     1100 0000 0000 1100 0000 0000 0000 0000 = 0xC00C0000
+	   * MaskAFRL: 0000 1111 1111 1111 1111 1111 1111 1111 = 0x0FFFFFFF
+	   * AFRL:     1100 0000 0000 0000 0000 0000 0000 0000 = 0xC0000000
 	   * Pin AFRH:  15   14   13   12   11   10   09   08
 	   * MaskAFRH: 0000 0000 0000 0000 0000 0000 0000 0000 = 0x00000000
 	   * AFRH:     1100 1100 1100 1100 1100 1100 1100 1100 = 0xCCCCCCCC
 	   * */
-	  GPIOE->AFR[0] &= 0x0FF0FFFF;
-	  GPIOE->AFR[0] |= 0xC00C0000;
+	  GPIOE->AFR[0] &= 0x0FFFFFFF;
+	  GPIOE->AFR[0] |= 0xC0000000;
 	  GPIOE->AFR[1] = 0xCCCCCCCC;
 
 

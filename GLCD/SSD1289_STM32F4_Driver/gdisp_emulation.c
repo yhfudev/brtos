@@ -303,7 +303,7 @@
 
 #if GDISP_NEED_ARC && !GDISP_HARDWARE_ARCS
 
-	#include <maths.h>
+	#include <math.h>
 
 	/*
 	 * @brief				Internal helper function for gdispDrawArc()
