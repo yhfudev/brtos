@@ -6,7 +6,12 @@
 
 Pen_Holder Pen_Point;
 
-extern BRTOS_Mbox	*MboxTouch;
+//extern BRTOS_Mbox	*MboxTouch;
+
+/*
+ * Declaration of TouchPanel function handler. Users must define their own functions handlers.
+ * */
+extern void TP_Handler(void);
 
 unsigned char flag=0;
 
@@ -208,8 +213,6 @@ void TP_Calibration(void)
 
 void TP_Init(void)
 {
-	/* BRTOS Touchpad mailbox initialization */
-	(void)OSMboxCreate(&MboxTouch,NULL);
 
 	SPI_InitTypeDef  SPI_InitStructure;
 	GPIO_InitTypeDef GPIO_InitStruct;
@@ -303,14 +306,9 @@ void TP_InterruptEnable(FunctionalState state)
 /* Touch external interrupt pin handler */
 void EXTI9_5_IRQHandler(void)
 {
-	InterruptCodeTypedef *envia;
-
 	if(EXTI_GetITStatus(TOUCH_EXTI_Line) != RESET)
 	{
-		envia = (InterruptCodeTypedef*)INT_TOUCH;
-		(void)OSMboxPost(MboxTouch,(void *)envia);
-		// Disable interrupt:
-		TP_InterruptEnable(DISABLE);
+		TP_Handler(); // Call the TouchPanel function handler
 
 		EXTI_ClearITPendingBit(TOUCH_EXTI_Line);
 	}
