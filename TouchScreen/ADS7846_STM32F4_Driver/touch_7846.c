@@ -310,7 +310,7 @@ void EXTI9_5_IRQHandler(void)
 {
 	if(EXTI_GetITStatus(TOUCH_EXTI_Line) != RESET)
 	{
-		//TP_Handler(); // Call the TouchPanel function handler
+		TP_Handler(); // Call the TouchPanel function handler
 
 		EXTI_ClearITPendingBit(TOUCH_EXTI_Line);
 	}
