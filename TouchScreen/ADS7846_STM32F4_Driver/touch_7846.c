@@ -219,7 +219,9 @@ void TP_Init(void)
 	NVIC_InitTypeDef NVIC_InitStructure;
 	EXTI_InitTypeDef EXTI_InitStructure;
 
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+	// Enable the clock of the touch ports
+	TOUCH_PORT_CLOCK();
+
 	/* Enable SYSCFG clock */
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 
@@ -245,7 +247,7 @@ void TP_Init(void)
 	SPI_InitStructure.SPI_CPOL = SPI_CPOL_High;//SPI_CPOL_Low 	 SPI_CPOL_High
 	SPI_InitStructure.SPI_CPHA = SPI_CPHA_2Edge;
 	SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;   //SPI_NSS_Hard	 //SPI_NSS_Soft
-	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_16; 	//16
+	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_32; 	//32
 	SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
 	SPI_InitStructure.SPI_CRCPolynomial = 7;
 	SPI_Init(SPI1,&SPI_InitStructure);
@@ -308,7 +310,7 @@ void EXTI9_5_IRQHandler(void)
 {
 	if(EXTI_GetITStatus(TOUCH_EXTI_Line) != RESET)
 	{
-		TP_Handler(); // Call the TouchPanel function handler
+		//TP_Handler(); // Call the TouchPanel function handler
 
 		EXTI_ClearITPendingBit(TOUCH_EXTI_Line);
 	}

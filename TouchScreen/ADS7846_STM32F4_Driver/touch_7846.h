@@ -46,6 +46,8 @@ extern Pen_Holder Pen_Point;
 #define TOUCH_EXTI_Source	EXTI_PinSource6
 #define TOUCH_EXTI_PortSource EXTI_PortSourceGPIOD
 #define TOUCH_IRQ_Channel	EXTI9_5_IRQn
+#define TOUCH_PORT_CLOCK()	RCC_AHB1PeriphClockCmd( RCC_AHB1Periph_GPIOB , ENABLE);	\
+							RCC_AHB1PeriphClockCmd( RCC_AHB1Periph_GPIOD , ENABLE)
 
 #define CMD_RDY 0X90  //0B10010000
 #define CMD_RDX	0XD0  //0B11010000
