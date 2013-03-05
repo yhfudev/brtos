@@ -14,6 +14,7 @@
 /* Library configuration */
 #define USE_BUTTON		TRUE
 #define USE_SLIDER		TRUE
+#define USE_CHECKBOX	TRUE
 
 
 /* Object types enum */
@@ -158,9 +159,7 @@ typedef struct _Slider
 
 /*Pointer to Slider functions typedef */
 typedef void (*FunctionS)(Slider_typedef *a);
-typedef void (*FuncUpdateS)(coord_t x, coord_t y, coord_t width, coord_t height,
-		color_t border_color, color_t fg_color, int value,
-		Slider_typedef *Slider_struct);
+typedef void (*FuncUpdateS)(int value, Slider_typedef *Slider_struct);
 typedef void (*FuncInit1S)(coord_t x, coord_t y, coord_t width, coord_t height,
 		color_t border_color, color_t fg_color, int value,
 		Slider_typedef *Slider_struct, Callbacks callback1);
@@ -183,16 +182,57 @@ void Slider_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 		color_t bg_color, color_t fg_color, int value,
 		Slider_typedef *Slider_struct, Callbacks click_event);
 
-void Slider_Update(coord_t x, coord_t y, coord_t width, coord_t height,
-		color_t bg_color, color_t fg_color, int value,
-		Slider_typedef *Slider_struct);
+void Slider_Update(int value, Slider_typedef *Slider_struct);
 
 void Slider_Draw(Slider_typedef *Slider_struct);
 void Slider_Click(Slider_typedef *Slider_struct);
 #endif
 
 
+#if (USE_CHECKBOX == TRUE)
+/* Structure typedef to store Checkbox parameters */
+typedef struct _Checkbox
+{
+	coord_t x; 						// Upper left corner x screen position
+	coord_t y; 						// Upper left corner y screen position
+	coord_t dx; 					// x size (width)
+	coord_t dy; 					// y size (height)
+	coord_t radius; 				// radius of the corners (in pixels)
+	color_t border_color; 			// Border color of the box.
+	color_t fg_color; 				// Foreground color.
+	unsigned char value;			// Slider value position
+	ObjectEvent_typedef event;		// Event handler
+	Callbacks			ClickEvent;	// Clicked callback
+}Checkbox_typedef;
 
+/*Pointer to Checkbox functions typedef */
+typedef void (*FunctionC)(Checkbox_typedef *a);
+typedef void (*FuncUpdateC)(int value, Checkbox_typedef *Checkbox_struct);
+typedef void (*FuncInit1C)(coord_t x, coord_t y, coord_t width, coord_t height,
+		color_t border_color, color_t fg_color, unsigned char value,
+		Checkbox_typedef *Checkbox_struct, Callbacks callback1);
+
+/* Definitions of the functions associated with Slider GUI object */
+typedef struct _CheckboxFuncList
+{
+	FuncInit1C 	  Init;
+	FuncUpdateC   Update;
+	FunctionC 	  Draw;
+	FunctionC 	  Click;
+}CheckboxFunc_typedef;
+
+extern CheckboxFunc_typedef Checkbox;
+
+/* Initializes the Checkbox structure */
+void Checkbox_Init(coord_t x, coord_t y, coord_t width, coord_t height,
+		color_t border_color, color_t fg_color, unsigned char value,
+		Checkbox_typedef *Checkbox_struct, Callbacks click_event);
+
+void Checkbox_Update(int value, Checkbox_typedef *Checkbox_struct);
+void Checkbox_Draw(Checkbox_typedef *Checkbox_struct);
+void Checkbox_Click(Checkbox_typedef *Checkbox_struct);
+
+#endif
 
 #endif
 

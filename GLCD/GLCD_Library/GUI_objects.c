@@ -29,6 +29,9 @@ ButtonFunc_typedef Button;
 /* Declare Slider functions structure */
 SliderFunc_typedef Slider;
 
+/* Declare Checkbox functions structure */
+CheckboxFunc_typedef Checkbox;
+
 /*  Initialization of the functions structures */
 void GUI_ObjetcsInit(color_t background)
 {
@@ -45,6 +48,14 @@ void GUI_ObjetcsInit(color_t background)
 	Slider.Update = Slider_Update;
 	Slider.Click = Slider_Click;
 #endif
+
+#if (USE_CHECKBOX == TRUE)
+	Checkbox.Draw = Checkbox_Draw;
+	Checkbox.Init = Checkbox_Init;
+	Checkbox.Update = Checkbox_Update;
+	Checkbox.Click = Checkbox_Click;
+#endif
+
 	GuiBackground = background;
 }
 
@@ -128,6 +139,7 @@ void GUI_Event_Handler(void *param)
 	ObjectEvent_typedef *object;
 	Button_typedef		*button;
 	Slider_typedef		*slider;
+	Checkbox_typedef	*checkbox;
 	TouchPos.x = 0;
 	TouchPos.y = 0;
 
@@ -154,7 +166,7 @@ void GUI_Event_Handler(void *param)
 			{
 				switch(object->object)
 				{
-					case BUTTON_OBJECT :
+					case BUTTON_OBJECT:
 						button = (Button_typedef*)object->ObjectPointer;
 						Button.Click(button);
 						while(GPIO_ReadInputDataBit(TOUCH_INT_PORT,TOUCH_INT_PIN)==0)
@@ -165,7 +177,7 @@ void GUI_Event_Handler(void *param)
 						Button.Draw(button);
 					break;
 
-					case SLIDER_OBJECT :
+					case SLIDER_OBJECT:
 						slider = (Slider_typedef*)object->ObjectPointer;
 						int slider_size = (slider->x2) - (slider->x1);
 						while(GPIO_ReadInputDataBit(TOUCH_INT_PORT,TOUCH_INT_PIN)==0)
@@ -191,6 +203,25 @@ void GUI_Event_Handler(void *param)
 							}
 						}
 						OSDQueuePost(TouchEvents, (void*)(&(slider->ClickEvent)));
+					break;
+
+					case CHECKBOX_OBJECT:
+						checkbox = (Checkbox_typedef*)object->ObjectPointer;
+
+						// New value
+						if (checkbox->value == TRUE)
+						{
+							checkbox->value = FALSE;
+						}else
+						{
+							checkbox->value = TRUE;
+						}
+						Checkbox.Click(checkbox);
+						while(GPIO_ReadInputDataBit(TOUCH_INT_PORT,TOUCH_INT_PIN)==0)
+						{
+							DelayTask(10);
+						}
+						OSDQueuePost(TouchEvents, (void*)(&(checkbox->ClickEvent)));
 					break;
 
 					/* Unknown object */
@@ -372,16 +403,8 @@ void Slider_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 
 
 /* Initializes the Button structure */
-void Slider_Update(coord_t x, coord_t y, coord_t width, coord_t height,
-		color_t border_color, color_t fg_color, int value,
-		Slider_typedef *Slider_struct)
+void Slider_Update(int value, Slider_typedef *Slider_struct)
 {
-	Slider_struct->x = x;
-	Slider_struct->y = y;
-	Slider_struct->dx = width;
-	Slider_struct->dy = height;
-	Slider_struct->border_color = border_color;
-	Slider_struct->fg_color = fg_color;
 	Slider_struct->value = value;
 }
 
@@ -440,3 +463,101 @@ void Slider_Click(Slider_typedef *Slider_struct)
 
 #endif
 
+
+#if (USE_CHECKBOX == TRUE)
+/* Initializes the Button structure */
+void Checkbox_Init(coord_t x, coord_t y, coord_t width, coord_t height,
+		color_t border_color, color_t fg_color, unsigned char value,
+		Checkbox_typedef *Checkbox_struct, Callbacks click_event)
+{
+	Checkbox_struct->x = x;
+	Checkbox_struct->y = y;
+	Checkbox_struct->dx = width;
+	Checkbox_struct->dy = height;
+	Checkbox_struct->radius = 4;
+	Checkbox_struct->border_color = border_color;
+	Checkbox_struct->fg_color = fg_color;
+	Checkbox_struct->value = value;
+
+	// Event handler
+	Checkbox_struct->event.x1 = x+2;
+	Checkbox_struct->event.y1 = y+2;
+	Checkbox_struct->event.x2 = x+width-4;
+	Checkbox_struct->event.y2 = y+height-4;
+
+	GUI_IncludeObjectIntoEventList(&(Checkbox_struct->event));
+
+	Checkbox_struct->event.object = CHECKBOX_OBJECT;
+	Checkbox_struct->event.ObjectPointer = (void*)Checkbox_struct;
+	Checkbox_struct->ClickEvent = click_event;
+}
+
+
+/* Initializes the Button structure */
+void Checkbox_Update(int value, Checkbox_typedef *Checkbox_struct)
+{
+	Checkbox_struct->value = value;
+}
+
+/* Function to draw a box with rounded corners */
+void Checkbox_Draw(Checkbox_typedef *Checkbox_struct)
+{
+	coord_t x1, x2, y1, y2;
+
+	x1 = Checkbox_struct->x + Checkbox_struct->radius;
+	x2 = Checkbox_struct->x + Checkbox_struct->dx - Checkbox_struct->radius;
+	y1 = Checkbox_struct->y + Checkbox_struct->radius;
+	y2 = Checkbox_struct->y + Checkbox_struct->dy - Checkbox_struct->radius;
+
+	// Draw the corners
+	gdispFillCircle(x1,y1,Checkbox_struct->radius,Checkbox_struct->border_color);
+	gdispFillCircle(x2,y1,Checkbox_struct->radius,Checkbox_struct->border_color);
+	gdispFillCircle(x1,y2,Checkbox_struct->radius,Checkbox_struct->border_color);
+	gdispFillCircle(x2,y2,Checkbox_struct->radius,Checkbox_struct->border_color);
+
+	// Draw the inner rectangles.
+	gdispFillArea(Checkbox_struct->x,y1,Checkbox_struct->radius,Checkbox_struct->dy-2*Checkbox_struct->radius,Checkbox_struct->border_color);
+	gdispFillArea(x2,y1,Checkbox_struct->radius+1,Checkbox_struct->dy-2*Checkbox_struct->radius,Checkbox_struct->border_color);
+	gdispFillArea(x1,Checkbox_struct->y,Checkbox_struct->dx-2*Checkbox_struct->radius,Checkbox_struct->dy+1,Checkbox_struct->border_color);
+
+	// Draw background border
+	gdispFillArea(Checkbox_struct->x+2,Checkbox_struct->y+2,(Checkbox_struct->dx)-3,(Checkbox_struct->dy)-3,GuiBackground);
+
+	// If true, draw the checkbox mark
+	if (Checkbox_struct->value == TRUE)
+	{
+		Checkbox.Click(Checkbox_struct);
+	}
+}
+
+/* Function to draw a box with rounded corners */
+void Checkbox_Click(Checkbox_typedef *Checkbox_struct)
+{
+	if (Checkbox_struct->value == TRUE)
+	{
+		// Draw the checkbox left triangle.
+		gdispDrawLine((Checkbox_struct->x)+4, (Checkbox_struct->y)+((Checkbox_struct->dy)>>1)+2, (Checkbox_struct->x)+((Checkbox_struct->dx)>>1), (Checkbox_struct->y)+(Checkbox_struct->dy)-3, Checkbox_struct->fg_color);
+		gdispDrawLine((Checkbox_struct->x)+4, (Checkbox_struct->y)+((Checkbox_struct->dy)>>1)+2, (Checkbox_struct->x)+((Checkbox_struct->dx)>>1)-1, (Checkbox_struct->y)+(Checkbox_struct->dy)-3, Checkbox_struct->fg_color);
+		gdispDrawLine((Checkbox_struct->x)+4, (Checkbox_struct->y)+((Checkbox_struct->dy)>>1)+2, (Checkbox_struct->x)+((Checkbox_struct->dx)>>1)-2, (Checkbox_struct->y)+(Checkbox_struct->dy)-3, Checkbox_struct->fg_color);
+		gdispDrawLine((Checkbox_struct->x)+4, (Checkbox_struct->y)+((Checkbox_struct->dy)>>1)+2, (Checkbox_struct->x)+((Checkbox_struct->dx)>>1)-1, (Checkbox_struct->y)+(Checkbox_struct->dy)-4, Checkbox_struct->fg_color);
+		gdispDrawLine((Checkbox_struct->x)+4, (Checkbox_struct->y)+((Checkbox_struct->dy)>>1)+2, (Checkbox_struct->x)+((Checkbox_struct->dx)>>1), (Checkbox_struct->y)+(Checkbox_struct->dy)-4, Checkbox_struct->fg_color);
+		gdispDrawLine((Checkbox_struct->x)+4, (Checkbox_struct->y)+((Checkbox_struct->dy)>>1)+2, (Checkbox_struct->x)+((Checkbox_struct->dx)>>1)+1, (Checkbox_struct->y)+(Checkbox_struct->dy)-5, Checkbox_struct->fg_color);
+		gdispDrawLine((Checkbox_struct->x)+4, (Checkbox_struct->y)+((Checkbox_struct->dy)>>1)+2, (Checkbox_struct->x)+((Checkbox_struct->dx)>>1), (Checkbox_struct->y)+(Checkbox_struct->dy)-5, Checkbox_struct->fg_color);
+
+		// Draw the checkbox right triangle.
+		gdispDrawLine((Checkbox_struct->x)+((Checkbox_struct->dx)>>1)-3, (Checkbox_struct->y)+(Checkbox_struct->dy)-5, (Checkbox_struct->x)+(Checkbox_struct->dx)-3, (Checkbox_struct->y)+4, Checkbox_struct->fg_color);
+		gdispDrawLine((Checkbox_struct->x)+((Checkbox_struct->dx)>>1)-3, (Checkbox_struct->y)+(Checkbox_struct->dy)-4, (Checkbox_struct->x)+(Checkbox_struct->dx)-3, (Checkbox_struct->y)+4, Checkbox_struct->fg_color);
+		gdispDrawLine((Checkbox_struct->x)+((Checkbox_struct->dx)>>1)-3, (Checkbox_struct->y)+(Checkbox_struct->dy)-3, (Checkbox_struct->x)+(Checkbox_struct->dx)-3, (Checkbox_struct->y)+4, Checkbox_struct->fg_color);
+		gdispDrawLine((Checkbox_struct->x)+((Checkbox_struct->dx)>>1)-2, (Checkbox_struct->y)+(Checkbox_struct->dy)-3, (Checkbox_struct->x)+(Checkbox_struct->dx)-3, (Checkbox_struct->y)+4, Checkbox_struct->fg_color);
+		gdispDrawLine((Checkbox_struct->x)+((Checkbox_struct->dx)>>1)-1, (Checkbox_struct->y)+(Checkbox_struct->dy)-3, (Checkbox_struct->x)+(Checkbox_struct->dx)-3, (Checkbox_struct->y)+4, Checkbox_struct->fg_color);
+		gdispDrawLine((Checkbox_struct->x)+((Checkbox_struct->dx)>>1), (Checkbox_struct->y)+(Checkbox_struct->dy)-3, (Checkbox_struct->x)+(Checkbox_struct->dx)-3, (Checkbox_struct->y)+4, Checkbox_struct->fg_color);
+	}
+	else
+	{
+		// Draw background border
+		gdispFillArea(Checkbox_struct->x+2,Checkbox_struct->y+2,(Checkbox_struct->dx)-3,(Checkbox_struct->dy)-3,GuiBackground);
+	}
+
+}
+
+#endif
