@@ -241,7 +241,11 @@ void OSTimerInit(INT16U timertask_stacksize, INT8U prio){
   BRTOS_TimerTaskInit();
    
    
+  #if (TASK_WITH_PARAMETERS == 1)
+  if(InstallTask(&BRTOS_TimerTask,"BRTOS Timers Task",timertask_stacksize, prio,NULL) != OK)
+  #else
   if(InstallTask(&BRTOS_TimerTask,"BRTOS Timers Task",timertask_stacksize, prio) != OK)
+  #endif
   {
     while(1){};
   }  
