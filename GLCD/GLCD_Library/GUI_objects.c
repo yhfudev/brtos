@@ -135,7 +135,7 @@ ObjectEvent_typedef *GUI_VerifyObjects(int x, int y)
 /* Declare GUI event handler task */
 void GUI_Event_Handler(void *param)
 {
-	Touch_typedef TouchPos;
+	volatile Touch_typedef TouchPos;
 	ObjectEvent_typedef *object;
 	Button_typedef		*button;
 	Slider_typedef		*slider;
@@ -179,7 +179,7 @@ void GUI_Event_Handler(void *param)
 
 					case SLIDER_OBJECT:
 						slider = (Slider_typedef*)object->ObjectPointer;
-						int slider_size = (slider->x2) - (slider->x1);
+						int slider_size = (slider->x2);
 						while(GPIO_ReadInputDataBit(TOUCH_INT_PORT,TOUCH_INT_PIN)==0)
 						{
 							DelayTask(20);
@@ -193,7 +193,7 @@ void GUI_Event_Handler(void *param)
 							if (object == GUI_VerifyObjects(TouchPos.x, TouchPos.y))
 							{
 								// Calcule new value
-								slider->value = (((TouchPos.x) - (slider->x1) - 7) * 100) / slider_size;
+								slider->value = (((TouchPos.x) - (slider->x1)) * 100) / slider_size;
 
 								if (slider->value <0) slider->value = 0;
 								if (slider->value >100) slider->value = 100;
@@ -385,13 +385,13 @@ void Slider_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 	// Slider bar area
 	Slider_struct->x1 = (Slider_struct->x)+4;
 	Slider_struct->y1 = (Slider_struct->y)+4;
-	Slider_struct->x2 = (Slider_struct->dx)-7;
+	Slider_struct->x2 = (Slider_struct->dx)-8;
 	Slider_struct->y2 = (Slider_struct->dy)-7;
 
 	// Event handler
-	Slider_struct->event.x1 = x+4;
+	Slider_struct->event.x1 = x+3;
 	Slider_struct->event.y1 = y+4;
-	Slider_struct->event.x2 = x+width-8;
+	Slider_struct->event.x2 = x+width-3;
 	Slider_struct->event.y2 = y+height-6;
 
 	GUI_IncludeObjectIntoEventList(&(Slider_struct->event));
@@ -449,14 +449,13 @@ void Slider_Click(Slider_typedef *Slider_struct)
 		// Draw background border
 		if (update < Slider_struct->lvalue)
 		{
-			//gdispFillArea(Slider_struct->x+2,Slider_struct->y+2,(Slider_struct->dx)-3,(Slider_struct->dy)-3,GuiBackground);
-			gdispFillArea(update+(Slider_struct->x1),(Slider_struct->y)+2,(Slider_struct->lvalue)-update,(Slider_struct->dy)-3,GuiBackground);
+			gdispFillArea(update+(Slider_struct->x1),(Slider_struct->y)+2,(Slider_struct->lvalue)-update+1,(Slider_struct->dy)-3,GuiBackground);
 		}
 
 		// Draw slider bar
 		if (update > Slider_struct->lvalue)
 		{
-			gdispFillArea((Slider_struct->lvalue)+(Slider_struct->x1),Slider_struct->y1,update-(Slider_struct->lvalue),Slider_struct->y2,Slider_struct->fg_color);
+			gdispFillArea((Slider_struct->lvalue)+(Slider_struct->x1),Slider_struct->y1,update-(Slider_struct->lvalue)+1,Slider_struct->y2,Slider_struct->fg_color);
 		}
 		Slider_struct->lvalue = update;
 }
