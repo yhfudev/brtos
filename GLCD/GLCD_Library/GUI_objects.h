@@ -15,6 +15,7 @@
 #define USE_BUTTON		TRUE
 #define USE_SLIDER		TRUE
 #define USE_CHECKBOX	TRUE
+#define USE_GRAPH		TRUE
 
 
 /* Object types enum */
@@ -23,7 +24,8 @@ enum
     NULL_OBJECT,
     BUTTON_OBJECT,
     CHECKBOX_OBJECT,
-    SLIDER_OBJECT
+    SLIDER_OBJECT,
+    GRAPH_OBJECT
 } GUI_Objects;
 
 
@@ -233,6 +235,56 @@ void Checkbox_Draw(Checkbox_typedef *Checkbox_struct);
 void Checkbox_Click(Checkbox_typedef *Checkbox_struct);
 
 #endif
+
+
+#if (USE_GRAPH == TRUE)
+
+typedef struct _Trace
+{
+	int 	line_type;
+	int		line_thin;
+	color_t color; 					// Trace color.
+}Trace_typedef;
+
+/* Structure typedef to store Slider parameters */
+typedef struct _Graph
+{
+	coord_t x; 						// Upper left corner x screen position
+	coord_t y; 						// Upper left corner y screen position
+	coord_t dx; 					// x size (width)
+	coord_t dy; 					// y size (height)
+	coord_t x1; 					// Upper left corner x screen position - slider bar
+	coord_t y1; 					// Upper left corner y screen position - slider bar
+	coord_t x2; 					// x size (width) - slider bar
+	coord_t y2; 					// y size (height) - slider bar
+	coord_t axis;					// Graph x axis
+	coord_t radius; 				// radius of the corners (in pixels)
+	color_t border_color; 			// Border color of the box.
+	color_t fg_color; 				// Foreground color.
+	int					ntraces;	// Number of traces
+	Trace_typedef 		*traces;	// Graph traces
+	char		  		*title_str;	// Title text
+	char		  		*axisx_str;	// X axis text
+	char				*axisy_str;	// Y axis text
+	ObjectEvent_typedef event;		// Event handler
+	Callbacks			ClickEvent;	// Clicked callback
+}Graph_typedef;
+
+
+
+void Graph_Init(coord_t x, coord_t y, coord_t width, coord_t height,
+		color_t border_color, color_t fg_color, Trace_typedef *traces, int ntraces,
+		char *title, char *axisx, char *axisy,
+		Graph_typedef *Graph_struct, Callbacks click_event);
+
+/* Initializes the Button structure */
+void Graph_AddTraceData(Graph_typedef *Graph_struct, int *data);
+
+/* Function to draw a box with rounded corners */
+void Graph_Draw(Graph_typedef *Graph_struct);
+
+#endif
+
 
 #endif
 

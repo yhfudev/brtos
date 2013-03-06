@@ -318,6 +318,7 @@ void Button_Draw(Button_typedef *Button_struct)
 	gdispFillArea(Button_struct->x,y1,Button_struct->radius,Button_struct->dy-2*Button_struct->radius,Button_struct->bg_color);
 	gdispFillArea(x2,y1,Button_struct->radius+1,Button_struct->dy-2*Button_struct->radius,Button_struct->bg_color);
 	gdispFillArea(x1,Button_struct->y,Button_struct->dx-2*Button_struct->radius,Button_struct->dy+1,Button_struct->bg_color);
+
 	// Obtaining the size of the text.
 	size_x = gdispGetStringWidth(Button_struct->str, &fontLarger);
 	size_y = gdispGetFontMetric(&fontLarger, fontHeight) -
@@ -556,7 +557,113 @@ void Checkbox_Click(Checkbox_typedef *Checkbox_struct)
 		// Draw background border
 		gdispFillArea(Checkbox_struct->x+2,Checkbox_struct->y+2,(Checkbox_struct->dx)-3,(Checkbox_struct->dy)-3,GuiBackground);
 	}
-
 }
 
 #endif
+
+
+#if (USE_GRAPH == TRUE)
+/* Initializes the Button structure */
+void Graph_Init(coord_t x, coord_t y, coord_t width, coord_t height,
+		color_t border_color, color_t fg_color, Trace_typedef *traces, int ntraces,
+		char *title, char *axisx, char *axisy,
+		Graph_typedef *Graph_struct, Callbacks click_event)
+{
+	Graph_struct->x = x;
+	Graph_struct->y = y;
+	Graph_struct->dx = width;
+	Graph_struct->dy = height;
+	Graph_struct->radius = 4;
+	Graph_struct->axis = 0;
+	Graph_struct->traces = traces;
+	Graph_struct->ntraces = ntraces;
+	Graph_struct->border_color = border_color;
+	Graph_struct->fg_color = fg_color;
+
+	Graph_struct->title_str = title;
+	Graph_struct->axisx_str = axisx;
+	Graph_struct->axisy_str = axisy;
+
+	// Graph area
+	Graph_struct->x1 = (Graph_struct->x)+15;
+	Graph_struct->y1 = (Graph_struct->y)+15;
+	Graph_struct->x2 = (Graph_struct->dx)-30;
+	Graph_struct->y2 = (Graph_struct->dy)-30;
+
+	#if 0
+	// Event handler
+	Graph_struct->event.x1 = x+3;
+	Graph_struct->event.y1 = y+4;
+	Graph_struct->event.x2 = x+width-3;
+	Graph_struct->event.y2 = y+height-6;
+
+	GUI_IncludeObjectIntoEventList(&(Graph_struct->event));
+
+	Graph_struct->event.object = SLIDER_OBJECT;
+	Graph_struct->event.ObjectPointer = (void*)Graph_struct;
+	Graph_struct->ClickEvent = click_event;
+	#endif
+}
+
+
+/* Graph_AddTraceData */
+void Graph_AddTraceData(Graph_typedef *Graph_struct, int *data)
+{
+	int n = Graph_struct->ntraces;
+	Trace_typedef *traces = Graph_struct->traces;
+
+	while(n--)
+	{
+		gdispDrawPixel((Graph_struct->x1)+(Graph_struct->axis), ((*data)>>1)+(Graph_struct->y1), traces->color);
+		traces++;
+		data++;
+	}
+
+	Graph_struct->axis++;
+	if ((Graph_struct->axis) > (Graph_struct->x2))
+	{
+		Graph_struct->axis = 0;
+	}
+}
+
+/* Function to draw a box with rounded corners */
+void Graph_Draw(Graph_typedef *Graph_struct)
+{
+	coord_t x1, x2, y1, y2;
+	coord_t size_x;
+
+	x1 = Graph_struct->x + Graph_struct->radius;
+	x2 = Graph_struct->x + Graph_struct->dx - Graph_struct->radius;
+	y1 = Graph_struct->y + Graph_struct->radius;
+	y2 = Graph_struct->y + Graph_struct->dy - Graph_struct->radius;
+
+	// Draw the corners
+	gdispFillCircle(x1,y1,Graph_struct->radius,Graph_struct->border_color);
+	gdispFillCircle(x2,y1,Graph_struct->radius,Graph_struct->border_color);
+	gdispFillCircle(x1,y2,Graph_struct->radius,Graph_struct->border_color);
+	gdispFillCircle(x2,y2,Graph_struct->radius,Graph_struct->border_color);
+
+	// Draw the inner rectangles.
+	gdispFillArea(Graph_struct->x,y1,Graph_struct->radius,Graph_struct->dy-2*Graph_struct->radius,Graph_struct->border_color);
+	gdispFillArea(x2,y1,Graph_struct->radius+1,Graph_struct->dy-2*Graph_struct->radius,Graph_struct->border_color);
+	gdispFillArea(x1,Graph_struct->y,Graph_struct->dx-2*Graph_struct->radius,Graph_struct->dy+1,Graph_struct->border_color);
+
+	// Draw background border
+	gdispFillArea(Graph_struct->x+2,Graph_struct->y+2,(Graph_struct->dx)-3,(Graph_struct->dy)-3,GuiBackground);
+
+	// Draw inside border
+	gdispFillArea((Graph_struct->x1)-1,(Graph_struct->y1)-1,(Graph_struct->x2)+2,(Graph_struct->y2)+2,Graph_struct->border_color);
+
+	// Draw inside graph
+	gdispFillArea((Graph_struct->x1),(Graph_struct->y1),(Graph_struct->x2),(Graph_struct->y2),GuiBackground);
+
+	// Obtaining the size of the text
+	size_x = gdispGetStringWidth(Graph_struct->title_str, &fontLarger);
+
+	// Draw the string in the middle of the box.
+	gdispDrawString(Graph_struct->x+(Graph_struct->dx-size_x)/2,
+			Graph_struct->y+3,
+			Graph_struct->title_str, &fontLarger, Graph_struct->fg_color);
+}
+#endif
+
