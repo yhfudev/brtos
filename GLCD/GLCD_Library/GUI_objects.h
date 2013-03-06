@@ -58,6 +58,9 @@ typedef void (*Callbacks)(void);
 extern BRTOS_Queue	*TouchEvents;
 extern BRTOS_Sem 	*TouchSync;
 
+/* Declare GLCD mutex */
+extern BRTOS_Mutex	*GUIMutex;
+
 /* Declare background color */
 extern color_t GuiBackground;
 
@@ -79,7 +82,7 @@ extern color_t GuiBackground;
 
 
 /* GUI functions prototypes */
-void GUI_ObjetcsInit(color_t background);
+void GUI_ObjetcsInit(color_t background, unsigned char mutex_prio);
 void GUI_IncludeObjectIntoEventList(ObjectEvent_typedef *object);
 void GUI_RemoveObjectIntoEventList(ObjectEvent_typedef *object);
 ObjectEvent_typedef *GUI_VerifyObjects(int x, int y);

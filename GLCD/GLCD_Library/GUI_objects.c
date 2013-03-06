@@ -14,6 +14,9 @@
 ObjectEvent_typedef *ObjectHead;
 ObjectEvent_typedef *ObjectTail;
 
+/* Declare GLCD mutex */
+BRTOS_Mutex	*GUIMutex;
+
 /* Declare touchscreen events list */
 BRTOS_Queue	*TouchEvents;
 
@@ -33,7 +36,7 @@ SliderFunc_typedef Slider;
 CheckboxFunc_typedef Checkbox;
 
 /*  Initialization of the functions structures */
-void GUI_ObjetcsInit(color_t background)
+void GUI_ObjetcsInit(color_t background, unsigned char mutex_prio)
 {
 #if (USE_BUTTON == TRUE)
 	Button.Draw = Button_Draw;
@@ -57,6 +60,12 @@ void GUI_ObjetcsInit(color_t background)
 #endif
 
 	GuiBackground = background;
+
+	// Create GUI mutex
+	if(OSMutexCreate(&GUIMutex,mutex_prio) != ALLOC_EVENT_OK)
+	{
+		// Fail
+	}
 }
 
 
@@ -303,6 +312,8 @@ void Button_Draw(Button_typedef *Button_struct)
 	coord_t x1, x2, y1, y2;
 	coord_t size_x, size_y;
 
+	(void)OSMutexAcquire(GUIMutex);
+
 	x1 = Button_struct->x + Button_struct->radius;
 	x2 = Button_struct->x + Button_struct->dx - Button_struct->radius;
 	y1 = Button_struct->y + Button_struct->radius;
@@ -329,6 +340,7 @@ void Button_Draw(Button_typedef *Button_struct)
 			Button_struct->y+(Button_struct->dy-size_y)/2,
 			Button_struct->str, &fontLarger, Button_struct->font_color);
 
+	(void)OSMutexRelease(GUIMutex);
 }
 
 
@@ -337,6 +349,8 @@ void Button_Click(Button_typedef *Button_struct)
 {
 	  Button_typedef Button_backup;
 	  Button_backup = *Button_struct;
+
+	  (void)OSMutexAcquire(GUIMutex);
 
 	  // Linha de cima
 	  gdispFillArea(Button_struct->x,Button_struct->y,Button_struct->dx,2,GuiBackground);
@@ -354,6 +368,8 @@ void Button_Click(Button_typedef *Button_struct)
 	  gdispFillArea((Button_struct->x)+(Button_struct->dx)-12,Button_struct->y,Button_struct->radius,Button_struct->radius,GuiBackground);
 	  //Quadrado do canto inferior esquerdo
 	  gdispFillArea((Button_struct->x)+(Button_struct->dx)-12,(Button_struct->y)+(Button_struct->dy)-12,Button_struct->radius,Button_struct->radius,GuiBackground);
+
+      (void)OSMutexRelease(GUIMutex);
 
 	  // Draw pressed button
 	  Button.Update((coord_t)((Button_struct->x)+2),(coord_t)((Button_struct->y)+2),(coord_t)((Button_struct->dx)-4),
@@ -414,6 +430,8 @@ void Slider_Draw(Slider_typedef *Slider_struct)
 {
 	coord_t x1, x2, y1, y2;
 
+	(void)OSMutexAcquire(GUIMutex);
+
 	x1 = Slider_struct->x + Slider_struct->radius;
 	x2 = Slider_struct->x + Slider_struct->dx - Slider_struct->radius;
 	y1 = Slider_struct->y + Slider_struct->radius;
@@ -437,6 +455,8 @@ void Slider_Draw(Slider_typedef *Slider_struct)
 	gdispFillArea(Slider_struct->x1,Slider_struct->y1,((Slider_struct->x2)*(Slider_struct->value))/100,Slider_struct->y2,Slider_struct->fg_color);
 
 	Slider_struct->lvalue = ((Slider_struct->x2)*(Slider_struct->value))/100;
+
+	(void)OSMutexRelease(GUIMutex);
 }
 
 
@@ -444,6 +464,8 @@ void Slider_Draw(Slider_typedef *Slider_struct)
 void Slider_Click(Slider_typedef *Slider_struct)
 {
 	  	coord_t update;
+
+		(void)OSMutexAcquire(GUIMutex);
 
 		update = ((Slider_struct->x2)*(Slider_struct->value))/100;
 
@@ -459,6 +481,8 @@ void Slider_Click(Slider_typedef *Slider_struct)
 			gdispFillArea((Slider_struct->lvalue)+(Slider_struct->x1),Slider_struct->y1,update-(Slider_struct->lvalue)+1,Slider_struct->y2,Slider_struct->fg_color);
 		}
 		Slider_struct->lvalue = update;
+
+		(void)OSMutexRelease(GUIMutex);
 }
 
 #endif
@@ -504,6 +528,8 @@ void Checkbox_Draw(Checkbox_typedef *Checkbox_struct)
 {
 	coord_t x1, x2, y1, y2;
 
+	(void)OSMutexAcquire(GUIMutex);
+
 	x1 = Checkbox_struct->x + Checkbox_struct->radius;
 	x2 = Checkbox_struct->x + Checkbox_struct->dx - Checkbox_struct->radius;
 	y1 = Checkbox_struct->y + Checkbox_struct->radius;
@@ -523,6 +549,8 @@ void Checkbox_Draw(Checkbox_typedef *Checkbox_struct)
 	// Draw background border
 	gdispFillArea(Checkbox_struct->x+2,Checkbox_struct->y+2,(Checkbox_struct->dx)-3,(Checkbox_struct->dy)-3,GuiBackground);
 
+	(void)OSMutexRelease(GUIMutex);
+
 	// If true, draw the checkbox mark
 	if (Checkbox_struct->value == TRUE)
 	{
@@ -533,6 +561,8 @@ void Checkbox_Draw(Checkbox_typedef *Checkbox_struct)
 /* Function to draw a box with rounded corners */
 void Checkbox_Click(Checkbox_typedef *Checkbox_struct)
 {
+	(void)OSMutexAcquire(GUIMutex);
+
 	if (Checkbox_struct->value == TRUE)
 	{
 		// Draw the checkbox left triangle.
@@ -557,6 +587,8 @@ void Checkbox_Click(Checkbox_typedef *Checkbox_struct)
 		// Draw background border
 		gdispFillArea(Checkbox_struct->x+2,Checkbox_struct->y+2,(Checkbox_struct->dx)-3,(Checkbox_struct->dy)-3,GuiBackground);
 	}
+
+	(void)OSMutexRelease(GUIMutex);
 }
 
 #endif
@@ -612,6 +644,8 @@ void Graph_AddTraceData(Graph_typedef *Graph_struct, int *data)
 	int n = Graph_struct->ntraces;
 	Trace_typedef *traces = Graph_struct->traces;
 
+	(void)OSMutexAcquire(GUIMutex);
+
 	while(n--)
 	{
 		gdispDrawPixel((Graph_struct->x1)+(Graph_struct->axis), ((*data)>>1)+(Graph_struct->y1), traces->color);
@@ -624,6 +658,8 @@ void Graph_AddTraceData(Graph_typedef *Graph_struct, int *data)
 	{
 		Graph_struct->axis = 0;
 	}
+
+	(void)OSMutexRelease(GUIMutex);
 }
 
 /* Function to draw a box with rounded corners */
@@ -631,6 +667,8 @@ void Graph_Draw(Graph_typedef *Graph_struct)
 {
 	coord_t x1, x2, y1, y2;
 	coord_t size_x;
+
+	(void)OSMutexAcquire(GUIMutex);
 
 	x1 = Graph_struct->x + Graph_struct->radius;
 	x2 = Graph_struct->x + Graph_struct->dx - Graph_struct->radius;
@@ -664,6 +702,8 @@ void Graph_Draw(Graph_typedef *Graph_struct)
 	gdispDrawString(Graph_struct->x+(Graph_struct->dx-size_x)/2,
 			Graph_struct->y+3,
 			Graph_struct->title_str, &fontLarger, Graph_struct->fg_color);
+
+	(void)OSMutexRelease(GUIMutex);
 }
 #endif
 
