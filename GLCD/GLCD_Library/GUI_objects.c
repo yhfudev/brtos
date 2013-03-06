@@ -620,7 +620,7 @@ void Graph_AddTraceData(Graph_typedef *Graph_struct, int *data)
 	}
 
 	Graph_struct->axis++;
-	if ((Graph_struct->axis) > (Graph_struct->x2))
+	if ((Graph_struct->axis) >= (Graph_struct->x2))
 	{
 		Graph_struct->axis = 0;
 	}
