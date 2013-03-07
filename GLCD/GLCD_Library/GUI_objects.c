@@ -646,17 +646,28 @@ void Graph_AddTraceData(Graph_t *Graph_struct, int *data)
 
 	(void)OSMutexAcquire(GUIMutex);
 
-	while(n--)
-	{
-		gdispDrawPixel((Graph_struct->x1)+(Graph_struct->axis), ((*data)>>1)+(Graph_struct->y1), traces->color);
-		traces++;
-		data++;
-	}
-
 	Graph_struct->axis++;
 	if ((Graph_struct->axis) >= (Graph_struct->x2))
 	{
+		// Clear last update line
+		gdispDrawLine((Graph_struct->x1)+(Graph_struct->axis)-1, Graph_struct->y1, (Graph_struct->x1)+(Graph_struct->axis)-1, (Graph_struct->y1)+(Graph_struct->y2)-1, GuiBackground);
+
 		Graph_struct->axis = 0;
+	}else
+	{
+		// Draw update line
+		gdispDrawLine((Graph_struct->x1)+(Graph_struct->axis), Graph_struct->y1, (Graph_struct->x1)+(Graph_struct->axis), (Graph_struct->y1)+(Graph_struct->y2)-1, Graph_struct->fg_color);
+
+		// Clear last update line
+		gdispDrawLine((Graph_struct->x1)+(Graph_struct->axis)-1, Graph_struct->y1, (Graph_struct->x1)+(Graph_struct->axis)-1, (Graph_struct->y1)+(Graph_struct->y2)-1, GuiBackground);
+
+		// Draw traces
+		while(n--)
+		{
+			gdispDrawPixel((Graph_struct->x1)+(Graph_struct->axis)-1, ((*data)>>1)+(Graph_struct->y1), traces->color);
+			traces++;
+			data++;
+		}
 	}
 
 	(void)OSMutexRelease(GUIMutex);
