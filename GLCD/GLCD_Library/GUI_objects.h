@@ -252,32 +252,35 @@ typedef struct _Trace
 /* Structure typedef to store Slider parameters */
 typedef struct _Graph
 {
-	coord_t x; 						// Upper left corner x screen position
-	coord_t y; 						// Upper left corner y screen position
-	coord_t dx; 					// x size (width)
-	coord_t dy; 					// y size (height)
-	coord_t x1; 					// Upper left corner x screen position - slider bar
-	coord_t y1; 					// Upper left corner y screen position - slider bar
-	coord_t x2; 					// x size (width) - slider bar
-	coord_t y2; 					// y size (height) - slider bar
-	coord_t axis;					// Graph x axis
-	coord_t radius; 				// radius of the corners (in pixels)
-	color_t border_color; 			// Border color of the box.
-	color_t fg_color; 				// Foreground color.
-	int					ntraces;	// Number of traces
-	Trace_t 			*traces;	// Graph traces
-	char		  		*title_str;	// Title text
-	char		  		*axisx_str;	// X axis text
-	char				*axisy_str;	// Y axis text
-	ObjectEvent_t event;			// Event handler
-	Callbacks			ClickEvent;	// Clicked callback
+	coord_t 		x; 						// Upper left corner x screen position
+	coord_t 		y; 						// Upper left corner y screen position
+	coord_t 		dx; 					// x size (width)
+	coord_t 		dy; 					// y size (height)
+	coord_t 		x1; 					// Upper left corner x screen position - slider bar
+	coord_t 		y1; 					// Upper left corner y screen position - slider bar
+	coord_t 		x2; 					// x size (width) - slider bar
+	coord_t 		y2; 					// y size (height) - slider bar
+	int			  	max;					// Maximum value inside the graph
+	int			  	min;					// Minimum value inside the graph
+	unsigned char 	refresh_bar;			// Enable or disable the refresh bar
+	coord_t 		axis;					// Graph x axis
+	coord_t 		radius; 				// radius of the corners (in pixels)
+	color_t 		border_color; 			// Border color of the box.
+	color_t 		fg_color; 				// Foreground color.
+	int				ntraces;				// Number of traces
+	Trace_t 		*traces;				// Graph traces
+	char		  	*title_str;				// Title text
+	char		  	*axisx_str;				// X axis text
+	char			*axisy_str;				// Y axis text
+	ObjectEvent_t 	event;					// Event handler
+	Callbacks		ClickEvent;				// Clicked callback
 }Graph_t;
 
 
 
 void Graph_Init(coord_t x, coord_t y, coord_t width, coord_t height,
-		color_t border_color, color_t fg_color, Trace_t *traces, int ntraces,
-		char *title, char *axisx, char *axisy,
+		int minimum, int maximum, unsigned char refresh_bar, color_t border_color, color_t fg_color,
+		Trace_t *traces, int ntraces, char *title, char *axisx, char *axisy,
 		Graph_t *Graph_struct, Callbacks click_event);
 
 /* Initializes the Button structure */

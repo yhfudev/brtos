@@ -597,8 +597,8 @@ void Checkbox_Click(Checkbox_t *Checkbox_struct)
 #if (USE_GRAPH == TRUE)
 /* Initializes the Button structure */
 void Graph_Init(coord_t x, coord_t y, coord_t width, coord_t height,
-		color_t border_color, color_t fg_color, Trace_t *traces, int ntraces,
-		char *title, char *axisx, char *axisy,
+		int minimum, int maximum, unsigned char refresh_bar, color_t border_color, color_t fg_color,
+		Trace_t *traces, int ntraces, char *title, char *axisx, char *axisy,
 		Graph_t *Graph_struct, Callbacks click_event)
 {
 	Graph_struct->x = x;
@@ -607,6 +607,9 @@ void Graph_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 	Graph_struct->dy = height;
 	Graph_struct->radius = 4;
 	Graph_struct->axis = 0;
+	Graph_struct->min = minimum;
+	Graph_struct->max = maximum;
+	Graph_struct->refresh_bar = refresh_bar;
 	Graph_struct->traces = traces;
 	Graph_struct->ntraces = ntraces;
 	Graph_struct->border_color = border_color;
@@ -641,6 +644,8 @@ void Graph_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 /* Graph_AddTraceData */
 void Graph_AddTraceData(Graph_t *Graph_struct, int *data)
 {
+	int value = 0;
+	int y_position = (Graph_struct->y1)+(Graph_struct->y2)-1;
 	int n = Graph_struct->ntraces;
 	Trace_t *traces = Graph_struct->traces;
 
@@ -650,21 +655,32 @@ void Graph_AddTraceData(Graph_t *Graph_struct, int *data)
 	if ((Graph_struct->axis) >= (Graph_struct->x2))
 	{
 		// Clear last update line
-		gdispDrawLine((Graph_struct->x1)+(Graph_struct->axis)-1, Graph_struct->y1, (Graph_struct->x1)+(Graph_struct->axis)-1, (Graph_struct->y1)+(Graph_struct->y2)-1, GuiBackground);
+		gdispDrawLine((Graph_struct->x1)+(Graph_struct->axis)-1, Graph_struct->y1, (Graph_struct->x1)+(Graph_struct->axis)-1, y_position, GuiBackground);
 
 		Graph_struct->axis = 0;
 	}else
 	{
-		// Draw update line
-		gdispDrawLine((Graph_struct->x1)+(Graph_struct->axis), Graph_struct->y1, (Graph_struct->x1)+(Graph_struct->axis), (Graph_struct->y1)+(Graph_struct->y2)-1, Graph_struct->fg_color);
+		if (Graph_struct->refresh_bar == TRUE)
+		{
+			// Draw update line
+			gdispDrawLine((Graph_struct->x1)+(Graph_struct->axis), Graph_struct->y1, (Graph_struct->x1)+(Graph_struct->axis), y_position, Graph_struct->fg_color);
+		}
 
 		// Clear last update line
-		gdispDrawLine((Graph_struct->x1)+(Graph_struct->axis)-1, Graph_struct->y1, (Graph_struct->x1)+(Graph_struct->axis)-1, (Graph_struct->y1)+(Graph_struct->y2)-1, GuiBackground);
+		gdispDrawLine((Graph_struct->x1)+(Graph_struct->axis)-1, Graph_struct->y1, (Graph_struct->x1)+(Graph_struct->axis)-1, y_position, GuiBackground);
 
 		// Draw traces
 		while(n--)
 		{
-			gdispDrawPixel((Graph_struct->x1)+(Graph_struct->axis)-1, ((*data)>>1)+(Graph_struct->y1), traces->color);
+			// Computes data place inside the graph
+			value = (int)(((*data)*(Graph_struct->y2)) / Graph_struct->max);
+
+			// If data is inside graph area
+			if ((value >= Graph_struct->min) && (value <= Graph_struct->max))
+			{
+				// Plot traces
+				gdispDrawPixel((Graph_struct->x1)+(Graph_struct->axis)-1, y_position - value, traces->color);
+			}
 			traces++;
 			data++;
 		}
