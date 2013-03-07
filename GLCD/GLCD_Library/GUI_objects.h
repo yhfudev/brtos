@@ -42,14 +42,14 @@ struct _ObjectEvent
 	struct _ObjectEvent *Previous;
 };
 
-typedef struct _ObjectEvent ObjectEvent_typedef;
+typedef struct _ObjectEvent ObjectEvent_t;
 
 /* Touch info structure */
 typedef struct _TouchInfo
 {
 	coord_t x; // x screen position
 	coord_t y; // y screen position
-}Touch_typedef;
+}Touch_t;
 
 /* Objects function callbacks types */
 typedef void (*Callbacks)(void);
@@ -83,9 +83,9 @@ extern color_t GuiBackground;
 
 /* GUI functions prototypes */
 void GUI_ObjetcsInit(color_t background, unsigned char mutex_prio);
-void GUI_IncludeObjectIntoEventList(ObjectEvent_typedef *object);
-void GUI_RemoveObjectIntoEventList(ObjectEvent_typedef *object);
-ObjectEvent_typedef *GUI_VerifyObjects(int x, int y);
+void GUI_IncludeObjectIntoEventList(ObjectEvent_t *object);
+void GUI_RemoveObjectIntoEventList(ObjectEvent_t *object);
+ObjectEvent_t *GUI_VerifyObjects(int x, int y);
 void GUI_Event_Handler(void *param);
 
 
@@ -101,18 +101,18 @@ typedef struct _Button
 	color_t bg_color; 				// Background color of the box.
 	color_t font_color; 			// Text color.
 	char *str; 						// Pointer to a string.
-	ObjectEvent_typedef event;		// Event handler
+	ObjectEvent_t event;		// Event handler
 	Callbacks			ClickEvent;	// Clicked callback
-}Button_typedef;
+}Button_t;
 
 /*Pointer to button functions typedef */
-typedef void (*Function)(Button_typedef *a);
+typedef void (*Function)(Button_t *a);
 typedef void (*FuncUpdate)(coord_t x, coord_t y, coord_t width, coord_t height,
 		coord_t radius, color_t bg_color, color_t font_color, char *str,
-		Button_typedef *Button_struct);
+		Button_t *Button_struct);
 typedef void (*FuncInit1)(coord_t x, coord_t y, coord_t width, coord_t height,
 		coord_t radius, color_t bg_color, color_t font_color, char *str,
-		Button_typedef *Button_struct, Callbacks callback1);
+		Button_t *Button_struct, Callbacks callback1);
 
 /* Definitions of the functions associated with Button GUI object */
 typedef struct _FuncList
@@ -121,23 +121,23 @@ typedef struct _FuncList
 	FuncUpdate 	  Update;
 	Function 	  Draw;
 	Function 	  Click;
-}ButtonFunc_typedef;
+}ButtonFunc_t;
 
-extern ButtonFunc_typedef Button;
+extern ButtonFunc_t Button;
 
 /*
  * Declarations of the Button functions.
  * ******************************************************************** */
 void Button_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 		coord_t radius, color_t bg_color, color_t font_color, char *str,
-		Button_typedef *Button_struct, Callbacks click_event);
+		Button_t *Button_struct, Callbacks click_event);
 
 void Button_Update(coord_t x, coord_t y, coord_t width, coord_t height,
 		coord_t radius, color_t bg_color, color_t font_color, char *str,
-		Button_typedef *Button_struct);
+		Button_t *Button_struct);
 
-void Button_Draw(Button_typedef *Button_struct);
-void Button_Click(Button_typedef *Button_struct);
+void Button_Draw(Button_t *Button_struct);
+void Button_Click(Button_t *Button_struct);
 #endif
 
 
@@ -158,16 +158,16 @@ typedef struct _Slider
 	color_t fg_color; 				// Foreground color.
 	int 	value;					// Slider value position
 	int 	lvalue;					// Slider last value position
-	ObjectEvent_typedef event;		// Event handler
+	ObjectEvent_t event;			// Event handler
 	Callbacks			ClickEvent;	// Clicked callback
-}Slider_typedef;
+}Slider_t;
 
 /*Pointer to Slider functions typedef */
-typedef void (*FunctionS)(Slider_typedef *a);
-typedef void (*FuncUpdateS)(int value, Slider_typedef *Slider_struct);
+typedef void (*FunctionS)(Slider_t *a);
+typedef void (*FuncUpdateS)(int value, Slider_t *Slider_struct);
 typedef void (*FuncInit1S)(coord_t x, coord_t y, coord_t width, coord_t height,
 		color_t border_color, color_t fg_color, int value,
-		Slider_typedef *Slider_struct, Callbacks callback1);
+		Slider_t *Slider_struct, Callbacks callback1);
 
 /* Definitions of the functions associated with Slider GUI object */
 typedef struct _SliderFuncList
@@ -176,21 +176,21 @@ typedef struct _SliderFuncList
 	FuncUpdateS   Update;
 	FunctionS 	  Draw;
 	FunctionS 	  Click;
-}SliderFunc_typedef;
+}SliderFunc_t;
 
-extern SliderFunc_typedef Slider;
+extern SliderFunc_t Slider;
 
 /*
  * Declarations of the Button functions.
  * ******************************************************************** */
 void Slider_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 		color_t bg_color, color_t fg_color, int value,
-		Slider_typedef *Slider_struct, Callbacks click_event);
+		Slider_t *Slider_struct, Callbacks click_event);
 
-void Slider_Update(int value, Slider_typedef *Slider_struct);
+void Slider_Update(int value, Slider_t *Slider_struct);
 
-void Slider_Draw(Slider_typedef *Slider_struct);
-void Slider_Click(Slider_typedef *Slider_struct);
+void Slider_Draw(Slider_t *Slider_struct);
+void Slider_Click(Slider_t *Slider_struct);
 #endif
 
 
@@ -206,16 +206,16 @@ typedef struct _Checkbox
 	color_t border_color; 			// Border color of the box.
 	color_t fg_color; 				// Foreground color.
 	unsigned char value;			// Slider value position
-	ObjectEvent_typedef event;		// Event handler
+	ObjectEvent_t event;			// Event handler
 	Callbacks			ClickEvent;	// Clicked callback
-}Checkbox_typedef;
+}Checkbox_t;
 
 /*Pointer to Checkbox functions typedef */
-typedef void (*FunctionC)(Checkbox_typedef *a);
-typedef void (*FuncUpdateC)(int value, Checkbox_typedef *Checkbox_struct);
+typedef void (*FunctionC)(Checkbox_t *a);
+typedef void (*FuncUpdateC)(int value, Checkbox_t *Checkbox_struct);
 typedef void (*FuncInit1C)(coord_t x, coord_t y, coord_t width, coord_t height,
 		color_t border_color, color_t fg_color, unsigned char value,
-		Checkbox_typedef *Checkbox_struct, Callbacks callback1);
+		Checkbox_t *Checkbox_struct, Callbacks callback1);
 
 /* Definitions of the functions associated with Slider GUI object */
 typedef struct _CheckboxFuncList
@@ -224,18 +224,18 @@ typedef struct _CheckboxFuncList
 	FuncUpdateC   Update;
 	FunctionC 	  Draw;
 	FunctionC 	  Click;
-}CheckboxFunc_typedef;
+}CheckboxFunc_t;
 
-extern CheckboxFunc_typedef Checkbox;
+extern CheckboxFunc_t Checkbox;
 
 /* Initializes the Checkbox structure */
 void Checkbox_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 		color_t border_color, color_t fg_color, unsigned char value,
-		Checkbox_typedef *Checkbox_struct, Callbacks click_event);
+		Checkbox_t *Checkbox_struct, Callbacks click_event);
 
-void Checkbox_Update(int value, Checkbox_typedef *Checkbox_struct);
-void Checkbox_Draw(Checkbox_typedef *Checkbox_struct);
-void Checkbox_Click(Checkbox_typedef *Checkbox_struct);
+void Checkbox_Update(int value, Checkbox_t *Checkbox_struct);
+void Checkbox_Draw(Checkbox_t *Checkbox_struct);
+void Checkbox_Click(Checkbox_t *Checkbox_struct);
 
 #endif
 
@@ -247,7 +247,7 @@ typedef struct _Trace
 	int 	line_type;
 	int		line_thin;
 	color_t color; 					// Trace color.
-}Trace_typedef;
+}Trace_t;
 
 /* Structure typedef to store Slider parameters */
 typedef struct _Graph
@@ -265,26 +265,26 @@ typedef struct _Graph
 	color_t border_color; 			// Border color of the box.
 	color_t fg_color; 				// Foreground color.
 	int					ntraces;	// Number of traces
-	Trace_typedef 		*traces;	// Graph traces
+	Trace_t 			*traces;	// Graph traces
 	char		  		*title_str;	// Title text
 	char		  		*axisx_str;	// X axis text
 	char				*axisy_str;	// Y axis text
-	ObjectEvent_typedef event;		// Event handler
+	ObjectEvent_t event;			// Event handler
 	Callbacks			ClickEvent;	// Clicked callback
-}Graph_typedef;
+}Graph_t;
 
 
 
 void Graph_Init(coord_t x, coord_t y, coord_t width, coord_t height,
-		color_t border_color, color_t fg_color, Trace_typedef *traces, int ntraces,
+		color_t border_color, color_t fg_color, Trace_t *traces, int ntraces,
 		char *title, char *axisx, char *axisy,
-		Graph_typedef *Graph_struct, Callbacks click_event);
+		Graph_t *Graph_struct, Callbacks click_event);
 
 /* Initializes the Button structure */
-void Graph_AddTraceData(Graph_typedef *Graph_struct, int *data);
+void Graph_AddTraceData(Graph_t *Graph_struct, int *data);
 
 /* Function to draw a box with rounded corners */
-void Graph_Draw(Graph_typedef *Graph_struct);
+void Graph_Draw(Graph_t *Graph_struct);
 
 #endif
 

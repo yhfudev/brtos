@@ -11,8 +11,8 @@
 #include "touch_7846.h"
 
 /* Declare object linked list head and tail */
-ObjectEvent_typedef *ObjectHead;
-ObjectEvent_typedef *ObjectTail;
+ObjectEvent_t *ObjectHead;
+ObjectEvent_t *ObjectTail;
 
 /* Declare GLCD mutex */
 BRTOS_Mutex	*GUIMutex;
@@ -27,13 +27,13 @@ BRTOS_Sem 	*TouchSync;
 color_t GuiBackground;
 
 /* Declare Button functions structure */
-ButtonFunc_typedef Button;
+ButtonFunc_t Button;
 
 /* Declare Slider functions structure */
-SliderFunc_typedef Slider;
+SliderFunc_t Slider;
 
 /* Declare Checkbox functions structure */
-CheckboxFunc_typedef Checkbox;
+CheckboxFunc_t Checkbox;
 
 /*  Initialization of the functions structures */
 void GUI_ObjetcsInit(color_t background, unsigned char mutex_prio)
@@ -70,7 +70,7 @@ void GUI_ObjetcsInit(color_t background, unsigned char mutex_prio)
 
 
 /* Declare function used to include objects into the object event list */
-void GUI_IncludeObjectIntoEventList(ObjectEvent_typedef *object)
+void GUI_IncludeObjectIntoEventList(ObjectEvent_t *object)
 {
 	if (ObjectTail != NULL)
 	{
@@ -90,7 +90,7 @@ void GUI_IncludeObjectIntoEventList(ObjectEvent_typedef *object)
 
 
 /* Declare function used to remove objects from the object event list */
-void GUI_RemoveObjectIntoEventList(ObjectEvent_typedef *object)
+void GUI_RemoveObjectIntoEventList(ObjectEvent_t *object)
 {
 	if (object == ObjectHead)
 	{
@@ -120,9 +120,9 @@ void GUI_RemoveObjectIntoEventList(ObjectEvent_typedef *object)
 
 
 /* Declare function used to verify objects inside touched region */
-ObjectEvent_typedef *GUI_VerifyObjects(int x, int y)
+ObjectEvent_t *GUI_VerifyObjects(int x, int y)
 {
-	ObjectEvent_typedef *object = ObjectHead;
+	ObjectEvent_t *object = ObjectHead;
 
 	  ////////////////////////////////////////////////////
 	  // Search for inside object 						//
@@ -144,11 +144,11 @@ ObjectEvent_typedef *GUI_VerifyObjects(int x, int y)
 /* Declare GUI event handler task */
 void GUI_Event_Handler(void *param)
 {
-	volatile Touch_typedef TouchPos;
-	ObjectEvent_typedef *object;
-	Button_typedef		*button;
-	Slider_typedef		*slider;
-	Checkbox_typedef	*checkbox;
+	Touch_t 			TouchPos;
+	ObjectEvent_t 		*object;
+	Button_t			*button;
+	Slider_t			*slider;
+	Checkbox_t			*checkbox;
 	TouchPos.x = 0;
 	TouchPos.y = 0;
 
@@ -176,7 +176,7 @@ void GUI_Event_Handler(void *param)
 				switch(object->object)
 				{
 					case BUTTON_OBJECT:
-						button = (Button_typedef*)object->ObjectPointer;
+						button = (Button_t*)object->ObjectPointer;
 						Button.Click(button);
 						while(GPIO_ReadInputDataBit(TOUCH_INT_PORT,TOUCH_INT_PIN)==0)
 						{
@@ -187,7 +187,7 @@ void GUI_Event_Handler(void *param)
 					break;
 
 					case SLIDER_OBJECT:
-						slider = (Slider_typedef*)object->ObjectPointer;
+						slider = (Slider_t*)object->ObjectPointer;
 						int slider_size = (slider->x2);
 						while(GPIO_ReadInputDataBit(TOUCH_INT_PORT,TOUCH_INT_PIN)==0)
 						{
@@ -215,7 +215,7 @@ void GUI_Event_Handler(void *param)
 					break;
 
 					case CHECKBOX_OBJECT:
-						checkbox = (Checkbox_typedef*)object->ObjectPointer;
+						checkbox = (Checkbox_t*)object->ObjectPointer;
 
 						// New value
 						if (checkbox->value == TRUE)
@@ -266,7 +266,7 @@ void TP_Handler(void){
 /* Initializes the Button structure */
 void Button_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 		coord_t radius, color_t bg_color, color_t font_color, char *str,
-		Button_typedef *Button_struct, Callbacks click_event)
+		Button_t *Button_struct, Callbacks click_event)
 {
 	Button_struct->x = x;
 	Button_struct->y = y;
@@ -294,7 +294,7 @@ void Button_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 /* Initializes the Button structure */
 void Button_Update(coord_t x, coord_t y, coord_t width, coord_t height,
 		coord_t radius, color_t bg_color, color_t font_color, char *str,
-		Button_typedef *Button_struct)
+		Button_t *Button_struct)
 {
 	Button_struct->x = x;
 	Button_struct->y = y;
@@ -307,7 +307,7 @@ void Button_Update(coord_t x, coord_t y, coord_t width, coord_t height,
 }
 
 /* Function to draw a box with rounded corners */
-void Button_Draw(Button_typedef *Button_struct)
+void Button_Draw(Button_t *Button_struct)
 {
 	coord_t x1, x2, y1, y2;
 	coord_t size_x, size_y;
@@ -345,9 +345,9 @@ void Button_Draw(Button_typedef *Button_struct)
 
 
 /* Function to draw a box with rounded corners */
-void Button_Click(Button_typedef *Button_struct)
+void Button_Click(Button_t *Button_struct)
 {
-	  Button_typedef Button_backup;
+	  Button_t Button_backup;
 	  Button_backup = *Button_struct;
 
 	  (void)OSMutexAcquire(GUIMutex);
@@ -388,7 +388,7 @@ void Button_Click(Button_typedef *Button_struct)
 /* Initializes the Button structure */
 void Slider_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 		color_t border_color, color_t fg_color, int value,
-		Slider_typedef *Slider_struct, Callbacks click_event)
+		Slider_t *Slider_struct, Callbacks click_event)
 {
 	Slider_struct->x = x;
 	Slider_struct->y = y;
@@ -420,13 +420,13 @@ void Slider_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 
 
 /* Initializes the Button structure */
-void Slider_Update(int value, Slider_typedef *Slider_struct)
+void Slider_Update(int value, Slider_t *Slider_struct)
 {
 	Slider_struct->value = value;
 }
 
 /* Function to draw a box with rounded corners */
-void Slider_Draw(Slider_typedef *Slider_struct)
+void Slider_Draw(Slider_t *Slider_struct)
 {
 	coord_t x1, x2, y1, y2;
 
@@ -461,7 +461,7 @@ void Slider_Draw(Slider_typedef *Slider_struct)
 
 
 /* Function to draw a box with rounded corners */
-void Slider_Click(Slider_typedef *Slider_struct)
+void Slider_Click(Slider_t *Slider_struct)
 {
 	  	coord_t update;
 
@@ -492,7 +492,7 @@ void Slider_Click(Slider_typedef *Slider_struct)
 /* Initializes the Button structure */
 void Checkbox_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 		color_t border_color, color_t fg_color, unsigned char value,
-		Checkbox_typedef *Checkbox_struct, Callbacks click_event)
+		Checkbox_t *Checkbox_struct, Callbacks click_event)
 {
 	Checkbox_struct->x = x;
 	Checkbox_struct->y = y;
@@ -518,13 +518,13 @@ void Checkbox_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 
 
 /* Initializes the Button structure */
-void Checkbox_Update(int value, Checkbox_typedef *Checkbox_struct)
+void Checkbox_Update(int value, Checkbox_t *Checkbox_struct)
 {
 	Checkbox_struct->value = value;
 }
 
 /* Function to draw a box with rounded corners */
-void Checkbox_Draw(Checkbox_typedef *Checkbox_struct)
+void Checkbox_Draw(Checkbox_t *Checkbox_struct)
 {
 	coord_t x1, x2, y1, y2;
 
@@ -559,7 +559,7 @@ void Checkbox_Draw(Checkbox_typedef *Checkbox_struct)
 }
 
 /* Function to draw a box with rounded corners */
-void Checkbox_Click(Checkbox_typedef *Checkbox_struct)
+void Checkbox_Click(Checkbox_t *Checkbox_struct)
 {
 	(void)OSMutexAcquire(GUIMutex);
 
@@ -597,9 +597,9 @@ void Checkbox_Click(Checkbox_typedef *Checkbox_struct)
 #if (USE_GRAPH == TRUE)
 /* Initializes the Button structure */
 void Graph_Init(coord_t x, coord_t y, coord_t width, coord_t height,
-		color_t border_color, color_t fg_color, Trace_typedef *traces, int ntraces,
+		color_t border_color, color_t fg_color, Trace_t *traces, int ntraces,
 		char *title, char *axisx, char *axisy,
-		Graph_typedef *Graph_struct, Callbacks click_event)
+		Graph_t *Graph_struct, Callbacks click_event)
 {
 	Graph_struct->x = x;
 	Graph_struct->y = y;
@@ -639,10 +639,10 @@ void Graph_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 
 
 /* Graph_AddTraceData */
-void Graph_AddTraceData(Graph_typedef *Graph_struct, int *data)
+void Graph_AddTraceData(Graph_t *Graph_struct, int *data)
 {
 	int n = Graph_struct->ntraces;
-	Trace_typedef *traces = Graph_struct->traces;
+	Trace_t *traces = Graph_struct->traces;
 
 	(void)OSMutexAcquire(GUIMutex);
 
@@ -663,7 +663,7 @@ void Graph_AddTraceData(Graph_typedef *Graph_struct, int *data)
 }
 
 /* Function to draw a box with rounded corners */
-void Graph_Draw(Graph_typedef *Graph_struct)
+void Graph_Draw(Graph_t *Graph_struct)
 {
 	coord_t x1, x2, y1, y2;
 	coord_t size_x;
