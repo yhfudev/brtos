@@ -242,11 +242,20 @@ void Checkbox_Click(Checkbox_t *Checkbox_struct);
 
 #if (USE_GRAPH == TRUE)
 
+enum
+{
+    POINTS,
+    LINE,
+    CIRCLE
+} Trace_type;
+
 typedef struct _Trace
 {
 	int 	line_type;
 	int		line_thin;
-	color_t color; 					// Trace color.
+	color_t color; 					// Trace color
+	coord_t last_x;					// Last x position
+	coord_t last_y;					// Last y position
 }Trace_t;
 
 /* Structure typedef to store Slider parameters */
@@ -260,8 +269,10 @@ typedef struct _Graph
 	coord_t 		y1; 					// Upper left corner y screen position - slider bar
 	coord_t 		x2; 					// x size (width) - slider bar
 	coord_t 		y2; 					// y size (height) - slider bar
-	int			  	max;					// Maximum value inside the graph
-	int			  	min;					// Minimum value inside the graph
+	coord_t			last_x;					// last x position of the graph
+	int			  	max_x;					// Maximum value inside the graph (axis x)
+	int			  	max_y;					// Maximum value inside the graph (axis y)
+	int			  	min_y;					// Minimum value inside the graph (axis y)
 	unsigned char 	refresh_bar;			// Enable or disable the refresh bar
 	coord_t 		axis;					// Graph x axis
 	coord_t 		radius; 				// radius of the corners (in pixels)
@@ -277,10 +288,29 @@ typedef struct _Graph
 }Graph_t;
 
 
+/*Pointer to Graph functions typedef */
+typedef void (*FunctionG)(Graph_t *Graph_struct);
+typedef void (*FuncUpdateG)(Graph_t *Graph_struct, int *data);
+typedef void (*FuncInitG)(coord_t x, coord_t y, coord_t width, coord_t height,
+		int maximum_x, int minimum_y, int maximum_y, unsigned char refresh_bar,
+		color_t border_color, color_t fg_color, Trace_t *traces, int ntraces,
+		char *title, char *axisx, char *axisy,
+		Graph_t *Graph_struct, Callbacks click_event);
+
+/* Definitions of the functions associated with Slider GUI object */
+typedef struct _GraphFuncList
+{
+	FuncInitG 	  Init;
+	FuncUpdateG   AddTraceData;
+	FunctionG 	  Draw;
+}GraphFunc_t;
+
+extern GraphFunc_t Graph;
 
 void Graph_Init(coord_t x, coord_t y, coord_t width, coord_t height,
-		int minimum, int maximum, unsigned char refresh_bar, color_t border_color, color_t fg_color,
-		Trace_t *traces, int ntraces, char *title, char *axisx, char *axisy,
+		int maximum_x, int minimum_y, int maximum_y, unsigned char refresh_bar,
+		color_t border_color, color_t fg_color, Trace_t *traces, int ntraces,
+		char *title, char *axisx, char *axisy,
 		Graph_t *Graph_struct, Callbacks click_event);
 
 /* Initializes the Button structure */

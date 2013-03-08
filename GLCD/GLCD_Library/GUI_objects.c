@@ -35,28 +35,37 @@ SliderFunc_t Slider;
 /* Declare Checkbox functions structure */
 CheckboxFunc_t Checkbox;
 
+/* Declare Graph functions structure */
+GraphFunc_t Graph;
+
 /*  Initialization of the functions structures */
 void GUI_ObjetcsInit(color_t background, unsigned char mutex_prio)
 {
 #if (USE_BUTTON == TRUE)
-	Button.Draw = Button_Draw;
 	Button.Init = Button_Init;
+	Button.Draw = Button_Draw;
 	Button.Update = Button_Update;
 	Button.Click = Button_Click;
 #endif
 
 #if (USE_SLIDER == TRUE)
-	Slider.Draw = Slider_Draw;
 	Slider.Init = Slider_Init;
+	Slider.Draw = Slider_Draw;
 	Slider.Update = Slider_Update;
 	Slider.Click = Slider_Click;
 #endif
 
 #if (USE_CHECKBOX == TRUE)
-	Checkbox.Draw = Checkbox_Draw;
 	Checkbox.Init = Checkbox_Init;
+	Checkbox.Draw = Checkbox_Draw;
 	Checkbox.Update = Checkbox_Update;
 	Checkbox.Click = Checkbox_Click;
+#endif
+
+#if (USE_GRAPH == TRUE)
+	Graph.Init = Graph_Init;
+	Graph.Draw = Graph_Draw;
+	Graph.AddTraceData = Graph_AddTraceData;
 #endif
 
 	GuiBackground = background;
@@ -504,10 +513,10 @@ void Checkbox_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 	Checkbox_struct->value = value;
 
 	// Event handler
-	Checkbox_struct->event.x1 = x+2;
-	Checkbox_struct->event.y1 = y+2;
-	Checkbox_struct->event.x2 = x+width-4;
-	Checkbox_struct->event.y2 = y+height-4;
+	Checkbox_struct->event.x1 = x+1;
+	Checkbox_struct->event.y1 = y+1;
+	Checkbox_struct->event.x2 = x+width-2;
+	Checkbox_struct->event.y2 = y+height-2;
 
 	GUI_IncludeObjectIntoEventList(&(Checkbox_struct->event));
 
@@ -597,8 +606,9 @@ void Checkbox_Click(Checkbox_t *Checkbox_struct)
 #if (USE_GRAPH == TRUE)
 /* Initializes the Button structure */
 void Graph_Init(coord_t x, coord_t y, coord_t width, coord_t height,
-		int minimum, int maximum, unsigned char refresh_bar, color_t border_color, color_t fg_color,
-		Trace_t *traces, int ntraces, char *title, char *axisx, char *axisy,
+		int maximum_x, int minimum_y, int maximum_y, unsigned char refresh_bar,
+		color_t border_color, color_t fg_color, Trace_t *traces, int ntraces,
+		char *title, char *axisx, char *axisy,
 		Graph_t *Graph_struct, Callbacks click_event)
 {
 	Graph_struct->x = x;
@@ -607,8 +617,9 @@ void Graph_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 	Graph_struct->dy = height;
 	Graph_struct->radius = 4;
 	Graph_struct->axis = 0;
-	Graph_struct->min = minimum;
-	Graph_struct->max = maximum;
+	Graph_struct->min_y = minimum_y;
+	Graph_struct->max_y = maximum_y;
+	Graph_struct->max_x = maximum_x;
 	Graph_struct->refresh_bar = refresh_bar;
 	Graph_struct->traces = traces;
 	Graph_struct->ntraces = ntraces;
@@ -645,6 +656,8 @@ void Graph_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 void Graph_AddTraceData(Graph_t *Graph_struct, int *data)
 {
 	int value = 0;
+	int valuex = 0;
+	int finish = 0;
 	int y_position = (Graph_struct->y1)+(Graph_struct->y2)-1;
 	int n = Graph_struct->ntraces;
 	Trace_t *traces = Graph_struct->traces;
@@ -652,12 +665,86 @@ void Graph_AddTraceData(Graph_t *Graph_struct, int *data)
 	(void)OSMutexAcquire(GUIMutex);
 
 	Graph_struct->axis++;
+
+	// Computes the graph axis x position
+	valuex = ((Graph_struct->x2) * (Graph_struct->axis)) / (Graph_struct->max_x);
+
+	if (Graph_struct->axis > Graph_struct->max_x)
+	{
+		if (valuex > ((Graph_struct->x2)+1))
+		{
+			valuex = (Graph_struct->x2 + 1);
+		}
+
+		// Clear last update line
+		gdispFillArea((Graph_struct->x1)+(Graph_struct->last_x), Graph_struct->y1, valuex-(Graph_struct->last_x), Graph_struct->y2, GuiBackground);
+
+		finish = 1;
+	}else
+	{
+		if (Graph_struct->refresh_bar == TRUE)
+		{
+			// Draw update line
+			gdispDrawLine((Graph_struct->x1)+valuex, Graph_struct->y1, (Graph_struct->x1)+valuex, y_position, Graph_struct->fg_color);
+		}
+
+		// Clear last update line
+		if (Graph_struct->axis == 1)
+		{
+			gdispFillArea(Graph_struct->x1, Graph_struct->y1, valuex, Graph_struct->y2, GuiBackground);
+		}else
+		{
+			gdispFillArea((Graph_struct->x1)+(Graph_struct->last_x), Graph_struct->y1, valuex-(Graph_struct->last_x), Graph_struct->y2, GuiBackground);
+		}
+		Graph_struct->last_x = valuex;
+	}
+
+	// Draw traces
+	while(n--)
+	{
+		// Computes data place inside the graph
+		value = (int)(((*data)*(Graph_struct->y2)) / Graph_struct->max_y);
+
+		// If data is inside graph area
+		if ((value >= Graph_struct->min_y) && (value <= Graph_struct->max_y))
+		{
+			// Determine the trace type
+			switch(traces->line_type)
+			{
+				case POINTS:
+					// Plot traces
+					gdispDrawPixel((Graph_struct->x1)+valuex-1, y_position - value, traces->color);
+				break;
+
+				case LINE:
+					// Plot traces
+					if (Graph_struct->axis == 1)
+					{
+						gdispDrawLine((Graph_struct->x1)+valuex-1, y_position - value,(Graph_struct->x1)+(Graph_struct->axis)-1, y_position - value, traces->color);
+					}else
+					{
+						gdispDrawLine(traces->last_x, traces->last_y,(Graph_struct->x1)+valuex-1, y_position - value, traces->color);
+					}
+					traces->last_x = (Graph_struct->x1)+valuex-1;
+					traces->last_y = y_position - value;
+				break;
+
+				default:
+				break;
+			}
+		}
+		traces++;
+		data++;
+	}
+
+	#if 0
+	Graph_struct->axis++;
 	if ((Graph_struct->axis) >= (Graph_struct->x2))
 	{
 		// Clear last update line
 		gdispDrawLine((Graph_struct->x1)+(Graph_struct->axis)-1, Graph_struct->y1, (Graph_struct->x1)+(Graph_struct->axis)-1, y_position, GuiBackground);
 
-		Graph_struct->axis = 0;
+		finish = 1;
 	}else
 	{
 		if (Graph_struct->refresh_bar == TRUE)
@@ -668,22 +755,53 @@ void Graph_AddTraceData(Graph_t *Graph_struct, int *data)
 
 		// Clear last update line
 		gdispDrawLine((Graph_struct->x1)+(Graph_struct->axis)-1, Graph_struct->y1, (Graph_struct->x1)+(Graph_struct->axis)-1, y_position, GuiBackground);
+	}
 
-		// Draw traces
-		while(n--)
+	// Draw traces
+	while(n--)
+	{
+		// Computes data place inside the graph
+		value = (int)(((*data)*(Graph_struct->y2)) / Graph_struct->max_y);
+
+		// Para x --> ((Tamanho da tela em x = x2) * ponto_atual) / maximo do gráfico em x
+
+		// If data is inside graph area
+		if ((value >= Graph_struct->min_y) && (value <= Graph_struct->max_y))
 		{
-			// Computes data place inside the graph
-			value = (int)(((*data)*(Graph_struct->y2)) / Graph_struct->max);
-
-			// If data is inside graph area
-			if ((value >= Graph_struct->min) && (value <= Graph_struct->max))
+			// Determine the trace type
+			switch(traces->line_type)
 			{
-				// Plot traces
-				gdispDrawPixel((Graph_struct->x1)+(Graph_struct->axis)-1, y_position - value, traces->color);
+				case POINTS:
+					// Plot traces
+					gdispDrawPixel((Graph_struct->x1)+(Graph_struct->axis)-1, y_position - value, traces->color);
+				break;
+
+				case LINE:
+					// Plot traces
+					if (Graph_struct->axis == 1)
+					{
+						gdispDrawLine((Graph_struct->x1)+(Graph_struct->axis)-1, y_position - value,(Graph_struct->x1)+(Graph_struct->axis)-1, y_position - value, traces->color);
+					}else
+					{
+						gdispDrawLine(traces->last_x, traces->last_y,(Graph_struct->x1)+(Graph_struct->axis)-1, y_position - value, traces->color);
+					}
+					traces->last_x = (Graph_struct->x1)+(Graph_struct->axis)-1;
+					traces->last_y = y_position - value;
+				break;
+
+				default:
+				break;
 			}
-			traces++;
-			data++;
 		}
+		traces++;
+		data++;
+	}
+	#endif
+
+	// Return to the graph init
+	if (finish)
+	{
+		Graph_struct->axis = 0;
 	}
 
 	(void)OSMutexRelease(GUIMutex);
@@ -717,10 +835,10 @@ void Graph_Draw(Graph_t *Graph_struct)
 	gdispFillArea(Graph_struct->x+2,Graph_struct->y+2,(Graph_struct->dx)-3,(Graph_struct->dy)-3,GuiBackground);
 
 	// Draw inside border
-	gdispFillArea((Graph_struct->x1)-1,(Graph_struct->y1)-1,(Graph_struct->x2)+2,(Graph_struct->y2)+2,Graph_struct->border_color);
+	gdispFillArea((Graph_struct->x1)-1,(Graph_struct->y1)-1,(Graph_struct->x2)+3,(Graph_struct->y2)+2,Graph_struct->border_color);
 
 	// Draw inside graph
-	gdispFillArea((Graph_struct->x1),(Graph_struct->y1),(Graph_struct->x2),(Graph_struct->y2),GuiBackground);
+	gdispFillArea((Graph_struct->x1),(Graph_struct->y1),(Graph_struct->x2)+1,(Graph_struct->y2),GuiBackground);
 
 	// Obtaining the size of the text
 	size_x = gdispGetStringWidth(Graph_struct->title_str, &fontLarger);
