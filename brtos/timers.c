@@ -144,10 +144,10 @@ void BRTOS_TimerTask(void)
      TIMER_CNT   repeat;
      INT32U      timeout;
      TIMER_CNT   next_time_to_wake;      /* tick count of next timer */
-     BRTOS_TMR_T *list, *list_tmp;          
+     BRTOS_TMR_T *list, *list_tmp;
      
      BRTOS_TIMER_VECTOR.task = currentTask;
-     
+
      list = BRTOS_TIMER_VECTOR.current;
 
      p=list->timers[1];
@@ -253,7 +253,8 @@ void OSTimerInit(INT16U timertask_stacksize, INT8U prio){
   {
     while(1){};
   }  
-  
+
+  DelayTask(1);
 }
 /**
   \fn INT8U OSTimerSet (BRTOS_TIMER *cbp, FCN_CALLBACK cb, TIMER_CNT time_wait) 
