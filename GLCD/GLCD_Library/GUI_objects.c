@@ -287,10 +287,10 @@ void Button_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 	Button_struct->str = str;
 
 	// Event handler
-	Button_struct->event.x1 = x+4;
-	Button_struct->event.y1 = y+4;
-	Button_struct->event.x2 = x+width-8;
-	Button_struct->event.y2 = y+height-8;
+	Button_struct->event.x1 = x+2;
+	Button_struct->event.y1 = y+2;
+	Button_struct->event.x2 = x+width-4;
+	Button_struct->event.y2 = y+height-4;
 
 	GUI_IncludeObjectIntoEventList(&(Button_struct->event));
 
@@ -415,10 +415,10 @@ void Slider_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 	Slider_struct->y2 = (Slider_struct->dy)-7;
 
 	// Event handler
-	Slider_struct->event.x1 = x+3;
-	Slider_struct->event.y1 = y+4;
-	Slider_struct->event.x2 = x+width-3;
-	Slider_struct->event.y2 = y+height-6;
+	Slider_struct->event.x1 = x+1;
+	Slider_struct->event.y1 = y+1;
+	Slider_struct->event.x2 = x+width-2;
+	Slider_struct->event.y2 = y+height-2;
 
 	GUI_IncludeObjectIntoEventList(&(Slider_struct->event));
 
@@ -461,9 +461,9 @@ void Slider_Draw(Slider_t *Slider_struct)
 	gdispFillArea(Slider_struct->x+2,Slider_struct->y+2,(Slider_struct->dx)-3,(Slider_struct->dy)-3,GuiBackground);
 
 	// Draw slider bar
-	gdispFillArea(Slider_struct->x1,Slider_struct->y1,((Slider_struct->x2)*(Slider_struct->value))/100,Slider_struct->y2,Slider_struct->fg_color);
+	gdispFillArea(Slider_struct->x1,Slider_struct->y1,((Slider_struct->x2)*((Slider_struct->value)+1))/100,Slider_struct->y2,Slider_struct->fg_color);
 
-	Slider_struct->lvalue = ((Slider_struct->x2)*(Slider_struct->value))/100;
+	Slider_struct->lvalue = ((Slider_struct->x2)*((Slider_struct->value)+1))/100;
 
 	(void)OSMutexRelease(GUIMutex);
 }
