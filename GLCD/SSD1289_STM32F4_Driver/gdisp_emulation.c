@@ -447,6 +447,39 @@
 			}
 		}
 	}
+
+	void GDISP_LLD(drawchar_inv)(coord_t x, coord_t y, char c, font_t font, color_t color) {
+		const fontcolumn_t	*ptr;
+		fontcolumn_t		column;
+		coord_t				width, height, xscale, yscale;
+		coord_t				i, j, xs, ys;
+
+		/* Check we actually have something to print */
+		width = _getCharWidth(font, c);
+		if (!width) return;
+
+		yscale = font->xscale;
+		xscale = font->yscale;
+		height = font->height * xscale;
+		width *= yscale;
+
+		ptr = _getCharData(font, c);
+
+		/* Loop through the data and display. The font data is LSBit first, down the column */
+		for(i=0; i < width; i+=yscale) {
+			/* Get the font bitmap data for the column */
+			column = *ptr++;
+
+			/* Draw each pixel */
+			for(j=0; j < height; j+=yscale, column >>= 1) {
+				if (column & 0x01) {
+					for(ys=0; ys < yscale; ys++)
+						for(xs=0; xs < xscale; xs++)
+							GDISP_LLD(drawpixel)(x+j+ys, y-i+xs, color);
+				}
+			}
+		}
+	}
 #endif
 
 #if GDISP_NEED_TEXT && !GDISP_HARDWARE_TEXTFILLS

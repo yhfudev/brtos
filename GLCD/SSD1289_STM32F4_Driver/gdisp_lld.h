@@ -607,6 +607,7 @@ extern "C" {
 	/* Text Rendering Functions */
 	#if GDISP_NEED_TEXT
 	extern void GDISP_LLD_VMT(drawchar)(coord_t x, coord_t y, char c, font_t font, color_t color);
+	extern void GDISP_LLD_VMT(drawchar_inv)(coord_t x, coord_t y, char c, font_t font, color_t color);
 	extern void GDISP_LLD_VMT(fillchar)(coord_t x, coord_t y, char c, font_t font, color_t color, color_t bgcolor);
 	#endif
 
