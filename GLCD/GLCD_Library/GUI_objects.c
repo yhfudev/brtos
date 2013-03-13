@@ -9,6 +9,7 @@
 
 #include "GUI_objects.h"
 #include "touch_7846.h"
+#include "utils.h"
 
 /* Declare object linked list head and tail */
 ObjectEvent_t *ObjectHead;
@@ -611,6 +612,10 @@ void Graph_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 		char *title, char *axisx, char *axisy,
 		Graph_t *Graph_struct, Callbacks click_event)
 {
+	coord_t size_x,size_y,x1,x2;
+	char	text[8];
+	char	*ptext;
+
 	Graph_struct->x = x;
 	Graph_struct->y = y;
 	Graph_struct->dx = width;
@@ -630,10 +635,62 @@ void Graph_Init(coord_t x, coord_t y, coord_t width, coord_t height,
 	Graph_struct->axisx_str = axisx;
 	Graph_struct->axisy_str = axisy;
 
+	PrintDecimal(Graph_struct->max_y, text);
+	ptext = text;
+	while(*ptext)
+	{
+		if (*ptext != ' ')
+			break;
+		else
+			ptext++;
+	}
+
+	size_x = gdispGetStringWidth(ptext, &fontLarger);
+
+	PrintDecimal(Graph_struct->min_y, text);
+	ptext = text;
+	while(*ptext)
+	{
+		if (*ptext != ' ')
+			break;
+		else
+			ptext++;
+	}
+
+	size_y = gdispGetStringWidth(ptext, &fontLarger);
+
+	// Verifies maximum text size for axis y limits
+	if (size_y > size_x) size_x = size_y = 0;
+
+
 	// Graph area
-	Graph_struct->x1 = (Graph_struct->x)+15;
+	if (size_x <= 15)
+	{
+		x1 = (Graph_struct->x)+15;
+		x2 = (Graph_struct->dx)-30;
+	}else
+	{
+		if (size_x <= 30)
+		{
+			x1 = (Graph_struct->x)+30;
+			x2 = (Graph_struct->dx)-45;
+		}else
+		{
+			if (size_x <= 45)
+			{
+				x1 = (Graph_struct->x)+45;
+				x2 = (Graph_struct->dx)-60;
+			}else
+			{
+				x1 = (Graph_struct->x)+60;
+				x2 = (Graph_struct->dx)-75;
+			}
+		}
+	}
+
+	Graph_struct->x1 = x1;
+	Graph_struct->x2 = x2;
 	Graph_struct->y1 = (Graph_struct->y)+15;
-	Graph_struct->x2 = (Graph_struct->dx)-30;
 	Graph_struct->y2 = (Graph_struct->dy)-30;
 
 	#if 0
@@ -737,67 +794,6 @@ void Graph_AddTraceData(Graph_t *Graph_struct, int *data)
 		data++;
 	}
 
-	#if 0
-	Graph_struct->axis++;
-	if ((Graph_struct->axis) >= (Graph_struct->x2))
-	{
-		// Clear last update line
-		gdispDrawLine((Graph_struct->x1)+(Graph_struct->axis)-1, Graph_struct->y1, (Graph_struct->x1)+(Graph_struct->axis)-1, y_position, GuiBackground);
-
-		finish = 1;
-	}else
-	{
-		if (Graph_struct->refresh_bar == TRUE)
-		{
-			// Draw update line
-			gdispDrawLine((Graph_struct->x1)+(Graph_struct->axis), Graph_struct->y1, (Graph_struct->x1)+(Graph_struct->axis), y_position, Graph_struct->fg_color);
-		}
-
-		// Clear last update line
-		gdispDrawLine((Graph_struct->x1)+(Graph_struct->axis)-1, Graph_struct->y1, (Graph_struct->x1)+(Graph_struct->axis)-1, y_position, GuiBackground);
-	}
-
-	// Draw traces
-	while(n--)
-	{
-		// Computes data place inside the graph
-		value = (int)(((*data)*(Graph_struct->y2)) / Graph_struct->max_y);
-
-		// Para x --> ((Tamanho da tela em x = x2) * ponto_atual) / maximo do gráfico em x
-
-		// If data is inside graph area
-		if ((value >= Graph_struct->min_y) && (value <= Graph_struct->max_y))
-		{
-			// Determine the trace type
-			switch(traces->line_type)
-			{
-				case POINTS:
-					// Plot traces
-					gdispDrawPixel((Graph_struct->x1)+(Graph_struct->axis)-1, y_position - value, traces->color);
-				break;
-
-				case LINE:
-					// Plot traces
-					if (Graph_struct->axis == 1)
-					{
-						gdispDrawLine((Graph_struct->x1)+(Graph_struct->axis)-1, y_position - value,(Graph_struct->x1)+(Graph_struct->axis)-1, y_position - value, traces->color);
-					}else
-					{
-						gdispDrawLine(traces->last_x, traces->last_y,(Graph_struct->x1)+(Graph_struct->axis)-1, y_position - value, traces->color);
-					}
-					traces->last_x = (Graph_struct->x1)+(Graph_struct->axis)-1;
-					traces->last_y = y_position - value;
-				break;
-
-				default:
-				break;
-			}
-		}
-		traces++;
-		data++;
-	}
-	#endif
-
 	// Return to the graph init
 	if (finish)
 	{
@@ -812,6 +808,7 @@ void Graph_Draw(Graph_t *Graph_struct)
 {
 	coord_t x1, x2, y1, y2;
 	coord_t size_x;
+	char	text[8];
 
 	(void)OSMutexAcquire(GUIMutex);
 
@@ -870,6 +867,27 @@ void Graph_Draw(Graph_t *Graph_struct)
 		// Draw the title y axis string
 		gdispDrawStringInv(Graph_struct->x+3, ((Graph_struct->y)+(Graph_struct->dy))-(((Graph_struct->dy)-size_x)/2), Graph_struct->axisy_str, &fontLarger, Graph_struct->fg_color);
 	}
+
+	// Print axis x limits
+	gdispDrawString((Graph_struct->x1)-6,
+						(Graph_struct->y)+(Graph_struct->dy) - gdispGetStringHeight(&fontLarger) - 1,
+						"0", &fontLarger, Graph_struct->fg_color);
+
+	PrintDecimal(Graph_struct->max_x, text);
+	size_x = gdispGetStringWidth(text, &fontLarger);
+	gdispDrawString((Graph_struct->x)+(Graph_struct->dx) - size_x - 3,
+					(Graph_struct->y)+(Graph_struct->dy) - gdispGetStringHeight(&fontLarger) - 1,
+					text, &fontLarger, Graph_struct->fg_color);
+
+	// Print axis y limits
+	PrintDecimal(Graph_struct->max_y, text);
+	size_x = gdispGetStringWidth(text, &fontLarger);
+	gdispDrawString((Graph_struct->x1)-size_x-3 , (Graph_struct->y)+9, text, &fontLarger, Graph_struct->fg_color);
+
+	PrintDecimal(Graph_struct->min_y, text);
+	size_x = gdispGetStringWidth(text, &fontLarger);
+	gdispDrawString((Graph_struct->x1)-size_x-3 , (Graph_struct->y)+(Graph_struct->dy) - (2*gdispGetStringHeight(&fontLarger)) - 2, text, &fontLarger, Graph_struct->fg_color);
+
 
 	(void)OSMutexRelease(GUIMutex);
 }
