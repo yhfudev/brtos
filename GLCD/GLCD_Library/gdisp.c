@@ -784,6 +784,34 @@ void gdispDrawBox(coord_t x, coord_t y, coord_t cx, coord_t cy, color_t color) {
 			x += w;
 		}
 	}
+
+	void gdispDrawStringInv(coord_t x, coord_t y, const char *str, font_t font, color_t color) {
+		/* No mutex required as we only call high level functions which have their own mutex */
+		coord_t		w, p;
+		char		c;
+		int			first;
+
+		first = 1;
+		p = font->charPadding * font->xscale;
+		while(*str) {
+			/* Get the next printable character */
+			c = *str++;
+			w = _getCharWidth(font, c) * font->xscale;
+			if (!w) continue;
+
+			/* Handle inter-character padding */
+			if (p) {
+				if (!first)
+					y -= p;
+				else
+					first = 0;
+			}
+
+			/* Print the character */
+			gdispDrawCharInv(x, y, c, font, color);
+			y -= w;
+		}
+	}
 #endif
 	
 #if GDISP_NEED_TEXT || defined(__DOXYGEN__)
@@ -1049,6 +1077,11 @@ void gdispDrawBox(coord_t x, coord_t y, coord_t cx, coord_t cy, color_t color) {
 			x += w;
 		}
 		return x;
+	}
+
+	coord_t gdispGetStringHeight(font_t font)
+	{
+		return (coord_t)font->height;
 	}
 #endif
 

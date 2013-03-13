@@ -192,6 +192,7 @@ extern "C" {
 	/* Basic Text Rendering Functions */
 	#if GDISP_NEED_TEXT
 	void gdispDrawChar(coord_t x, coord_t y, char c, font_t font, color_t color);
+	void gdispDrawCharInv(coord_t x, coord_t y, char c, font_t font, color_t color);
 	void gdispFillChar(coord_t x, coord_t y, char c, font_t font, color_t color, color_t bgcolor);
 	#endif
 	
@@ -233,6 +234,7 @@ extern "C" {
 	#define gdispDrawEllipse(x, y, a, b, color)					GDISP_LLD(drawellipse)(x, y, a, b, color)
 	#define gdispFillEllipse(x, y, a, b, color)					GDISP_LLD(fillellipse)(x, y, a, b, color)
 	#define gdispDrawChar(x, y, c, font, color)					GDISP_LLD(drawchar)(x, y, c, font, color)
+	#define gdispDrawCharInv(x, y, c, font, color)				GDISP_LLD(drawchar_inv)(x, y, c, font, color)
 	#define gdispFillChar(x, y, c, font, color, bgcolor)		GDISP_LLD(fillchar)(x, y, c, font, color, bgcolor)
 	#define gdispGetPixelColor(x, y)							GDISP_LLD(getpixelcolor)(x, y)
 	#define gdispVerticalScroll(x, y, cx, cy, lines, bgcolor)	GDISP_LLD(verticalscroll)(x, y, cx, cy, lines, bgcolor)
@@ -250,11 +252,13 @@ void gdispDrawBox(coord_t x, coord_t y, coord_t cx, coord_t cy, color_t color);
 /* Extra Text Functions */
 #if GDISP_NEED_TEXT
 	void gdispDrawString(coord_t x, coord_t y, const char *str, font_t font, color_t color);
+	void gdispDrawStringInv(coord_t x, coord_t y, const char *str, font_t font, color_t color);
 	void gdispFillString(coord_t x, coord_t y, const char *str, font_t font, color_t color, color_t bgcolor);
 	void gdispFillStringBox(coord_t x, coord_t y, coord_t cx, coord_t cy, const char* str, font_t font, color_t color, color_t bgColor, justify_t justify);
 	coord_t gdispGetFontMetric(font_t font, fontmetric_t metric);
 	coord_t gdispGetCharWidth(char c, font_t font);
 	coord_t gdispGetStringWidth(const char* str, font_t font);
+	coord_t gdispGetStringHeight(font_t font);
 #endif
 
 /* Support routine for packed pixel formats */

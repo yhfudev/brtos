@@ -840,13 +840,36 @@ void Graph_Draw(Graph_t *Graph_struct)
 	// Draw inside graph
 	gdispFillArea((Graph_struct->x1),(Graph_struct->y1),(Graph_struct->x2)+1,(Graph_struct->y2),GuiBackground);
 
-	// Obtaining the size of the text
-	size_x = gdispGetStringWidth(Graph_struct->title_str, &fontLarger);
+	if (Graph_struct->title_str != NULL)
+	{
+		// Obtaining the size of the text
+		size_x = gdispGetStringWidth(Graph_struct->title_str, &fontLarger);
 
-	// Draw the string in the middle of the box.
-	gdispDrawString(Graph_struct->x+(Graph_struct->dx-size_x)/2,
-			Graph_struct->y+3,
-			Graph_struct->title_str, &fontLarger, Graph_struct->fg_color);
+		// Draw the title string in the middle of the box.
+		gdispDrawString(Graph_struct->x+(Graph_struct->dx-size_x)/2,
+				Graph_struct->y+3,
+				Graph_struct->title_str, &fontLarger, Graph_struct->fg_color);
+	}
+
+	if (Graph_struct->axisx_str != NULL)
+	{
+		// Obtaining the size of the text
+		size_x = gdispGetStringWidth(Graph_struct->axisx_str, &fontLarger);
+
+		// Draw the title string in the middle of the box.
+		gdispDrawString(Graph_struct->x+(Graph_struct->dx-size_x)/2,
+				(Graph_struct->y)+(Graph_struct->dy) - gdispGetStringHeight(&fontLarger) - 1,
+				Graph_struct->axisx_str, &fontLarger, Graph_struct->fg_color);
+	}
+
+	if (Graph_struct->axisy_str != NULL)
+	{
+		// Obtaining the size of the text
+		size_x = gdispGetStringWidth(Graph_struct->axisy_str, &fontLarger);
+
+		// Draw the title y axis string
+		gdispDrawStringInv(Graph_struct->x+3, ((Graph_struct->y)+(Graph_struct->dy))-(((Graph_struct->dy)-size_x)/2), Graph_struct->axisy_str, &fontLarger, Graph_struct->fg_color);
+	}
 
 	(void)OSMutexRelease(GUIMutex);
 }
