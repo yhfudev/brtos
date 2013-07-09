@@ -22,6 +22,8 @@
 *   Authors:  Carlos Henrique Barriquelo
 *   Revision: 1.0
 *   Date:     12/01/2013
+*   Revision: 1.01
+*   Date:     09/06/2013
 *********************************************************************************************************/
 
 
@@ -171,9 +173,9 @@ timer_loop:
             // some timer has expired
             if((p)->func_cb != NULL) {                            
               repeat = (TIMER_CNT)((p)->func_cb()); /* callback */
-			}else{
-			  repeat = 0;
-			}
+      			}else{
+      			  repeat = 0;
+      			}
               
             OSEnterCritical(); 
                            
@@ -205,7 +207,7 @@ timer_loop:
              OSExitCritical();                           
         }
                 
-        if(tickcount == TIMER_MAX_COUNTER){
+        if(tickcount >= TIMER_MAX_COUNTER){
           if(p==NULL){            
             /* time to switch lists */
             void* tmp = BRTOS_TIMER_VECTOR.current;                               
@@ -214,8 +216,8 @@ timer_loop:
             list = BRTOS_TIMER_VECTOR.current;
             p=list->timers[1];
           }else{
-            /* there is a delayed timer */
-            tickcount++;
+            /* should not be here! */
+            // tickcount++;
             goto timer_loop;            
           }
         }
