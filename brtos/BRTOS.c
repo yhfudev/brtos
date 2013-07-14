@@ -500,6 +500,10 @@ void OS_TICK_HANDLER(void)
           
         // Remove from delay list
         RemoveFromDelayList();
+
+		#if ((PROCESSOR == ARM_Cortex_M0) || (PROCESSOR == ARM_Cortex_M3) || (PROCESSOR == ARM_Cortex_M4) || (PROCESSOR == ARM_Cortex_M4F))
+		OS_INT_EXIT_EXT();
+		#endif
       }
  
       Task = Task->Next;
