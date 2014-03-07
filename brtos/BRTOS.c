@@ -55,8 +55,8 @@
 *   Date:     15/12/2010 ,  Date:     22/02/2011 ,  Date:     24/03/2011  ,  Date:     30/04/2011   ,  Date:     14/06/2011
 *   Revision: 1.68       ,  Revision: 1.69       ,  Revision: 1.70        ,  Revision: 1.75			,  Revision: 1.76
 *   Date:     02/09/2011 ,  Date:     05/11/2011 ,  Date:     06/06/2012  ,  Date:     24/08/2012	,  Date: 11/10/2012
-*   Revision: 1.77       
-*   Date:     12/01/2013
+*   Revision: 1.77       ,  Revision: 1.78
+*   Date:     12/01/2013 ,  Date:     06/03/2014
 *
 *
 *********************************************************************************************************/
@@ -714,7 +714,7 @@ INT8U UnBlockPriority(INT8U iPriority)
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-INT8U BlockTask(INT8U iTaskNumber)
+INT8U BlockTask(BRTOS_TH iTaskNumber)
 {
   OS_SR_SAVE_VAR
   INT8U iPriority = 0;
@@ -761,7 +761,7 @@ INT8U BlockTask(INT8U iTaskNumber)
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 
-INT8U UnBlockTask(INT8U iTaskNumber)
+INT8U UnBlockTask(BRTOS_TH iTaskNumber)
 {
   OS_SR_SAVE_VAR
   INT8U iPriority = 0;
@@ -958,9 +958,9 @@ INT8U UnBlockMultipleTask(INT8U TaskStart, INT8U TaskNumber)
 
 
 #if (TASK_WITH_PARAMETERS == 1)
-  INT8U InstallTask(void(*FctPtr)(void *),const CHAR8 *TaskName, INT16U USER_STACKED_BYTES,INT8U iPriority, void *parameters)
+  INT8U InstallTask(void(*FctPtr)(void *),const CHAR8 *TaskName, INT16U USER_STACKED_BYTES,INT8U iPriority, void *parameters, OS_CPU_TYPE *TaskHandle)
 #else
-  INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED_BYTES,INT8U iPriority)
+  INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED_BYTES,INT8U iPriority, OS_CPU_TYPE *TaskHandle)
 #endif
 {
   OS_SR_SAVE_VAR
@@ -1044,18 +1044,24 @@ INT8U UnBlockMultipleTask(INT8U TaskStart, INT8U TaskNumber)
       return END_OF_AVAILABLE_TCB;
    }
      
+   // Copy task handle id
+   if (TaskHandle != NULL) 
+   {
+      *TaskHandle = (OS_CPU_TYPE)TaskNumber;
+   }
+   
    Task = (ContextType*)&ContextTask[TaskNumber];      
    Task->TaskName = TaskName;
 
    // Posiciona o inicio do stack da tarefa
    // no inicio da disponibilidade de RAM do HEAP
 	#if STACK_GROWTH == 1
-	Task->StackPoint = StackAddress + NUMBER_MIN_OF_STACKED_BYTES;
+	 Task->StackPoint = StackAddress + NUMBER_MIN_OF_STACKED_BYTES;
 	#else
-	Task->StackPoint = StackAddress + (USER_STACKED_BYTES - NUMBER_MIN_OF_STACKED_BYTES);
-    #endif
+	 Task->StackPoint = StackAddress + (USER_STACKED_BYTES - NUMBER_MIN_OF_STACKED_BYTES);
+  #endif
                                                                       
-   // Virtual Stack Init
+  // Virtual Stack Init
 	#if STACK_GROWTH == 1
 	Task->StackInit = StackAddress;
 	#else
@@ -1093,7 +1099,7 @@ INT8U UnBlockMultipleTask(INT8U TaskStart, INT8U TaskNumber)
    Task->State = READY;
    #endif   
    
-   OSReadyList = OSReadyList | (PriorityMask[iPriority]);
+   OSReadyList = OSReadyList | (PriorityMask[iPriority]);   
    
    if (currentTask)
     // Exit Critical Section

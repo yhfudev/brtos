@@ -28,8 +28,8 @@
 *   Date:     22/02/2011            ,   Date:     06/06/2012
 *
 *   Author:   Gustavo W. Denardin	,	Authors:  Gustavo W. Denardin
-*   Revision: 1.75					,   Revision: 1.76
-*   Date:     24/08/2012			,	Date:     11/10/2012
+*   Revision: 1.75					,   Revision: 1.76        ,   Revision: 1.78
+*   Date:     24/08/2012	  ,	  Date:     11/10/2012	,	  Date:     06/03/2014
 *
 *********************************************************************************************************/
 
@@ -54,7 +54,7 @@
 
 
 // Brtos version
-#define BRTOS_VERSION   "BRTOS Ver. 1.77"
+#define BRTOS_VERSION   "BRTOS Ver. 1.78"
 
 /// False and True defines
 #ifndef FALSE
@@ -75,6 +75,10 @@
 
 #define BRTOS_BIG_ENDIAN              (0)
 #define BRTOS_LITTLE_ENDIAN           (1)
+
+#ifndef BRTOS_TH
+#define BRTOS_TH                      OS_CPU_TYPE
+#endif
 
 
 /// Task States
@@ -471,15 +475,17 @@ typedef struct
 * \param *TaskName Task Name or task description
 * \param USER_STACKED_BYTES Size of the task virtual stack. Depends on the user code and used interrupts.
 * \param iPriority Desired task priority
+* \param *parameters Task init parameters
+* \param *TaskHandle Pointer to the task handle id
 * \return OK Task successfully installed
 * \return NO_MEMORY Not enough memory available to install the task
 * \return END_OF_AVAILABLE_PRIORITIES All the available priorities are busy
 * \return BUSY_PRIORITY Desired priority busy
 *********************************************************************************************/
 #if (TASK_WITH_PARAMETERS == 1)
-  INT8U InstallTask(void(*FctPtr)(void*),const CHAR8 *TaskName, INT16U USER_STACKED_BYTES,INT8U iPriority, void *parameters);
+  INT8U InstallTask(void(*FctPtr)(void*),const CHAR8 *TaskName, INT16U USER_STACKED_BYTES,INT8U iPriority, void *parameters, OS_CPU_TYPE *TaskHandle);
 #else
-  INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED_BYTES,INT8U iPriority);
+  INT8U InstallTask(void(*FctPtr)(void),const CHAR8 *TaskName, INT16U USER_STACKED_BYTES,INT8U iPriority, OS_CPU_TYPE *TaskHandle);
 #endif
 
 /*****************************************************************************************//**
@@ -628,7 +634,7 @@ INT8U UnBlockPriority(INT8U iPriority);
 * \return OK - Success
 * \return IRQ_PEND_ERR - Can not use block task function from interrupt handler code
 *********************************************************************************************/
-INT8U BlockTask(INT8U iTaskNumber);
+INT8U BlockTask(BRTOS_TH iTaskNumber);
 
 /*****************************************************************************************//**
 * \fn INT8U UnBlockTask(INT8U iTaskNumber)
@@ -637,7 +643,7 @@ INT8U BlockTask(INT8U iTaskNumber);
 * \return OK - Success
 * \return IRQ_PEND_ERR - Can not use unblock task function from interrupt handler code
 *********************************************************************************************/
-INT8U UnBlockTask(INT8U iTaskNumber);
+INT8U UnBlockTask(BRTOS_TH iTaskNumber);
 
 /*****************************************************************************************//**
 * \fn INT8U BlockMultipleTask(INT8U TaskStart, INT8U TaskNumber)
