@@ -898,9 +898,16 @@ INT8U UnBlockMultipleTask(INT8U TaskStart, INT8U TaskNumber)
     }
   }
   
-  // Exit critical Section
+  // check if we have unblocked a higher priority task  
   if (currentTask)
-    OSExitCritical();
+  {
+    if (!iNesting)
+    {
+       ChangeContext();
+    }
+	// Exit critical Section
+	OSExitCritical();
+  } 
 
   return OK;
 }
