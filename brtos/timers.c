@@ -24,6 +24,8 @@
 *   Date:     12/01/2013
 *   Revision: 1.01
 *   Date:     09/06/2013
+*   Revision: 1.02 (Support for task handle)
+*   Date:     22/11/2014
 *********************************************************************************************************/
 
 
@@ -248,9 +250,9 @@ void OSTimerInit(INT16U timertask_stacksize, INT8U prio){
    
    
   #if (TASK_WITH_PARAMETERS == 1)
-  if(InstallTask(&BRTOS_TimerTask,"BRTOS Timers Task",timertask_stacksize, prio,NULL) != OK)
+  if(InstallTask(&BRTOS_TimerTask,"BRTOS Timers Task",timertask_stacksize, prio,NULL,NULL) != OK)
   #else
-  if(InstallTask(&BRTOS_TimerTask,"BRTOS Timers Task",timertask_stacksize, prio) != OK)
+  if(InstallTask(&BRTOS_TimerTask,"BRTOS Timers Task",timertask_stacksize, prio,NULL) != OK)
   #endif
   {
     while(1){};
