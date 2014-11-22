@@ -22,6 +22,8 @@
 *   Authors:  Carlos Henrique Barriquelo
 *   Revision: 1.0
 *   Date:     12/01/2013
+*   Revision: 1.02 (Support for task handle)
+*   Date:     22/11/2014
 *********************************************************************************************************/
 
 
@@ -31,8 +33,6 @@
 #ifndef TIMERS_H
 #define TIMERS_H
 
-#include "OS_types.h"
-#include "BRTOSConfig.h"
 #include "BRTOS.h"
 
 #ifdef BRTOS_TMR_EN 
