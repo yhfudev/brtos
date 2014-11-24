@@ -4,7 +4,7 @@
 
 /* Scheduler includes. */
 #include "BRTOS.h"
-#include "tarefas.h"
+#include "tasks.h"
 
 BRTOS_TH th1, th2, th3;
 
