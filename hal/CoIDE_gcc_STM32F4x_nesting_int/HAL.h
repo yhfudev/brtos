@@ -61,7 +61,7 @@
 #define OPTIMIZED_SCHEDULER 1
 
 /// Define if InstallTask function will support parameters
-#define TASK_WITH_PARAMETERS 1
+#define TASK_WITH_PARAMETERS 0
 
 /// Define if 32 bits register for tick timer will be used
 #define TICK_TIMER_32BITS   1
