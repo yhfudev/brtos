@@ -195,9 +195,10 @@ void TickTimerSetup(void);
 *********************************************************************************************/
 void OSRTCSetup(void);
 
-void TickTimer(void);
-__attribute__((naked)) void SwitchContext(void);
-__attribute__((naked)) void SwitchContextToFirstTask(void);
+/* BRTOS port interrupt handlers. Must be used in order to map handlers to the specific processor interrupt vector. */
+extern void TickTimer(void);
+extern __attribute__((naked)) void SwitchContext(void);
+extern __attribute__((naked)) void SwitchContextToFirstTask(void);
 
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
