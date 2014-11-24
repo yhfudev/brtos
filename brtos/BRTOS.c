@@ -951,9 +951,7 @@ INT8U UnBlockMultipleTask(INT8U TaskStart, INT8U TaskNumber)
         OSDutyTmp = 1;
      #endif            
      
-     #if (DEBUG == 1)
-        OS_Wait;
-     #endif
+     OS_Wait;
   }
 }
 ////////////////////////////////////////////////////////////
