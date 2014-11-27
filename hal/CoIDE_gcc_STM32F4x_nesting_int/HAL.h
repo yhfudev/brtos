@@ -200,6 +200,10 @@ extern void TickTimer(void);
 extern __attribute__((naked)) void SwitchContext(void);
 extern __attribute__((naked)) void SwitchContextToFirstTask(void);
 
+#define SVC_Handler SwitchContextToFirstTask
+#define PendSV_Handler SwitchContext
+#define SysTick_Handler TickTimer
+
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////
